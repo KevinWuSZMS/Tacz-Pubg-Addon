@@ -1,0 +1,8 @@
+{
+  "cbrg.attachments.quickdraw_mag_pistol.desc": "+60%% 换弹速度\n（该数值可能会因装备的武器不同而产生差异）",
+  "cbrg.attachments.quickdraw_mag_rifle.desc": "+60%% 换弹速度\n（该数值可能会因装备的武器不同而产生差异）",
+  "cbrg.attachments.quickdraw_mag_sr.desc": "+60%% 换弹速度",
+  "cbrg.attachments.extended_quickdraw_mag_pistol.desc": "+ 弹匣容量\n+15%% 换弹速度\n（该数值可能会因装备的武器不同而产生差异）",
+  "cbrg.attachments.extended_quickdraw_mag_rifle.desc": "+ 弹匣容量\n+15%% 换弹速度\n（该数值可能会因装备的武器不同而产生差异）",
+  "cbrg.attachments.extended_quickdraw_mag_sr.desc": "+ 弹匣容量\n+15%% 换弹速度"
+}

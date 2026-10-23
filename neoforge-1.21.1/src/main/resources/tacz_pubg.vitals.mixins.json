@@ -1,0 +1,9 @@
+{
+  "required": true,
+  "minVersion": "0.8.5",
+  "package": "com.example.examplemod.vitals.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": ["MatchFoodDataMixin", "MatchPeacefulHealingMixin", "BlueZoneHurtSoundMixin"],
+  "client": ["MedicineUseInputMixin"],
+  "injectors": {"defaultRequire": 1}
+}

@@ -1,0 +1,9 @@
+{
+  "required": true,
+  "minVersion": "0.8.5",
+  "package": "com.example.examplemod.visibility.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": ["TrackedEntityVisibilityMixin", "ChunkMapVisibilityMixin"],
+  "client": ["EntityVisibilityMixin", "RemotePlayerVisibilityMixin", "TargetMinecartVisibilityMixin", "TargetRendererVisibilityMixin", "SodiumVisibilityMixin", "LevelRendererVisibilityMixin", "GameRendererVisibilityMixin", "ClientLevelVisibilityMixin", "EntityRendererVisibilityMixin", "BlockEntityDispatcherVisibilityMixin"],
+  "injectors": {"defaultRequire": 1}
+}

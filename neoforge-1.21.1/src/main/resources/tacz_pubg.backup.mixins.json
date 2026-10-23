@@ -1,0 +1,9 @@
+{
+  "required": true,
+  "minVersion": "0.8.5",
+  "package": "com.example.examplemod.backup.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": ["LevelChunkJournalMixin", "LevelProtectionMixin", "BlockEntityJournalMixin", "BlockEntityTickProtectionMixin", "ContainerProtectionMixin", "HopperProtectionMixin", "ScheduledTickProtectionMixin", "EntityBaselineLevelAccessor", "EntityBaselineStorageAccessor", "EntityBaselineEntityStorageAccessor", "EntityBaselinePassengerMixin"],
+  "client": ["IntegratedServerMaintenanceMixin"],
+  "injectors": {"defaultRequire": 1}
+}

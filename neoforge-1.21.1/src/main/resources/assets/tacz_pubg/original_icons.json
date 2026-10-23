@@ -1,0 +1,1299 @@
+{
+  "schema": 1,
+  "defaultEnabled": false,
+  "sourceManifest": "textures/pubg_original/sources.json",
+  "notes": [
+    "GUI only. Unknown IDs keep their models.",
+    "Explicit base-firearm mappings include cosmetic/modernized variants; no fuzzy runtime matching."
+  ],
+  "icons": {
+    "ammo:cbrg:ammo_12g": {
+      "texture": "tacz_pubg:textures/pubg_original/official/ammunition/none/item_ammo_12guage_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Ammo_12Guage_C",
+      "sha256": "99d14d844c4b48fc7ad5377232dc029b184dee34840a3c7fc6c909dd463c34f6"
+    },
+    "ammo:cbrg:ammo_45acp": {
+      "texture": "tacz_pubg:textures/pubg_original/official/ammunition/none/item_ammo_45acp_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Ammo_45ACP_C",
+      "sha256": "bac6390d1a86de18f23cdc94c91761bf9f00a498d8b99a4d7c827c9f912ca75f"
+    },
+    "ammo:cbrg:ammo_556": {
+      "texture": "tacz_pubg:textures/pubg_original/official/ammunition/none/item_ammo_556mm_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Ammo_556mm_C",
+      "sha256": "1471f203bb028b12caa49002d38f4301124b42a5b482e3b97a6c5b56ce41a5a7"
+    },
+    "ammo:cbrg:ammo_57mm": {
+      "texture": "tacz_pubg:textures/pubg_original/official/ammunition/none/item_ammo_57mm_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "item_Ammo_57mm_c",
+      "sha256": "88449f83a11e093bd379d9f0ccbda0a14691fc284d935f05367ef4fd176bf56a"
+    },
+    "ammo:cbrg:ammo_762": {
+      "texture": "tacz_pubg:textures/pubg_original/official/ammunition/none/item_ammo_762mm_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Ammo_762mm_C",
+      "sha256": "6983c24148eab4426196464c26c738707b64c613e87ae360c15f195004370aeb"
+    },
+    "ammo:cbrg:ammo_9mm": {
+      "texture": "tacz_pubg:textures/pubg_original/official/ammunition/none/item_ammo_9mm_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Ammo_9mm_C",
+      "sha256": "c70fb8a9247636324697adb9320cb8b4ce5cf2b6b98541d91e149655c815c3cd"
+    },
+    "ammo:ccrp:556x45_m855": {
+      "texture": "tacz_pubg:textures/pubg_original/official/ammunition/none/item_ammo_556mm_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Ammo_556mm_C",
+      "sha256": "1471f203bb028b12caa49002d38f4301124b42a5b482e3b97a6c5b56ce41a5a7"
+    },
+    "ammo:ccrp:556x45_m995": {
+      "texture": "tacz_pubg:textures/pubg_original/official/ammunition/none/item_ammo_556mm_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Ammo_556mm_C",
+      "sha256": "1471f203bb028b12caa49002d38f4301124b42a5b482e3b97a6c5b56ce41a5a7"
+    },
+    "ammo:hamster:flares_ammo": {
+      "texture": "tacz_pubg:textures/pubg_original/official/ammunition/none/item_ammo_flare_c.png",
+      "width": 2000,
+      "height": 2000,
+      "source_item": "Item_Ammo_Flare_C",
+      "sha256": "e93f76dcdb8093e115239f546bb68c905b73b2bc6b1b794a14bfc547807ca57d"
+    },
+    "ammo:tacz:12g": {
+      "texture": "tacz_pubg:textures/pubg_original/official/ammunition/none/item_ammo_12guage_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Ammo_12Guage_C",
+      "sha256": "99d14d844c4b48fc7ad5377232dc029b184dee34840a3c7fc6c909dd463c34f6"
+    },
+    "ammo:tacz:308": {
+      "texture": "tacz_pubg:textures/pubg_original/official/ammunition/none/item_ammo_762mm_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Ammo_762mm_C",
+      "sha256": "6983c24148eab4426196464c26c738707b64c613e87ae360c15f195004370aeb"
+    },
+    "ammo:tacz:40mm": {
+      "texture": "tacz_pubg:textures/pubg_original/official/ammunition/none/item_ammo_40mm_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "item_Ammo_40mm_C",
+      "sha256": "b4c183c7058f76f5262c9b23787e045dbda441acc4fe81add6895da44d640ab0"
+    },
+    "ammo:tacz:45acp": {
+      "texture": "tacz_pubg:textures/pubg_original/official/ammunition/none/item_ammo_45acp_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Ammo_45ACP_C",
+      "sha256": "bac6390d1a86de18f23cdc94c91761bf9f00a498d8b99a4d7c827c9f912ca75f"
+    },
+    "ammo:tacz:556x45": {
+      "texture": "tacz_pubg:textures/pubg_original/official/ammunition/none/item_ammo_556mm_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Ammo_556mm_C",
+      "sha256": "1471f203bb028b12caa49002d38f4301124b42a5b482e3b97a6c5b56ce41a5a7"
+    },
+    "ammo:tacz:57x28": {
+      "texture": "tacz_pubg:textures/pubg_original/official/ammunition/none/item_ammo_57mm_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "item_Ammo_57mm_c",
+      "sha256": "88449f83a11e093bd379d9f0ccbda0a14691fc284d935f05367ef4fd176bf56a"
+    },
+    "ammo:tacz:762x39": {
+      "texture": "tacz_pubg:textures/pubg_original/official/ammunition/none/item_ammo_762mm_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Ammo_762mm_C",
+      "sha256": "6983c24148eab4426196464c26c738707b64c613e87ae360c15f195004370aeb"
+    },
+    "ammo:tacz:762x39copper": {
+      "texture": "tacz_pubg:textures/pubg_original/official/ammunition/none/item_ammo_762mm_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Ammo_762mm_C",
+      "sha256": "6983c24148eab4426196464c26c738707b64c613e87ae360c15f195004370aeb"
+    },
+    "ammo:tacz:762x54": {
+      "texture": "tacz_pubg:textures/pubg_original/official/ammunition/none/item_ammo_762mm_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Ammo_762mm_C",
+      "sha256": "6983c24148eab4426196464c26c738707b64c613e87ae360c15f195004370aeb"
+    },
+    "ammo:tacz:762x54r": {
+      "texture": "tacz_pubg:textures/pubg_original/official/ammunition/none/item_ammo_762mm_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Ammo_762mm_C",
+      "sha256": "6983c24148eab4426196464c26c738707b64c613e87ae360c15f195004370aeb"
+    },
+    "ammo:tacz:9mm": {
+      "texture": "tacz_pubg:textures/pubg_original/official/ammunition/none/item_ammo_9mm_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Ammo_9mm_C",
+      "sha256": "c70fb8a9247636324697adb9320cb8b4ce5cf2b6b98541d91e149655c815c3cd"
+    },
+    "attachment:cbrg:15x_scope": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_upper_pm2_01_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Attach_Weapon_Upper_PM2_01_C",
+      "sha256": "5f5de7dbe76df8e4b282f432a6041f81b539c7e0adf99f123aaa682269e70fac"
+    },
+    "attachment:cbrg:2x_scope": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_upper_aimpoint_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Attach_Weapon_Upper_Aimpoint_C",
+      "sha256": "6e9deb57b149104fb27ed626f0afe8d28fd56c273c74ab05e9a0c01ddc0626db"
+    },
+    "attachment:cbrg:3x_scope": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_upper_scope3x_c.png",
+      "width": 2000,
+      "height": 2000,
+      "source_item": "Item_Attach_Weapon_Upper_Scope3x_C",
+      "sha256": "0fdf98305ba738167a805aea60b59ff81045213bb4a3fa2fbe2c8739fc6e3139"
+    },
+    "attachment:cbrg:4x_scope": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_upper_acog_01_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Attach_Weapon_Upper_ACOG_01_C",
+      "sha256": "a9bf31825d8af6e8bec751b056e2d7c4176fdf91a12e81fa810175e27644a0c5"
+    },
+    "attachment:cbrg:6x_scope": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_upper_scope6x_c.png",
+      "width": 2000,
+      "height": 2000,
+      "source_item": "Item_Attach_Weapon_Upper_Scope6x_C",
+      "sha256": "86994aff3e5c680b020ba13f9029f9426eae1eb9825fc3485077eed0c97947e2"
+    },
+    "attachment:cbrg:8x_scope": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_upper_cqbss_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Attach_Weapon_Upper_CQBSS_C",
+      "sha256": "89a303d16a267c4e7e1a9e4371dc175db3797405868239f7785597bb83ba1493"
+    },
+    "attachment:cbrg:angled_foregrip": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_lower_angledforegrip_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Attach_Weapon_Lower_AngledForeGrip_C",
+      "sha256": "d752789f5e639f7ae33c4ab6fae88769829d39d026427f11d2df43d11bd3d6a6"
+    },
+    "attachment:cbrg:canted_sight": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_siderail_dotsight_rmr_c.png",
+      "width": 2000,
+      "height": 2000,
+      "source_item": "Item_Attach_Weapon_SideRail_DotSight_RMR_C",
+      "sha256": "52527303c31d9602d89b81783f953883de1cd7dd1e31b63e7eacdc8f0ecaa137"
+    },
+    "attachment:cbrg:cheek_pad": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_stock_sniperrifle_cheekpad_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Attach_Weapon_Stock_SniperRifle_CheekPad_C",
+      "sha256": "affd6bef21b80579608fd2b34c86a2cb22ff61db33eeb98f63948247d62c2400"
+    },
+    "attachment:cbrg:compensator_rifle": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_muzzle_compensator_large_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Attach_Weapon_Muzzle_Compensator_Large_C",
+      "sha256": "e32dd7141d3eb4d5662f778910de5f65659e5cbae0243452bc54583e92efd8ad"
+    },
+    "attachment:cbrg:extended_mag_rifle": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_magazine_extended_large_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Attach_Weapon_Magazine_Extended_Large_C",
+      "sha256": "1a6594f62987ef45c3c76fbd5414c50488e708339b49de0413f503d4bef5e96d"
+    },
+    "attachment:cbrg:extended_quickdraw_mag_rifle": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_magazine_extendedquickdraw_large_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Attach_Weapon_Magazine_ExtendedQuickDraw_Large_C",
+      "sha256": "e0ee546b0abebf8ce677573dbc9d27898a0ef003112ad3ad83ae8a2cec632a7b"
+    },
+    "attachment:cbrg:flash_hider_rifle": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_muzzle_flashhider_large_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Attach_Weapon_Muzzle_FlashHider_Large_C",
+      "sha256": "82c98496afd78d4eb64621c8bee1479de5035bff8bdfdaf51f7c5a0d17a2e06e"
+    },
+    "attachment:cbrg:halfgrip": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_lower_halfgrip_c.png",
+      "width": 2000,
+      "height": 2000,
+      "source_item": "Item_Attach_Weapon_Lower_HalfGrip_C",
+      "sha256": "88c757593d9c76c3837bb13995464e6c2efa62f4310f3c0ca85eff9cf6f272a6"
+    },
+    "attachment:cbrg:holographic_sight": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_upper_holosight_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Attach_Weapon_Upper_Holosight_C",
+      "sha256": "59c28c234417e151d7f8cf497b63e56d8a0ddeafc2aa662f8e973ec041981233"
+    },
+    "attachment:cbrg:laser_sight": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_lower_laserpointer_c.png",
+      "width": 2000,
+      "height": 2000,
+      "source_item": "Item_Attach_Weapon_Lower_LaserPointer_C",
+      "sha256": "18b8e52ee68079a10482a39ddf2b11fb10d6722a6674160d6e592d97cdfa114e"
+    },
+    "attachment:cbrg:lightweight_grip": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_lower_lightweightforegrip_c.png",
+      "width": 2000,
+      "height": 2000,
+      "source_item": "Item_Attach_Weapon_Lower_LightweightForeGrip_C",
+      "sha256": "bb1f571da3c10963cdacd8f2ac1729b1f93a0c96df1996e2649fa06748892f3e"
+    },
+    "attachment:cbrg:quickdraw_mag_rifle": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_magazine_quickdraw_large_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Attach_Weapon_Magazine_QuickDraw_Large_C",
+      "sha256": "e53b9ba38c0741bbedfb5c48844284b71eca97be2891d69994aa6d43790c6bc8"
+    },
+    "attachment:cbrg:red_dot": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_upper_dotsight_01_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Attach_Weapon_Upper_DotSight_01_C",
+      "sha256": "888bc60139298a10de1d6afcf8c4e5f46236e6a1dc19df038931b59c7f9911d4"
+    },
+    "attachment:cbrg:suppressor_pistol": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_muzzle_suppressor_small_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Attach_Weapon_Muzzle_Suppressor_Small_C",
+      "sha256": "2a47f0e6060638a110c2f55c83db92aa53ee40773ab48e5e7ce095e6a9350eda"
+    },
+    "attachment:cbrg:suppressor_rifle": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_muzzle_suppressor_large_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Attach_Weapon_Muzzle_Suppressor_Large_C",
+      "sha256": "a8b3e762d9f814c3547b0510ad8d65c570470bd2ab18df7c0f3900cfe8c1428f"
+    },
+    "attachment:cbrg:suppressor_sr": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_muzzle_suppressor_sniperrifle_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Attach_Weapon_Muzzle_Suppressor_SniperRifle_C",
+      "sha256": "2c506143ffcd306b074f7cd27706a2f0737a7926a78ea829f3de7fffa1fa7877"
+    },
+    "attachment:cbrg:thumbgrip": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_lower_thumbgrip_c.png",
+      "width": 2000,
+      "height": 2000,
+      "source_item": "Item_Attach_Weapon_Lower_ThumbGrip_C",
+      "sha256": "26d852e5c1a3a609ff23d8570bd5a72f9ddbb12ee3a1f19fe8e64ebe441596cb"
+    },
+    "attachment:cbrg:vertical_foregrip": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_lower_foregrip_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Attach_Weapon_Lower_Foregrip_C",
+      "sha256": "2b51aa8c5a4717a54969f4c02af3477f2b9e8352c81485989d8e2ce9787bd0db"
+    },
+    "attachment:tacz:muzzle_choke_sg": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_muzzle_choke_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Attach_Weapon_Muzzle_Choke_C",
+      "sha256": "0a08f3631625e61aa9fef3b050ede6eaa99320456d0a917dbd35938c141e9bd2"
+    },
+    "attachment:tacz:scope_acog_ta31": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_upper_acog_01_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Attach_Weapon_Upper_ACOG_01_C",
+      "sha256": "a9bf31825d8af6e8bec751b056e2d7c4176fdf91a12e81fa810175e27644a0c5"
+    },
+    "attachment:tacz:scope_standard_8x": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_upper_cqbss_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Attach_Weapon_Upper_CQBSS_C",
+      "sha256": "89a303d16a267c4e7e1a9e4371dc175db3797405868239f7785597bb83ba1493"
+    },
+    "attachment:tacz:sight_552": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_upper_holosight_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Attach_Weapon_Upper_Holosight_C",
+      "sha256": "59c28c234417e151d7f8cf497b63e56d8a0ddeafc2aa662f8e973ec041981233"
+    },
+    "attachment:tacz:sight_t1": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_upper_dotsight_01_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Attach_Weapon_Upper_DotSight_01_C",
+      "sha256": "888bc60139298a10de1d6afcf8c4e5f46236e6a1dc19df038931b59c7f9911d4"
+    },
+    "attachment:tacz:stock_tactical_ar": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_stock_ar_composite_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Attach_Weapon_Stock_AR_Composite_C",
+      "sha256": "f92b864ca392d0d960a8bbb2106077f4855e1863501ad20c1dd94d1681e8cb98"
+    },
+    "attachment:tacz_pubg_workbench:extended_mag_rifle": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_magazine_extended_large_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Attach_Weapon_Magazine_Extended_Large_C",
+      "sha256": "1a6594f62987ef45c3c76fbd5414c50488e708339b49de0413f503d4bef5e96d"
+    },
+    "attachment:tacz_pubg_workbench:extended_mag_smg": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_magazine_extended_medium_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Attach_Weapon_Magazine_Extended_Medium_C",
+      "sha256": "923cfabb19d8f7fe67bd0b68e06608de3067db7cdd15dc7f73b655c8981a915d"
+    },
+    "attachment:tacz_pubg_workbench:extended_mag_sniper": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_magazine_extended_sniperrifle_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Attach_Weapon_Magazine_Extended_SniperRifle_C",
+      "sha256": "4a2d6e4f456c46e6adc639d647005457c4ade4397c0af4fd1df509594ee47dbc"
+    },
+    "attachment:tacz_pubg_workbench:extended_quickdraw_mag_rifle": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_magazine_extendedquickdraw_large_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Attach_Weapon_Magazine_ExtendedQuickDraw_Large_C",
+      "sha256": "e0ee546b0abebf8ce677573dbc9d27898a0ef003112ad3ad83ae8a2cec632a7b"
+    },
+    "attachment:tacz_pubg_workbench:extended_quickdraw_mag_smg": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_magazine_extendedquickdraw_medium_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Attach_Weapon_Magazine_ExtendedQuickDraw_Medium_C",
+      "sha256": "4440cef6dc43af1c205f5a49b5f89fe5101eb057e57a55b4935fab66e0c07d4c"
+    },
+    "attachment:tacz_pubg_workbench:extended_quickdraw_mag_sniper": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_magazine_extendedquickdraw_sniperrifle_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Attach_Weapon_Magazine_ExtendedQuickDraw_SniperRifle_C",
+      "sha256": "c5375dc3c65d0091afe4167322dbfe7c3470c06c400fc89a38d2ee24f0377428"
+    },
+    "attachment:tacz_pubg_workbench:quickdraw_mag_rifle": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_magazine_quickdraw_large_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Attach_Weapon_Magazine_QuickDraw_Large_C",
+      "sha256": "e53b9ba38c0741bbedfb5c48844284b71eca97be2891d69994aa6d43790c6bc8"
+    },
+    "attachment:tacz_pubg_workbench:quickdraw_mag_smg": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_magazine_quickdraw_medium_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Attach_Weapon_Magazine_QuickDraw_Medium_C",
+      "sha256": "5cb8b33e35bb9ef908c2a748d868d1d6623df4d60fa9531ed0028d92d1d6ea36"
+    },
+    "attachment:tacz_pubg_workbench:quickdraw_mag_sniper": {
+      "texture": "tacz_pubg:textures/pubg_original/official/attachment/item_attach_weapon_magazine_quickdraw_sniperrifle_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Attach_Weapon_Magazine_QuickDraw_SniperRifle_C",
+      "sha256": "b78c76e6650a78815557882e9a6cd08c53278b30bdbabcf1bf9234351de87b3c"
+    },
+    "gun:cbrg:beryl_m762": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_berylm762_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_BerylM762_C",
+      "sha256": "b89e95137ae9a190fe2ab0593bb467d48c711911d797caba107f1ebce69fd6dd"
+    },
+    "gun:cbrg:beryl_m762_2": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_berylm762_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_BerylM762_C",
+      "sha256": "b89e95137ae9a190fe2ab0593bb467d48c711911d797caba107f1ebce69fd6dd"
+    },
+    "gun:cbrg:groza": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_groza_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_Groza_C",
+      "sha256": "98d7f4352ded249e1dbdb40b90dddd41beffc3d1f22a344ba529a785c5fc80de"
+    },
+    "gun:cbrg:slr": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_fnfal_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_FNFal_C",
+      "sha256": "e0e950f58b3b08e79dc119b18c1b8737490e66484d799543f625914a3b0dde1c"
+    },
+    "gun:ccrp:ak47_spent_bullet": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_ak47_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_AK47_C",
+      "sha256": "1891393816fdd6ac4a8ceb74d2f2f8a8fb99e36ae48a31205ac0df60d16160fa"
+    },
+    "gun:ccrp:aug_a3_m2kit": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_aug_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_AUG_C",
+      "sha256": "0b81d68002d7203983a351503e71c9046b74275160ea5bc0e79ea085e4d553be"
+    },
+    "gun:ccrp:aug_a3s": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_aug_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_AUG_C",
+      "sha256": "0b81d68002d7203983a351503e71c9046b74275160ea5bc0e79ea085e4d553be"
+    },
+    "gun:ccrp:chisato_m1911": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/handgun/item_weapon_m1911_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_M1911_C",
+      "sha256": "9f03f28f1417c5afb1e42b5bb3fe9c55944a2b24b6ec3257680b894a8751794d"
+    },
+    "gun:ccrp:hk416": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_hk416_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_HK416_C",
+      "sha256": "5630b92c67db0219f63eaeee198bfab4bbc673f67253be27ea48afdd08d87f59"
+    },
+    "gun:ccrp:hk416_sopmod": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_hk416_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_HK416_C",
+      "sha256": "5630b92c67db0219f63eaeee198bfab4bbc673f67253be27ea48afdd08d87f59"
+    },
+    "gun:ccrp:hk416a8": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_hk416_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_HK416_C",
+      "sha256": "5630b92c67db0219f63eaeee198bfab4bbc673f67253be27ea48afdd08d87f59"
+    },
+    "gun:ccrp:m249_saw": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_m249_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_M249_C",
+      "sha256": "d2309950cff7b7a274c440a1d22530a21ed7ed7dce0d5a7e6226df877510929f"
+    },
+    "gun:ccrp:mp5k": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_mp5k_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_MP5K_C",
+      "sha256": "6ee95def367d492af1639df3a6794db25c67ef39b17f9249c85502eaa3256a83"
+    },
+    "gun:ccrp:mp5k_pdw": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_mp5k_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_MP5K_C",
+      "sha256": "6ee95def367d492af1639df3a6794db25c67ef39b17f9249c85502eaa3256a83"
+    },
+    "gun:ccrp:mp9_modernrized": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_mp9_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_MP9_C",
+      "sha256": "6a36b7af2ba5f4887758e782b531b2a1b102364b4505eb564712f42e1a608f33"
+    },
+    "gun:ccrp:mp9_thunder": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_mp9_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_MP9_C",
+      "sha256": "6a36b7af2ba5f4887758e782b531b2a1b102364b4505eb564712f42e1a608f33"
+    },
+    "gun:ccrp:p90_effen_90": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_p90_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_P90_C",
+      "sha256": "b9385d724b125a850daa3fa067381e67ddb33747af5f0e7327fad6f61ab76154"
+    },
+    "gun:ccrp:p90_paw": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_p90_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_P90_C",
+      "sha256": "b9385d724b125a850daa3fa067381e67ddb33747af5f0e7327fad6f61ab76154"
+    },
+    "gun:ccrp:p90_shround_s": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_p90_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_P90_C",
+      "sha256": "b9385d724b125a850daa3fa067381e67ddb33747af5f0e7327fad6f61ab76154"
+    },
+    "gun:ccrp:scar_16s": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_scar-l_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_SCAR-L_C",
+      "sha256": "eb7fd60df00c12347063ae9fd2431a59b168cf74761b2f03ce3ba46741e67bcb"
+    },
+    "gun:ccrp:uzi45": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_uzi_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_UZI_C",
+      "sha256": "9412d03575858315f8bd624e7889145ccc7cbf26f20a2f54ba97367cd5a0f6fa"
+    },
+    "gun:cib:686": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_berreta686_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_Berreta686_C",
+      "sha256": "96c9e7fb6ed7bec6b84384d244aaf8fa5f7f74c4a123931373589868a0a1fe77"
+    },
+    "gun:cib:cs_ak47": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_ak47_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_AK47_C",
+      "sha256": "1891393816fdd6ac4a8ceb74d2f2f8a8fb99e36ae48a31205ac0df60d16160fa"
+    },
+    "gun:cib:fal": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_fnfal_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_FNFal_C",
+      "sha256": "e0e950f58b3b08e79dc119b18c1b8737490e66484d799543f625914a3b0dde1c"
+    },
+    "gun:cib:g18c": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/handgun/item_weapon_g18_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_G18_C",
+      "sha256": "a298960cb2a8e7ca2804ada620cf2049332ccd5eb1ebda3f2ea3072b7d1d9cee"
+    },
+    "gun:cib:galilace32": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_ace32_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_ACE32_C",
+      "sha256": "e07a967d394b17e12179e4e038c5a9baaa3131675449a7a4c8ddba30801e0e20"
+    },
+    "gun:cib:k2": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_k2_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_K2_C",
+      "sha256": "1135f8ec3b14872ed363acc3f49035fbf977ebdb82efee38083373b79361183c"
+    },
+    "gun:cib:m16a4": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_m16a4_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_M16A4_C",
+      "sha256": "5bd7fa230e5e4e6840b6ddddb2d85cca8fef996f68d34eb18335d27a68808506"
+    },
+    "gun:cib:mg3": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_mg3_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_MG3_C",
+      "sha256": "775ae8a5872b65c2c5eeeb4a6e5dbd9d1339c14f9dfa2967303c21e7e70acdc9"
+    },
+    "gun:cib:mini": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_mini14_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_Mini14_C",
+      "sha256": "0f34068479408309fd1ac457be5b0aa123751c9967b164a08968186aa57eba19"
+    },
+    "gun:cib:origin12": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_origins12_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_OriginS12_C",
+      "sha256": "997f9d4bef6fffdeb2943e246ca18fbbde11c696b8eab40e4bab5b5cdc8da249"
+    },
+    "gun:cib:ots14": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_groza_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_Groza_C",
+      "sha256": "98d7f4352ded249e1dbdb40b90dddd41beffc3d1f22a344ba529a785c5fc80de"
+    },
+    "gun:cib:pp19": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_bizonpp19_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_BizonPP19_C",
+      "sha256": "f435d36abb85223eff497df475b28902ce9e23e441bbc33d9750d0b0d178bbf2"
+    },
+    "gun:cib:qbu88": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_qbu88_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_QBU88_C",
+      "sha256": "1e479f8fa5f15630541ce562d9f100ceae27e3660d10cfaf272e0158f82eba22"
+    },
+    "gun:cib:qbz951": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_qbz95_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_QBZ95_C",
+      "sha256": "8820544726947547dbd58b5c455461a1ba92d67949f05406acec63d800ea4ace"
+    },
+    "gun:cib:svd": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_dragunov_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_Dragunov_C",
+      "sha256": "8b293a4d760755b8a6e3bc0c5b4c96a09a8217dc359589ff4489d41bd8b07aeb"
+    },
+    "gun:cibs:qbz951_asiimov": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_qbz95_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_QBZ95_C",
+      "sha256": "8820544726947547dbd58b5c455461a1ba92d67949f05406acec63d800ea4ace"
+    },
+    "gun:classicr:dp28": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_dp28_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_DP28_C",
+      "sha256": "762e224d2e6b82a645f3290f7071e3b7406e67bfc653df85e3cc073ba0b60cd1"
+    },
+    "gun:classicr:fn_fal_tac": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_fnfal_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_FNFal_C",
+      "sha256": "e0e950f58b3b08e79dc119b18c1b8737490e66484d799543f625914a3b0dde1c"
+    },
+    "gun:classicr:glock_18": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/handgun/item_weapon_g18_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_G18_C",
+      "sha256": "a298960cb2a8e7ca2804ada620cf2049332ccd5eb1ebda3f2ea3072b7d1d9cee"
+    },
+    "gun:classicr:hk416_a5": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_hk416_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_HK416_C",
+      "sha256": "5630b92c67db0219f63eaeee198bfab4bbc673f67253be27ea48afdd08d87f59"
+    },
+    "gun:classicr:kar98": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_kar98k_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_Kar98k_C",
+      "sha256": "f9f8f37e30e4b22a70538d2135dd856208a58b056259cef9ca66d70ae5126421"
+    },
+    "gun:classicr:m1a1_smg": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_thompson_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_Thompson_C",
+      "sha256": "fc5b4d5ec0567c09c0f6a4fcae9fe0e0c641ee19ab8f2e7817ab1e00fe204d14"
+    },
+    "gun:classicr:m24_renewed": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_m24_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_M24_C",
+      "sha256": "933a95a6002dd2198ba1772a5ea6e8b0477438c341b70bf467d1de06d341a665"
+    },
+    "gun:classicr:m92fs": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/handgun/item_weapon_m9_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_M9_C",
+      "sha256": "4addc562f8d7c582a5b5cb48824de660dc9f2a46745a92f54e5b898af69c9d58"
+    },
+    "gun:classicr:mk47": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_mk47mutant_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_Mk47Mutant_C",
+      "sha256": "12cd30ac2cbdca765c9fda3d4a37f1055bd21e566379c36b7e2ca04df57abf3f"
+    },
+    "gun:classicr:mp9": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_mp9_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_MP9_C",
+      "sha256": "6a36b7af2ba5f4887758e782b531b2a1b102364b4505eb564712f42e1a608f33"
+    },
+    "gun:gz:1st_vector45acp": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_vector_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_Vector_C",
+      "sha256": "60b5778284aeacf075b48c0dfdf9679e951b09ee21c2d5605563aebe308831a1"
+    },
+    "gun:gz:auga3cqc": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_aug_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_AUG_C",
+      "sha256": "0b81d68002d7203983a351503e71c9046b74275160ea5bc0e79ea085e4d553be"
+    },
+    "gun:gz:black_market_akm": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_ak47_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_AK47_C",
+      "sha256": "1891393816fdd6ac4a8ceb74d2f2f8a8fb99e36ae48a31205ac0df60d16160fa"
+    },
+    "gun:gz:enhanced_pp19": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_bizonpp19_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_BizonPP19_C",
+      "sha256": "f435d36abb85223eff497df475b28902ce9e23e441bbc33d9750d0b0d178bbf2"
+    },
+    "gun:gz:pp19": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_bizonpp19_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_BizonPP19_C",
+      "sha256": "f435d36abb85223eff497df475b28902ce9e23e441bbc33d9750d0b0d178bbf2"
+    },
+    "gun:gz:pp19_01": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_bizonpp19_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_BizonPP19_C",
+      "sha256": "f435d36abb85223eff497df475b28902ce9e23e441bbc33d9750d0b0d178bbf2"
+    },
+    "gun:gz:sasg_12": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_saiga12_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_Saiga12_C",
+      "sha256": "a740e69f4ee347263caab7d84fe287e63dc0c2f59b2b52bf3e16dc5d680ea219"
+    },
+    "gun:gz:tactical_pp19_01": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_bizonpp19_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_BizonPP19_C",
+      "sha256": "f435d36abb85223eff497df475b28902ce9e23e441bbc33d9750d0b0d178bbf2"
+    },
+    "gun:gz:tactical_sasg_12k": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_saiga12_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_Saiga12_C",
+      "sha256": "a740e69f4ee347263caab7d84fe287e63dc0c2f59b2b52bf3e16dc5d680ea219"
+    },
+    "gun:hamster:flaregun": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/handgun/item_weapon_flaregun_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_FlareGun_C",
+      "sha256": "f6c91e7d0d4d083aead39321b833c78d3b6e69ecde519584cdb988b8751c8396"
+    },
+    "gun:hamster:mosin91": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_mosin_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_Mosin_C",
+      "sha256": "5853d7d015220a89324e1807c81f42e3016fa16c5662b04c6f18d049e13022db"
+    },
+    "gun:hamster:mosin9130": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_mosin_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_Mosin_C",
+      "sha256": "5853d7d015220a89324e1807c81f42e3016fa16c5662b04c6f18d049e13022db"
+    },
+    "gun:hamster:nagantm1895": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/handgun/item_weapon_nagantm1895_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_NagantM1895_C",
+      "sha256": "e69bba7da0a954db94711f94b1c7a5cb19d6803ddac5fcd3ed146a59ee22a48c"
+    },
+    "gun:hamster:sks": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_sks_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_SKS_C",
+      "sha256": "9b1705f90ef3d2082efa5a4f142c408cbaa758bad5439478fbf7c97dc3484b9d"
+    },
+    "gun:hamster:win1894": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_win1894_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_Win1894_C",
+      "sha256": "931c44c5917947eca490d7b017c7918540c11a48a6bae8edc0d2ebe4869b2a4f"
+    },
+    "gun:origin:p90": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_p90_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_P90_C",
+      "sha256": "b9385d724b125a850daa3fa067381e67ddb33747af5f0e7327fad6f61ab76154"
+    },
+    "gun:rainforest:fal": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_fnfal_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_FNFal_C",
+      "sha256": "e0e950f58b3b08e79dc119b18c1b8737490e66484d799543f625914a3b0dde1c"
+    },
+    "gun:rainforest:famas": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_famasg2_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_FAMASG2_C",
+      "sha256": "a1b1e011c03dca52ee725aeb0a4d54106f89a8dc7cb45eb85544a88f4e2389db"
+    },
+    "gun:suffuse:m1895": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/handgun/item_weapon_nagantm1895_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_NagantM1895_C",
+      "sha256": "e69bba7da0a954db94711f94b1c7a5cb19d6803ddac5fcd3ed146a59ee22a48c"
+    },
+    "gun:suffuse:m79": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/handgun/item_weapon_m79_c.png",
+      "width": 1156,
+      "height": 805,
+      "source_item": "Item_Weapon_M79_C",
+      "sha256": "ecdcb39f4640c4ea0f1aa868fd8b0bfcf5ab1d660ea4978c6b175c50e5c9f21d"
+    },
+    "gun:suffuse:pp19": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_bizonpp19_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_BizonPP19_C",
+      "sha256": "f435d36abb85223eff497df475b28902ce9e23e441bbc33d9750d0b0d178bbf2"
+    },
+    "gun:suffuse:qbz951": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_qbz95_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_QBZ95_C",
+      "sha256": "8820544726947547dbd58b5c455461a1ba92d67949f05406acec63d800ea4ace"
+    },
+    "gun:suffuse:saddam_golden_ak": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_ak47_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_AK47_C",
+      "sha256": "1891393816fdd6ac4a8ceb74d2f2f8a8fb99e36ae48a31205ac0df60d16160fa"
+    },
+    "gun:suffuse:svd": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_dragunov_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_Dragunov_C",
+      "sha256": "8b293a4d760755b8a6e3bc0c5b4c96a09a8217dc359589ff4489d41bd8b07aeb"
+    },
+    "gun:suffuse:ump45": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_ump_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_UMP_C",
+      "sha256": "9c8355f217a9a575aa843f0b07f4f2edbe051fa5a0e1a6093f515481a510e629"
+    },
+    "gun:tacz:ak47": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_ak47_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_AK47_C",
+      "sha256": "1891393816fdd6ac4a8ceb74d2f2f8a8fb99e36ae48a31205ac0df60d16160fa"
+    },
+    "gun:tacz:aug": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_aug_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_AUG_C",
+      "sha256": "0b81d68002d7203983a351503e71c9046b74275160ea5bc0e79ea085e4d553be"
+    },
+    "gun:tacz:db_long": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_berreta686_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_Berreta686_C",
+      "sha256": "96c9e7fb6ed7bec6b84384d244aaf8fa5f7f74c4a123931373589868a0a1fe77"
+    },
+    "gun:tacz:db_short": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/handgun/item_weapon_sawnoff_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_Sawnoff_C",
+      "sha256": "69ca99bbc8cadc1fd32f8893d20d9633e2d6b20d2922f8bd45e3da6b5a7dd45f"
+    },
+    "gun:tacz:deagle": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/handgun/item_weapon_deserteagle_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_DesertEagle_C",
+      "sha256": "b87f3059ba785e3016b458ea02c46231ec0e469eaac4780d865867214edc8a99"
+    },
+    "gun:tacz:deagle_golden": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/handgun/item_weapon_deserteagle_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_DesertEagle_C",
+      "sha256": "b87f3059ba785e3016b458ea02c46231ec0e469eaac4780d865867214edc8a99"
+    },
+    "gun:tacz:fn_fal": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_fnfal_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_FNFal_C",
+      "sha256": "e0e950f58b3b08e79dc119b18c1b8737490e66484d799543f625914a3b0dde1c"
+    },
+    "gun:tacz:hk416d": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_hk416_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_HK416_C",
+      "sha256": "5630b92c67db0219f63eaeee198bfab4bbc673f67253be27ea48afdd08d87f59"
+    },
+    "gun:tacz:kar98": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_kar98k_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_Kar98k_C",
+      "sha256": "f9f8f37e30e4b22a70538d2135dd856208a58b056259cef9ca66d70ae5126421"
+    },
+    "gun:tacz:m16a4": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_m16a4_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_M16A4_C",
+      "sha256": "5bd7fa230e5e4e6840b6ddddb2d85cca8fef996f68d34eb18335d27a68808506"
+    },
+    "gun:tacz:m1911": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/handgun/item_weapon_m1911_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_M1911_C",
+      "sha256": "9f03f28f1417c5afb1e42b5bb3fe9c55944a2b24b6ec3257680b894a8751794d"
+    },
+    "gun:tacz:m249": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_m249_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_M249_C",
+      "sha256": "d2309950cff7b7a274c440a1d22530a21ed7ed7dce0d5a7e6226df877510929f"
+    },
+    "gun:tacz:m870": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_winchester_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_Winchester_C",
+      "sha256": "4441d2efd6fd8b6e77180d3fb5a6bf1013e554900ec96c4de2271c9a95ca55d1"
+    },
+    "gun:tacz:m9a4": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/handgun/item_weapon_m9_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_M9_C",
+      "sha256": "4addc562f8d7c582a5b5cb48824de660dc9f2a46745a92f54e5b898af69c9d58"
+    },
+    "gun:tacz:mk14": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_mk14_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_Mk14_C",
+      "sha256": "80c7d3df867ac2c60b9942bb2f0c0c3c5b6c70c671b4caa2e6b72ebbe366f360"
+    },
+    "gun:tacz:p90": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_p90_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_P90_C",
+      "sha256": "b9385d724b125a850daa3fa067381e67ddb33747af5f0e7327fad6f61ab76154"
+    },
+    "gun:tacz:qbz_95": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_qbz95_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_QBZ95_C",
+      "sha256": "8820544726947547dbd58b5c455461a1ba92d67949f05406acec63d800ea4ace"
+    },
+    "gun:tacz:rhino357": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/handgun/item_weapon_rhino_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_Rhino_C",
+      "sha256": "23245532f5931e7d6f0ec9bd6638bd31a66f2798168b50ad24cd3818dc42486c"
+    },
+    "gun:tacz:scar_l": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_scar-l_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_SCAR-L_C",
+      "sha256": "eb7fd60df00c12347063ae9fd2431a59b168cf74761b2f03ce3ba46741e67bcb"
+    },
+    "gun:tacz:sks_tactical": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_sks_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_SKS_C",
+      "sha256": "9b1705f90ef3d2082efa5a4f142c408cbaa758bad5439478fbf7c97dc3484b9d"
+    },
+    "gun:tacz:ump45": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_ump_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_UMP_C",
+      "sha256": "9c8355f217a9a575aa843f0b07f4f2edbe051fa5a0e1a6093f515481a510e629"
+    },
+    "gun:tacz:uzi": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_uzi_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_UZI_C",
+      "sha256": "9412d03575858315f8bd624e7889145ccc7cbf26f20a2f54ba97367cd5a0f6fa"
+    },
+    "gun:tacz:vector45": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_vector_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_Vector_C",
+      "sha256": "60b5778284aeacf075b48c0dfdf9679e951b09ee21c2d5605563aebe308831a1"
+    },
+    "item:minecraft:crossbow": {
+      "texture": "tacz_pubg:textures/pubg_original/official/weapon/main/item_weapon_crossbow_c.png",
+      "width": 240,
+      "height": 240,
+      "source_item": "Item_Weapon_Crossbow_C",
+      "sha256": "68576927982ee4aab2e8394c9e1b1ff1597cb6b3bc6735a06a8426b3bf3ebed7"
+    },
+    "item:tacz_pubg:adrenaline_syringe": {
+      "texture": "tacz_pubg:textures/pubg_original/official/use/boost/item_boost_adrenalinesyringe_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Boost_AdrenalineSyringe_C",
+      "sha256": "bb90c4112d634bd7aa96603cec455958c3d38da213f21d45c3de95759940f036"
+    },
+    "item:tacz_pubg:backpack_1": {
+      "texture": "tacz_pubg:textures/pubg_original/official/equipment/backpack/item_back_e_01_lv1_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Back_E_01_Lv1_C",
+      "sha256": "fbfe5d5de9cd0c0638486c867d6617d84717ea9ec5efa090ad8b396022c92dbb"
+    },
+    "item:tacz_pubg:backpack_2": {
+      "texture": "tacz_pubg:textures/pubg_original/official/equipment/backpack/item_back_f_01_lv2_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Back_F_01_Lv2_C",
+      "sha256": "83af2a85fc479e5bcfbd259e471d3585c5cc1980bfd2e9ac9052b4319915bc93"
+    },
+    "item:tacz_pubg:backpack_3": {
+      "texture": "tacz_pubg:textures/pubg_original/official/equipment/backpack/item_back_c_01_lv3_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Back_C_01_Lv3_C",
+      "sha256": "e1696f0ee772b647baf882a993368b6997eef683bbbcb69821fa6bae402032d1"
+    },
+    "item:tacz_pubg:bandage": {
+      "texture": "tacz_pubg:textures/pubg_original/official/use/heal/item_heal_bandage_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Heal_Bandage_C",
+      "sha256": "97a2671c36c8d1edf57e2cafe2fec137e65efb5a5bba8a36ff32c9ee12987551"
+    },
+    "item:tacz_pubg:blue_zone_grenade": {
+      "texture": "tacz_pubg:textures/pubg_original/official/equipment/throwable/item_weapon_bluezonegrenade_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Weapon_BluezoneGrenade_C",
+      "sha256": "28a720b33d5c95713bdc8a4de7937a628f2e711a49d407af6524d77a32ddf06c"
+    },
+    "item:tacz_pubg:c4": {
+      "texture": "tacz_pubg:textures/pubg_original/official/equipment/throwable/item_weapon_c4_c.png",
+      "width": 800,
+      "height": 800,
+      "source_item": "Item_Weapon_C4_C",
+      "sha256": "e7e01dec490061e0232ebfa59e2f4cc57cba7cdc10e78ff6204f169c30744628"
+    },
+    "item:tacz_pubg:energy_drink": {
+      "texture": "tacz_pubg:textures/pubg_original/official/use/boost/item_boost_energydrink_c.png",
+      "width": 1024,
+      "height": 1024,
+      "source_item": "Item_Boost_EnergyDrink_C",
+      "sha256": "317ba027af83b345e03bed8d2af09a8dd597c094f8aaddfafee15b1ab0efcc7c"
+    },
+    "item:tacz_pubg:first_aid_kit": {
+      "texture": "tacz_pubg:textures/pubg_original/official/use/heal/item_heal_firstaid_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Heal_FirstAid_C",
+      "sha256": "fc219f1a2592a00022cdc769d1d785066a9f2fa6b7ddcb527adaa37dbc1355ab"
+    },
+    "item:tacz_pubg:frag_grenade": {
+      "texture": "tacz_pubg:textures/pubg_original/official/equipment/throwable/item_weapon_grenade_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Weapon_Grenade_C",
+      "sha256": "c761e28991d99c9868536845f63298070b05c2bc44bf5b9701f5e7518c8e32ec"
+    },
+    "item:tacz_pubg:helmet_1": {
+      "texture": "tacz_pubg:textures/pubg_original/official/equipment/headgear/item_head_e_01_lv1_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Head_E_01_Lv1_C",
+      "sha256": "f93f33c2dad95d6bc387ba373281063b9184a1ec32ce653f555ad3756a1d6bf1"
+    },
+    "item:tacz_pubg:helmet_2": {
+      "texture": "tacz_pubg:textures/pubg_original/official/equipment/headgear/item_head_f_01_lv2_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Head_F_01_Lv2_C",
+      "sha256": "57731b111f80bd09fd209747e970af512afe989124309589141b8bafcd03443c"
+    },
+    "item:tacz_pubg:helmet_3": {
+      "texture": "tacz_pubg:textures/pubg_original/official/equipment/headgear/item_head_g_01_lv3_c.png",
+      "width": 256,
+      "height": 256,
+      "source_item": "Item_Head_G_01_Lv3_C",
+      "sha256": "eb7ec6699e0e2ea5388aeae2e378acec95037d7985e2e9e72476b4578ceae271"
+    },
+    "item:tacz_pubg:med_kit": {
+      "texture": "tacz_pubg:textures/pubg_original/official/use/heal/item_heal_medkit_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Heal_MedKit_C",
+      "sha256": "c91d739614c5bc21557b74e683cdddc258a4beb3ca7482d29da71ff86e6b0757"
+    },
+    "item:tacz_pubg:molotov": {
+      "texture": "tacz_pubg:textures/pubg_original/official/equipment/throwable/item_weapon_molotov_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Weapon_Molotov_C",
+      "sha256": "2162fc8abb54fbc25d7221956e02e0d78ccb94e39a676379cdb5704c0f9fc94b"
+    },
+    "item:tacz_pubg:painkiller": {
+      "texture": "tacz_pubg:textures/pubg_original/official/use/boost/item_boost_painkiller_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Boost_PainKiller_C",
+      "sha256": "6aedf814103f609b741b5a2448f27fd20799db7f30708e7e7e407dbc07d60e01"
+    },
+    "item:tacz_pubg:parachute": {
+      "texture": "tacz_pubg:textures/pubg_original/official/equipment/backpack/item_back_b_01_startparachutepack_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Back_B_01_StartParachutePack_C",
+      "sha256": "3763efc22886edaf617b5c8cd40140644ee1a72e0962cf4df610c7539b0f0c07"
+    },
+    "item:tacz_pubg:smoke_grenade": {
+      "texture": "tacz_pubg:textures/pubg_original/official/equipment/throwable/item_weapon_smokebomb_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Weapon_SmokeBomb_C",
+      "sha256": "29ce7f8eac6eca10bd9dc6b64824297af1db2d6959d700df9d3c27f06c1ceafa"
+    },
+    "item:tacz_pubg:sticky_bomb": {
+      "texture": "tacz_pubg:textures/pubg_original/official/equipment/throwable/item_weapon_stickygrenade_c.png",
+      "width": 735,
+      "height": 735,
+      "source_item": "Item_Weapon_StickyGrenade_C",
+      "sha256": "1d07c79c9c3f6d998d1cf5f02d2774541669f61dc407d997f5859340507b30d1"
+    },
+    "item:tacz_pubg:stun_grenade": {
+      "texture": "tacz_pubg:textures/pubg_original/official/equipment/throwable/item_weapon_flashbang_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Weapon_FlashBang_C",
+      "sha256": "26ff9ddf733b25f7aa0b1fb85e4283e6c93a1f6e8fc93a4ff31806c331967cff"
+    },
+    "item:tacz_pubg:vest_1": {
+      "texture": "tacz_pubg:textures/pubg_original/official/equipment/vest/item_armor_e_01_lv1_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Armor_E_01_Lv1_C",
+      "sha256": "e5ecbbd265fe63b52b669b4ad5f9f1d880a6528a189e327e7fe727c8becddd11"
+    },
+    "item:tacz_pubg:vest_2": {
+      "texture": "tacz_pubg:textures/pubg_original/official/equipment/vest/item_armor_d_01_lv2_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Armor_D_01_Lv2_C",
+      "sha256": "1ef8385e5a52513c4ded2641b3d53d11a7501fd13a6d5b4edc65688d87f71614"
+    },
+    "item:tacz_pubg:vest_3": {
+      "texture": "tacz_pubg:textures/pubg_original/official/equipment/vest/item_armor_c_01_lv3_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Armor_C_01_Lv3_C",
+      "sha256": "17717a2251c6e7d79fd8ccc15dbc6267cdf1d4045ecbe8bd0d65be9e80084067"
+    },
+    "throwable:lrtactical:c4": {
+      "texture": "tacz_pubg:textures/pubg_original/official/equipment/throwable/item_weapon_c4_c.png",
+      "width": 800,
+      "height": 800,
+      "source_item": "Item_Weapon_C4_C",
+      "sha256": "e7e01dec490061e0232ebfa59e2f4cc57cba7cdc10e78ff6204f169c30744628"
+    },
+    "throwable:lrtactical:flash_grenade": {
+      "texture": "tacz_pubg:textures/pubg_original/official/equipment/throwable/item_weapon_flashbang_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Weapon_FlashBang_C",
+      "sha256": "26ff9ddf733b25f7aa0b1fb85e4283e6c93a1f6e8fc93a4ff31806c331967cff"
+    },
+    "throwable:lrtactical:m67": {
+      "texture": "tacz_pubg:textures/pubg_original/official/equipment/throwable/item_weapon_grenade_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Weapon_Grenade_C",
+      "sha256": "c761e28991d99c9868536845f63298070b05c2bc44bf5b9701f5e7518c8e32ec"
+    },
+    "throwable:lrtactical:molotov": {
+      "texture": "tacz_pubg:textures/pubg_original/official/equipment/throwable/item_weapon_molotov_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Weapon_Molotov_C",
+      "sha256": "2162fc8abb54fbc25d7221956e02e0d78ccb94e39a676379cdb5704c0f9fc94b"
+    },
+    "throwable:lrtactical:rgn": {
+      "texture": "tacz_pubg:textures/pubg_original/official/equipment/throwable/item_weapon_grenade_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Weapon_Grenade_C",
+      "sha256": "c761e28991d99c9868536845f63298070b05c2bc44bf5b9701f5e7518c8e32ec"
+    },
+    "throwable:lrtactical:smoke_grenade": {
+      "texture": "tacz_pubg:textures/pubg_original/official/equipment/throwable/item_weapon_smokebomb_c.png",
+      "width": 512,
+      "height": 512,
+      "source_item": "Item_Weapon_SmokeBomb_C",
+      "sha256": "29ce7f8eac6eca10bd9dc6b64824297af1db2d6959d700df9d3c27f06c1ceafa"
+    }
+  }
+}

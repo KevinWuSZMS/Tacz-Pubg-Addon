@@ -1,0 +1,9 @@
+{
+  "required": true,
+  "minVersion": "0.8.5",
+  "package": "com.example.examplemod.inventory.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": ["MatchInventoryMixin", "MatchInventoryMenuMixin", "MatchInventorySlotMixin"],
+  "client": ["MatchGunKeyboardMixin", "MatchGunInteractKeyMixin", "MatchGunClickMixin", "MatchGunInteractTextMixin"],
+  "injectors": {"defaultRequire": 1}
+}

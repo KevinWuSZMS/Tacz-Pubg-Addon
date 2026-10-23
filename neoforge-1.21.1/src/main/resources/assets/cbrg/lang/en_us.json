@@ -1,0 +1,8 @@
+{
+  "cbrg.attachments.quickdraw_mag_pistol.desc": "+60%% Reload speed\n(This stat may differ depending on the attached weapon)",
+  "cbrg.attachments.quickdraw_mag_rifle.desc": "+60%% Reload speed\n(This stat may differ depending on the attached weapon)",
+  "cbrg.attachments.quickdraw_mag_sr.desc": "+60%% Reload speed",
+  "cbrg.attachments.extended_quickdraw_mag_pistol.desc": "+ Magazine capacity\n+15%% Reload speed\n(This stat may differ depending on the attached weapon)",
+  "cbrg.attachments.extended_quickdraw_mag_rifle.desc": "+ Magazine capacity\n+15%% Reload speed\n(This stat may differ depending on the attached weapon)",
+  "cbrg.attachments.extended_quickdraw_mag_sr.desc": "+ Magazine capacity\n+15%% Reload speed"
+}

@@ -1,0 +1,316 @@
+{
+  "schemaVersion": 1,
+  "recordedDate": "2026-10-23",
+  "pathBase": "workspace-root",
+  "recordType": "inventory, not an automated restore or tested build",
+  "evidencePolicy": "Download URLs and SHA-512 values are copied from existing local manifests; currentSha256 and test input hashes were read from existing local files. No downloads, build or gameplay validation performed.",
+  "toolchain": {
+    "java": 21,
+    "minecraft": "1.21.1",
+    "neoforge": "21.1.259",
+    "modDevGradle": "2.0.148",
+    "gradleWrapper": "9.2.1",
+    "parchment": "2024.11.17"
+  },
+  "declarations": {
+    "build": "neoforge-1.21.1/build.gradle",
+    "properties": "neoforge-1.21.1/gradle.properties",
+    "modMetadata": "neoforge-1.21.1/src/main/templates/META-INF/neoforge.mods.toml"
+  },
+  "runtimeRequirements": [
+    {
+      "id": "minecraft",
+      "versionRange": "[1.21.1]",
+      "type": "required"
+    },
+    {
+      "id": "neoforge",
+      "versionRange": "[21.1.259,)",
+      "type": "required"
+    },
+    {
+      "id": "tacz",
+      "versionRange": "[1.1.8,)",
+      "type": "required"
+    },
+    {
+      "id": "lrtactical",
+      "versionRange": "[0.4.3,0.5)",
+      "type": "required"
+    },
+    {
+      "id": "carpet",
+      "versionRange": "[1.0.8,)",
+      "type": "optional"
+    }
+  ],
+  "localCompileOnly": [
+    {
+      "name": "TaCZ",
+      "version": "1.1.8-hotfix-r7",
+      "scope": "compileOnly",
+      "tracked": false,
+      "localPath": "downloads/tacz/tacz-neoforge-1.21.1-1.1.8-hotfix-r7.jar",
+      "bytes": 57247579,
+      "currentSha256": "fa3a09f15265a4065a566960a8deab315f6c601a5f9a542840b362d455dd5470",
+      "recordedDownloadUrl": "https://cdn.modrinth.com/data/OypNE65K/versions/62q6mB5Q/tacz-neoforge-1.21.1-1.1.8-hotfix-r7.jar",
+      "recordedSha512": "7700ed99a080729c3aa21f9619e018fbe9e2303cfbcaa463175ee5170553a000b692bc4cfa2e8ce0778747eed34dcc0197fb5e4344bb258cff1ba90adc842642",
+      "localEvidence": "downloads/tacz/installation-manifest.json",
+      "extractFromLocalJar": null,
+      "jarEntry": null
+    },
+    {
+      "name": "LR Tactical",
+      "version": "0.4.3",
+      "scope": "compileOnly",
+      "tracked": false,
+      "localPath": "downloads/lrtactical/LesRaisins-Tactical-Equipements-1.21.1-0.4.3.jar",
+      "bytes": 6612829,
+      "currentSha256": "b492f2d37a993d76a8ffd6b79bea89a64de91d4710b1b4841f63d65982f610ac",
+      "recordedDownloadUrl": "https://cdn.modrinth.com/data/zSKr1DYY/versions/fcwJFQFG/LesRaisins-Tactical-Equipements-1.21.1-0.4.3.jar",
+      "recordedSha512": "9035e28d8f38d324cdb912506f2874dd171fefa80c253fe448ec35d2257b30aef8287c75eb60729daa9ca361b27218472c11f9dded2cd0348e92e80791b6dec4",
+      "localEvidence": "downloads/lrtactical/version.json",
+      "extractFromLocalJar": null,
+      "jarEntry": null
+    },
+    {
+      "name": "NeoForge Carpet",
+      "version": "1.0.8+v251027",
+      "scope": "compileOnly",
+      "tracked": false,
+      "localPath": "neoforge-1.21.1/run/mods/neoforge-carpet-1.21.1-1.0.8+v251027.jar",
+      "bytes": 1498683,
+      "currentSha256": "6a81db1098a92d7239daa992b8508daef7eb2528c4f7c9024ae3a81a34259f5c",
+      "recordedDownloadUrl": "https://cdn.modrinth.com/data/XqqOkvZz/versions/lnOeoKcQ/neoforge-carpet-1.21.1-1.0.8%2Bv251027.jar",
+      "recordedSha512": "1251195e45340b475b6ee8ea7712b33d9f5f84c87ec1f783e6276b12fc93cec877cefcfb083758395d09da5a890de5c659bbb1357e7092d5c70567b22629038e",
+      "localEvidence": "downloads/carpet/installed-manifest.json",
+      "extractFromLocalJar": null,
+      "jarEntry": null
+    },
+    {
+      "name": "Apache Commons Math",
+      "version": "3.6.1",
+      "scope": "compileOnly",
+      "tracked": false,
+      "localPath": "downloads/tacz/runtime-libraries/commons-math3-3.6.1.jar",
+      "bytes": 2213560,
+      "currentSha256": "1e56d7b058d28b65abd256b8458e3885b674c1d588fa43cd7d1cbb9c7ef2b308",
+      "recordedDownloadUrl": null,
+      "recordedSha512": null,
+      "localEvidence": "neoforge-1.21.1/build.gradle",
+      "extractFromLocalJar": "downloads/tacz/tacz-neoforge-1.21.1-1.1.8-hotfix-r7.jar",
+      "jarEntry": "META-INF/jarjar/commons-math3-3.6.1.jar"
+    },
+    {
+      "name": "LuaJ Figura",
+      "version": "3.0.8-figura",
+      "scope": "compileOnly",
+      "tracked": false,
+      "localPath": "downloads/tacz/runtime-libraries/luaj-core-3.0.8-figura.jar",
+      "bytes": 294956,
+      "currentSha256": "6050678ca1dad5e2a4c401cc9ce968d282d30105b2ea46f79c30abccdfa30fbe",
+      "recordedDownloadUrl": null,
+      "recordedSha512": null,
+      "localEvidence": "neoforge-1.21.1/build.gradle",
+      "extractFromLocalJar": "downloads/tacz/tacz-neoforge-1.21.1-1.1.8-hotfix-r7.jar",
+      "jarEntry": "META-INF/jarjar/luaj-core-3.0.8-figura.jar"
+    },
+    {
+      "name": "SimpleBedrockModel",
+      "version": "2.2.1-neoforge+mc1.21.1",
+      "scope": "compileOnly",
+      "tracked": false,
+      "localPath": "downloads/tacz/runtime-libraries/simplebedrockmodel-2.2.1-neoforge+mc1.21.1.jar",
+      "bytes": 331670,
+      "currentSha256": "97551be10776217d045df415feecfb605eb85cfb6df22e7ba7dc5aab9ae2d1d2",
+      "recordedDownloadUrl": null,
+      "recordedSha512": null,
+      "localEvidence": "neoforge-1.21.1/build.gradle",
+      "extractFromLocalJar": "downloads/tacz/tacz-neoforge-1.21.1-1.1.8-hotfix-r7.jar",
+      "jarEntry": "META-INF/jarjar/simplebedrockmodel-2.2.1-neoforge+mc1.21.1.jar"
+    },
+    {
+      "name": "Xaero Minimap",
+      "version": "26.6.0",
+      "scope": "compileOnly",
+      "tracked": false,
+      "localPath": "neoforge-1.21.1/run/mods/xaerominimap-neoforge-1.21.1-26.6.0.jar",
+      "bytes": 2186351,
+      "currentSha256": "d3398221b2262abfe2d394b588122e5b3fd2e4d8c4bf66a5fd357352fcf51b2e",
+      "recordedDownloadUrl": "https://cdn.modrinth.com/data/1bokaNcj/versions/irjR7dHk/xaerominimap-neoforge-1.21.1-26.6.0.jar",
+      "recordedSha512": "d56b93ddb921285624b491d6a85aba23748bec9974867399c881c257eb25a746df92a735473adf3a6875e0928a56ff78245d5238eb9207b0e45c3fec20c896dc",
+      "localEvidence": "downloads/client-utilities/installed-manifest.json",
+      "extractFromLocalJar": null,
+      "jarEntry": null
+    },
+    {
+      "name": "Xaero World Map",
+      "version": "1.47.0",
+      "scope": "compileOnly",
+      "tracked": false,
+      "localPath": "neoforge-1.21.1/run/mods/xaeroworldmap-neoforge-1.21.1-1.47.0.jar",
+      "bytes": 1427078,
+      "currentSha256": "6a42b6f01bd96b496e5fcc07d4541bad1a699d9ec8ad58ad40d5dcfe23a7d4c7",
+      "recordedDownloadUrl": "https://cdn.modrinth.com/data/NcUtCpym/versions/SnQ4SoDe/xaeroworldmap-neoforge-1.21.1-1.47.0.jar",
+      "recordedSha512": "4d2d78bc85afa002f682ef344b7284cf1baa4903cc5a11cd1d7bd260ac63952580ae717bab47079540ead633cdd5d8e4fdf230dc99a68bcb7a269500e7dada13",
+      "localEvidence": "downloads/client-utilities/installed-manifest.json",
+      "extractFromLocalJar": null,
+      "jarEntry": null
+    },
+    {
+      "name": "Xaerolib",
+      "version": "1.7.3",
+      "scope": "compileOnly",
+      "tracked": false,
+      "localPath": "downloads/client-utilities/xaero-runtime-libraries/xaerolib-neoforge-1.21.1-1.7.3.jar",
+      "bytes": 568376,
+      "currentSha256": "010dc4c2ff154aa8ba04c779600658b77ac0003eee3a98ac9453f6e7acd28898",
+      "recordedDownloadUrl": null,
+      "recordedSha512": null,
+      "localEvidence": "downloads/client-utilities/installed-manifest.json",
+      "extractFromLocalJar": "neoforge-1.21.1/run/mods/xaerominimap-neoforge-1.21.1-26.6.0.jar",
+      "jarEntry": "META-INF/jarjar/xaerolib-neoforge-1.21.1-1.7.3.jar"
+    }
+  ],
+  "testInputs": [
+    {
+      "path": "docs/gun-balance/gun-assets.json",
+      "bytes": 4808794,
+      "sha256": "20007c1161d89800a55d41c6b34beead3c246a95ee4988908c85a66429f44533",
+      "tracked": false,
+      "reason": "Contains third-party raw resource/index/config data or code fragments; retained locally pending publication scope review. Existing checks still require this input."
+    },
+    {
+      "path": "docs/gun-balance/proposed-gun-data.json",
+      "bytes": 1995489,
+      "sha256": "fcf0329fa6e5edb7619e3f3d12db133409060242cbc04275ac28846ce548b231",
+      "tracked": false,
+      "reason": "Contains third-party raw resource/index/config data or code fragments; retained locally pending publication scope review. Existing checks still require this input."
+    },
+    {
+      "path": "docs/compatibility/compatibility-inventory.json",
+      "bytes": 15465707,
+      "sha256": "c66941897cd62f256b2fa61ee27e9417c9ee3066710ee5178428175909d30097",
+      "tracked": false,
+      "reason": "Contains third-party raw resource/index/config data or code fragments; retained locally pending publication scope review. Existing checks still require this input."
+    }
+  ],
+  "gunpackDownloadEvidence": {
+    "source": "downloads/pubg-gunpacks/download-manifest.json",
+    "note": "Original recorded downloads only; deployed run/tacz packs may be modified or differ. Not a complete current-instance restore manifest.",
+    "items": [
+      {
+        "folder": "classic_battleroyale_gun",
+        "filename": "CBRG-0.4.8.zip",
+        "projectUrl": "https://www.curseforge.com/minecraft/customization/tacz-classic-battleroyale-gun",
+        "fileUrl": "https://www.curseforge.com/minecraft/customization/tacz-classic-battleroyale-gun/files/7589555",
+        "downloadUrl": "https://mediafilez.forgecdn.net/files/7589/555/CBRG-0.4.8.zip",
+        "recordedSha256": "efe77ecf980c50497c76a9b6b979a933e0b395afac79ab7f33065bdde8e02673",
+        "recordedBytes": 13811327,
+        "recordedStatus": "downloaded",
+        "tracked": false
+      },
+      {
+        "folder": "cibr_gunspack",
+        "filename": "[Tacz1.1.7+]CIBR_GunsPack_v0.3_1.1.7.zip",
+        "projectUrl": "https://www.curseforge.com/minecraft/customization/tacz-charge-into-battle-reboot-pack",
+        "fileUrl": "https://www.curseforge.com/minecraft/customization/tacz-charge-into-battle-reboot-pack/files/7280896",
+        "downloadUrl": "https://mediafilez.forgecdn.net/files/7280/896/%5BTacz1.1.7%2B%5DCIBR_GunsPack_v0.3_1.1.7.zip",
+        "recordedSha256": "40797ee6fc734de14e3065e80f85a61efa67207af9914d24084b3b680a8aba60",
+        "recordedBytes": 57546590,
+        "recordedStatus": "downloaded",
+        "tracked": false
+      },
+      {
+        "folder": "classic_rccrp",
+        "filename": "[TACZ1.1.5+]ClassicR1.1.3CCRP 1.1.4 hotfix3.zip",
+        "projectUrl": "https://www.curseforge.com/minecraft/customization/tacz-classics-reborn",
+        "fileUrl": "https://www.curseforge.com/minecraft/customization/tacz-classics-reborn/files/7529068",
+        "downloadUrl": "https://mediafilez.forgecdn.net/files/7529/68/%5BTACZ1.1.5%2B%5DClassicR1.1.3CCRP%201.1.4%20hotfix3.zip",
+        "recordedSha256": "9dfb8530f281a36d8241ed989433fcd2df61e73b44f2f0da8292f1faa17a30dd",
+        "recordedBytes": 74385997,
+        "recordedStatus": "downloaded",
+        "tracked": false
+      },
+      {
+        "folder": "cold_war",
+        "filename": "Cold War from 1947-1991 v0.51.zip",
+        "projectUrl": "https://www.curseforge.com/minecraft/customization/coldwarguns",
+        "fileUrl": "https://www.curseforge.com/minecraft/customization/coldwarguns/files/7042787",
+        "downloadUrl": "https://mediafilez.forgecdn.net/files/7042/787/Cold%20War%20from%201947-1991%20v0.51.zip",
+        "recordedSha256": "a5a4766a5b8ad0272c1b0d921c5402b0c61a8cc12169d7411585d3dbf6b1246b",
+        "recordedBytes": 12082290,
+        "recordedStatus": "downloaded",
+        "tracked": false
+      },
+      {
+        "folder": "gunpowder_revolution_gunpack",
+        "filename": "GunpowderRevolution_gunpack v1.2.7.zip",
+        "projectUrl": "https://www.curseforge.com/minecraft/customization/tacz-gunpowder-revolution-great-war-gunpack",
+        "fileUrl": "https://www.curseforge.com/minecraft/customization/tacz-gunpowder-revolution-great-war-gunpack/files/6982844",
+        "downloadUrl": "https://mediafilez.forgecdn.net/files/6982/844/GunpowderRevolution_gunpack%20v1.2.7.zip",
+        "recordedSha256": "5d1deb681fb087442b35f16100aacdf81a13cb9dfd5a1085fef7169e3088a749",
+        "recordedBytes": 13508068,
+        "recordedStatus": "downloaded",
+        "tracked": false
+      },
+      {
+        "folder": "infinite_origin",
+        "filename": "Infinite Origin_v1.0.0.zip",
+        "projectUrl": "https://www.curseforge.com/minecraft/customization/tacz-infinite-origin",
+        "fileUrl": "https://www.curseforge.com/minecraft/customization/tacz-infinite-origin/files/6768903",
+        "downloadUrl": "https://mediafilez.forgecdn.net/files/6768/903/Infinite%20Origin_v1.0.0.zip",
+        "recordedSha256": "9c58b237086e5e8be221b2d97b2c0a82aed2b87acf7a5296b819afe0aab84415",
+        "recordedBytes": 2088720,
+        "recordedStatus": "downloaded",
+        "tracked": false
+      },
+      {
+        "folder": "suffuse_gunsmoke_pack",
+        "filename": "Suffuse-GunSmoke-Pack1.0.7--hotfix.zip",
+        "projectUrl": "https://www.curseforge.com/minecraft/customization/suffuse-gunsmoke",
+        "fileUrl": "https://www.curseforge.com/minecraft/customization/suffuse-gunsmoke/files/6563620",
+        "downloadUrl": "https://mediafilez.forgecdn.net/files/6563/620/Suffuse-GunSmoke-Pack1.0.7--hotfix.zip",
+        "recordedSha256": null,
+        "recordedBytes": null,
+        "recordedStatus": "failed",
+        "tracked": false
+      },
+      {
+        "folder": "the_division_pack",
+        "filename": "The Division pack_ver.0.3.3.zip",
+        "projectUrl": "https://www.curseforge.com/minecraft/customization/tacz-the-division-gunpack",
+        "fileUrl": "https://www.curseforge.com/minecraft/customization/tacz-the-division-gunpack/files/6130805",
+        "downloadUrl": "https://mediafilez.forgecdn.net/files/6130/805/The%20Division%20pack_ver.0.3.3.zip",
+        "recordedSha256": "2b702aa82cb9ef70c2416c4d5878deec3c9c69f02199c79f1f9e16f794b0e9c6",
+        "recordedBytes": 14120083,
+        "recordedStatus": "downloaded",
+        "tracked": false
+      }
+    ]
+  },
+  "localOnly": {
+    "runtimeRoots": [
+      "neoforge-1.21.1/run/",
+      "neoforge-1.21.1/run-entity-benchmark/",
+      "neoforge-1.21.1/run-inventory-tests/",
+      ".runtime/"
+    ],
+    "thirdPartyAndCacheRoots": [
+      "downloads/",
+      "external/",
+      "logs/",
+      "exports/",
+      "model-workflows/output/",
+      "model-workflows/.tools/",
+      "model-workflows/backups/",
+      "model-workflows/cache/"
+    ],
+    "note": "Files remain in their current local locations. See root .gitignore for the authoritative tracking boundary."
+  },
+  "limitations": [
+    "A clean clone lacks the nine local JARs, omitted third-party assets, three test input snapshots, full gunpacks, worlds and local settings.",
+    "Existing machine-specific paths and proxy settings were not refactored for this first baseline.",
+    "No claim is made that a clean clone currently builds or reproduces the complete playable instance."
+  ]
+}

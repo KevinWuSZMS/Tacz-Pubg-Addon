@@ -1,0 +1,9 @@
+{
+  "required": true,
+  "minVersion": "0.8.5",
+  "package": "com.example.examplemod.gunbalance.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": ["CommonDataManagerMixin", "GunDataHeavyProfileMixin", "AttachmentsTagManagerMixin", "AttachmentMagazineExperimentMixin", "EntityKineticBulletBallisticsMixin", "ModernKineticGunItemBallisticsMixin", "EntityKineticBulletRangeMixin", "EntityKineticBulletBombingMixin", "EntityKineticBulletHeavyTerrainMixin", "ProjectileExplosionHeavyBalanceMixin", "ShooterMagazineReloadRateMixin", "ModernGunMagazineReloadMixin", "ModernGunMagazineReloadClockMixin"],
+  "client": ["BedrockGunModelScopeMixin", "FirstPersonScopePositionMixin", "FirstPersonPoseSafetyMixin", "CameraPersistentRecoilMixin", "LocalPlayerPersistentRecoilMixin", "LocalPlayerMagazineReloadMixin", "GunAnimationMagazineReloadMixin", "AnimationContextMagazineReloadMixin", "ObjectAnimationRunnerMagazineReloadMixin", "SoundPlayManagerMagazineReloadMixin"],
+  "injectors": {"defaultRequire": 1}
+}

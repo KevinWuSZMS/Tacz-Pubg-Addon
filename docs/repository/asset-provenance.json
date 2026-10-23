@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 1,
+  "recordedDate": "2026-10-23",
+  "pathBase": "workspace-root",
+  "note": "Source evidence extracted from existing local metadata only. Metadata and hashes are not redistribution permission. Images, geometry, archives and third-party code are not copied into this inventory.",
+  "publicationBoundary": {
+    "excludedFromFirstBaseline": [
+      "production texture files",
+      "production mesh geometry",
+      "model JSON of unconfirmed source scope",
+      "third-party original resource snapshots",
+      "raw C4D/TGA sources",
+      "third-party gunpack archives and expanded packs",
+      "workbench previews and conversion output"
+    ],
+    "retainedLocally": true,
+    "authoritativeRules": ".gitignore",
+    "completePlayableDistribution": false
+  },
+  "licenseStatus": {
+    "remoteRepositoryLicense": "Apache-2.0",
+    "currentModMetadata": "All Rights Reserved",
+    "metadataFile": "neoforge-1.21.1/gradle.properties",
+    "resolved": false,
+    "note": "No source-license selection or third-party relicensing was performed by this first baseline."
+  },
+  "pubgmc": {
+    "catalogUrl": "https://www.mcmod.cn/class/1639.html",
+    "releasePage": "https://www.curseforge.com/minecraft/mc-mods/pubgmc-mod/files/6471930",
+    "releaseDownload": "https://mediafilez.forgecdn.net/files/6471/930/pubgmc-1.12.2-1.10.7.jar",
+    "sourceArchive": "https://codeload.github.com/Toma1O6/PUBGMC/zip/f8c341eb784425b1bf7e015f36b851e760ab2999",
+    "sourceCommit": "f8c341eb784425b1bf7e015f36b851e760ab2999",
+    "recordedLicenseEvidence": {
+      "url": "https://www.curseforge.com/minecraft/mc-mods/pubgmc-mod/license",
+      "observed": "2026-10-20",
+      "text": "All Rights Reserved unless otherwise explicitly stated.",
+      "source_contains_license_file": false
+    },
+    "downloadFingerprints": [
+      {
+        "file": "minecraft-1.12.2-client.jar",
+        "size": 10180113,
+        "sha256": "8ada07da5ee77dad3527bd7278fbd05ee1fc8a597813b216a871a2d7d64cc64f"
+      },
+      {
+        "file": "pubgmc-1.12.2-1.10.7.jar",
+        "size": 9548698,
+        "sha256": "35d1f23facac5bcbaf5738a1d3c4f5182be4ec16eeb01b1af133d44c89bd98e3"
+      },
+      {
+        "file": "PUBGMC-f8c341eb784425b1bf7e015f36b851e760ab2999.zip",
+        "size": 8762641,
+        "sha256": "bbd219f9a867062d27825bc8c6ff24fd267adc1af6f300a21e986afe0d148ff7"
+      }
+    ],
+    "localEvidence": "assets-workbench/pubgmc-reference/provenance.json"
+  },
+  "officialPubgIcons": {
+    "repository": "https://github.com/pubg/api-assets",
+    "commit": "32b13b51128b8d8909ae5e77f3b833e01230b24d",
+    "licensePermissionConfirmed": false,
+    "note": "Official origin is recorded; no new redistribution permission is inferred."
+  },
+  "flatIconIndex": {
+    "path": "neoforge-1.21.1/src/main/resources/assets/tacz_pubg/textures/pubg_original/sources.json",
+    "sha256": "45324ceaab8bd0d3a2dee2f8565b31330fcb8321c871a4212b872baecaf7f284",
+    "entries": 370,
+    "countsBySource": [
+      {
+        "source": "PUBG official api-assets",
+        "count": 274
+      },
+      {
+        "source": "PUBGMC",
+        "count": 96
+      }
+    ],
+    "content": "Per-icon source path, target texture ID and SHA-256 are retained in the source index; PNG files remain local."
+  },
+  "equipmentHudIndex": {
+    "path": "neoforge-1.21.1/src/main/resources/assets/tacz_pubg/textures/gui/equipment/sources.json",
+    "sha256": "dbbfabe00e620f92fa4db2ec9c8b6f74551c2607a20213bf7dde9132aa255049",
+    "sourceCommit": "f8c341eb784425b1bf7e015f36b851e760ab2999",
+    "entries": 9,
+    "description": "Unmodified two-dimensional PUBGMC equipment HUD textures; attribution is to PUBGMC, not a claim of official PUBG provenance.",
+    "content": "Unmodified PUBGMC HUD PNG provenance; source index retained, PNG files remain local."
+  },
+  "userSuppliedModelSources": {
+    "roots": [
+      "82个绝地求生PUBG吃鸡游戏模型/",
+      "20180214152952/"
+    ],
+    "redistributionPermissionConfirmed": false,
+    "note": "User-supplied files are source material, not a claim of original authorship or public redistribution rights.",
+    "knownMedKitExample": {
+      "id": "med_kit",
+      "source": "82个绝地求生PUBG吃鸡游戏模型/绝地求生 (17).c4d",
+      "recordedSourceSha256": "77010e4ae0d75eb56afce13638c6798862c57a36068d7ccc54165ac67fdee9e9",
+      "recordedMeshSha256": "8c745c070840e4e51ebd51d0979f877ee032f9ebdd8119bc0691fc57efd9e186",
+      "recordedTextureSha256": "df6437b5911b8a5efe4fbd362041ae67c41f7b971ace21f9022b44c1f517bb0d",
+      "localManifest": "assets-workbench/pubgmc-reference/detailed-models.json",
+      "authoring": "User-supplied C4D source geometry and original bitmap; not procedurally authored",
+      "workflow": "model-workflows/playful_world.py",
+      "note": "Recorded hashes from the local authoring manifest, not a claim that all current output resources were reverified."
+    }
+  },
+  "localAuthoringEvidence": [
+    {
+      "path": "assets-workbench/pubgmc-reference/README.md",
+      "bytes": 4365,
+      "sha256": "051d1159661f3d81ab09bf022809aee0b4693b9eecc6a089c041bd48ddb3b861",
+      "location": "local workbench; not embedded in this inventory"
+    },
+    {
+      "path": "assets-workbench/pubgmc-reference/provenance.json",
+      "bytes": 32861,
+      "sha256": "f5072ccd2584dc13db13874602ba8240c160f88a452b163feaad71a719997844",
+      "location": "local workbench; not embedded in this inventory"
+    },
+    {
+      "path": "assets-workbench/pubgmc-reference/original-models.json",
+      "bytes": 10728,
+      "sha256": "10346d48a16de477f4ac5db96ba75e0f23308c0fdd38d010d713453b561582b5",
+      "location": "local workbench; not embedded in this inventory"
+    },
+    {
+      "path": "assets-workbench/pubgmc-reference/detailed-models.json",
+      "bytes": 15960,
+      "sha256": "873542bfe0bba9520d96fad14d96ebb36e1daaad55d478f137b19b4cca0f0eb8",
+      "location": "local workbench; not embedded in this inventory"
+    },
+    {
+      "path": "assets-workbench/pubg-magazines/manifest.json",
+      "bytes": 32669,
+      "sha256": "d0b2e81a533eb678dc6cbca275787b6a9b151e6fd553c29c20ffe81488b30a59",
+      "location": "local workbench; not embedded in this inventory"
+    },
+    {
+      "path": "assets-workbench/pubg-magazines/reference/pubg-api/reference-sources.json",
+      "bytes": 4224,
+      "sha256": "acdcd30250850db49e2a986d028940d7dfa2720db646da01947cd12f6d686802",
+      "location": "local workbench; not embedded in this inventory"
+    }
+  ],
+  "modelAuthoringNotes": [
+    "The workbench distinguishes procedural geometry and materials from user-supplied model extraction; med_kit is explicitly mixed provenance.",
+    "Magazine workbench metadata records source-derived pull-loop geometry as well as original authored geometry.",
+    "The model workflow is offline tooling. Finished runtime resources are the game input; raw authoring files are not a normal runtime dependency."
+  ],
+  "omittedThirdPartySnapshots": [
+    "docs/gun-balance/gun-assets.json",
+    "docs/gun-balance/proposed-gun-data.json",
+    "docs/compatibility/compatibility-inventory.json"
+  ],
+  "validation": "Only source metadata was read and summarized. No network download, asset regeneration, build, test, game launch or change to original local assets was performed."
+}

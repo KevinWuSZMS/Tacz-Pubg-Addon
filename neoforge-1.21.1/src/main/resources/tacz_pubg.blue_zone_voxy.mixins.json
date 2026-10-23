@@ -1,0 +1,8 @@
+{
+  "required": false,
+  "minVersion": "0.8.5",
+  "package": "com.example.examplemod.zones.client.visual.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": ["VoxyBlueZoneDepthMixin"],
+  "injectors": {"defaultRequire": 0}
+}

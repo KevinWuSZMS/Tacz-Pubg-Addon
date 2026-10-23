@@ -1,0 +1,3399 @@
+{
+  "schemaVersion": 1,
+  "source": "docs/gun-balance/ballistics-research.json",
+  "sourceSha256": "dc5132d0fe702e66ba9ae83d31395f7edb01a2ea9705e6c9e042f85b6ed0a3ed",
+  "guns": [
+    {
+      "gunId": "cbrg:beryl_m762",
+      "dataId": "cbrg:beryl_m762_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 738.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001424756482467549
+    },
+    {
+      "gunId": "cbrg:beryl_m762_2",
+      "dataId": "cbrg:beryl_m762_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 738.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001424756482467549
+    },
+    {
+      "gunId": "cbrg:groza",
+      "dataId": "cbrg:groza_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 738.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001424756482467549
+    },
+    {
+      "gunId": "cbrg:slr",
+      "dataId": "cbrg:slr_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 850.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0009237332013101507
+    },
+    {
+      "gunId": "ccrp:af2011",
+      "dataId": "ccrp:af2011_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 260.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0007174390485884132
+    },
+    {
+      "gunId": "ccrp:aics_m700",
+      "dataId": "ccrp:aics_m700_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 810.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0007829526414926505
+    },
+    {
+      "gunId": "ccrp:ak47_spent_bullet",
+      "dataId": "ccrp:ak47_spent_bullet_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 738.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001424756482467549
+    },
+    {
+      "gunId": "ccrp:aks74u",
+      "dataId": "ccrp:aks74u_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 735,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0011169365905484897
+    },
+    {
+      "gunId": "ccrp:am17",
+      "dataId": "ccrp:am17_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 880.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0011169365905484897
+    },
+    {
+      "gunId": "ccrp:apc_9k_pro_g",
+      "dataId": "ccrp:apc_9k_pro_g_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "ccrp:ar57",
+      "dataId": "ccrp:ar57_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 715,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0022
+    },
+    {
+      "gunId": "ccrp:aug_a3_dmr",
+      "dataId": "ccrp:aug_a3_dmr_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 1006.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "ccrp:aug_a3_m2kit",
+      "dataId": "ccrp:aug_a3_m2kit_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 1030,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "ccrp:aug_a3s",
+      "dataId": "ccrp:aug_a3s_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 323.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.00047552540249082065
+    },
+    {
+      "gunId": "ccrp:aug_camg_kit",
+      "dataId": "ccrp:aug_camg_kit_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "ccrp:aug_hbar",
+      "dataId": "ccrp:aug_hbar_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 1006.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "ccrp:aug_para",
+      "dataId": "ccrp:aug_para_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "ccrp:block_17",
+      "dataId": "ccrp:block_17_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "ccrp:camg_krait",
+      "dataId": "ccrp:camg_krait_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 900,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0008
+    },
+    {
+      "gunId": "ccrp:camg_m1014",
+      "dataId": "ccrp:camg_m1014_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.004533179012345679
+    },
+    {
+      "gunId": "ccrp:camg_mk18",
+      "dataId": "ccrp:camg_mk18_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 877.74,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "ccrp:chisato_m1911",
+      "dataId": "ccrp:chisato_m1911_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 260.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0007174390485884132
+    },
+    {
+      "gunId": "ccrp:cr300",
+      "dataId": "ccrp:cr300_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 633.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0010483406131558026
+    },
+    {
+      "gunId": "ccrp:cslr_42a",
+      "dataId": "ccrp:cslr_42a_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 877.74,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "ccrp:cslr_43a",
+      "dataId": "ccrp:cslr_43a_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 738.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001424756482467549
+    },
+    {
+      "gunId": "ccrp:cslr_44",
+      "dataId": "ccrp:cslr_44_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 850.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0009237332013101507
+    },
+    {
+      "gunId": "ccrp:ddm4",
+      "dataId": "ccrp:ddm4_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 1030,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "ccrp:ddm4_pdw",
+      "dataId": "ccrp:ddm4_pdw_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 633.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0010483406131558026
+    },
+    {
+      "gunId": "ccrp:ddm4_v7_pro",
+      "dataId": "ccrp:ddm4_v7_pro_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 1006.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "ccrp:f90",
+      "dataId": "ccrp:f90_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "ccrp:f90_mbr",
+      "dataId": "ccrp:f90_mbr_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "ccrp:fightlite_scr_hg",
+      "dataId": "ccrp:fightlite_scr_hg_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 877.74,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "ccrp:g95a1",
+      "dataId": "ccrp:g95a1_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "ccrp:glock20gen5mos",
+      "dataId": "ccrp:glock20gen5mos_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 355.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0015180601286800413
+    },
+    {
+      "gunId": "ccrp:glock40gen5mos",
+      "dataId": "ccrp:glock40gen5mos_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 355.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0015180601286800413
+    },
+    {
+      "gunId": "ccrp:hk21",
+      "dataId": "ccrp:hk21_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 850.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0009237332013101507
+    },
+    {
+      "gunId": "ccrp:hk416",
+      "dataId": "ccrp:hk416_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "ccrp:hk416_sopmod",
+      "dataId": "ccrp:hk416_sopmod_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 877.74,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "ccrp:hk416a8",
+      "dataId": "ccrp:hk416a8_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "ccrp:hk416c",
+      "dataId": "ccrp:hk416c_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 877.74,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "ccrp:hk417",
+      "dataId": "ccrp:hk417_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 850.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0009237332013101507
+    },
+    {
+      "gunId": "ccrp:hk433",
+      "dataId": "ccrp:hk433_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "ccrp:honeybadger",
+      "dataId": "ccrp:honeybadger_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 323.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.00047552540249082065
+    },
+    {
+      "gunId": "ccrp:keltec_p50",
+      "dataId": "ccrp:keltec_p50_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 715,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0022
+    },
+    {
+      "gunId": "ccrp:lastwar",
+      "dataId": "ccrp:lastwar_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.004533179012345679
+    },
+    {
+      "gunId": "ccrp:m110",
+      "dataId": "ccrp:sr25_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 800.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.000806679030674547
+    },
+    {
+      "gunId": "ccrp:m14_hbar",
+      "dataId": "ccrp:m14_hbar_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 850.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0009237332013101507
+    },
+    {
+      "gunId": "ccrp:m1887_long",
+      "dataId": "ccrp:m1887_long_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.004533179012345679
+    },
+    {
+      "gunId": "ccrp:m249_saw",
+      "dataId": "ccrp:m249_saw_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 1006.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "ccrp:m27_iar",
+      "dataId": "ccrp:m27_iar_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "ccrp:m305a",
+      "dataId": "ccrp:m305a_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 738.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001424756482467549
+    },
+    {
+      "gunId": "ccrp:m38_spr",
+      "dataId": "ccrp:m38_spr_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 1006.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "ccrp:m39_emr",
+      "dataId": "ccrp:m39_emr_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 800.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.000806679030674547
+    },
+    {
+      "gunId": "ccrp:m4_cqbr",
+      "dataId": "ccrp:m4_cqbr_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 877.74,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "ccrp:m4_ss",
+      "dataId": "ccrp:m4_ss_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "ccrp:marlin_1895",
+      "dataId": "ccrp:marlin_1895_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 460.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0012981161152199052
+    },
+    {
+      "gunId": "ccrp:mcx_spear_tombstone",
+      "dataId": "ccrp:mcx_spear_tombstone_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 914.4,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.00075
+    },
+    {
+      "gunId": "ccrp:mcx_virtus",
+      "dataId": "ccrp:mcx_virtus_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "ccrp:mk18_mjolnir",
+      "dataId": "ccrp:mk18_mjolnir_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 868.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0005566860520792204
+    },
+    {
+      "gunId": "ccrp:mk556",
+      "dataId": "ccrp:mk556_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "ccrp:mp5_sd",
+      "dataId": "ccrp:mp5_sd_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 305,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0008552217343816193
+    },
+    {
+      "gunId": "ccrp:mp5k",
+      "dataId": "ccrp:mp5k_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "ccrp:mp5k_pdw",
+      "dataId": "ccrp:mp5k_pdw_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "ccrp:mp7a3",
+      "dataId": "ccrp:mp7a3_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 635,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0024
+    },
+    {
+      "gunId": "ccrp:mp9_modernrized",
+      "dataId": "ccrp:mp9_modernrized_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "ccrp:mp9_thunder",
+      "dataId": "ccrp:mp9_thunder_data",
+      "action": "preserve",
+      "proposedMuzzleVelocityMps": null,
+      "gravityMps2": null,
+      "effectiveDragPerMeter": null
+    },
+    {
+      "gunId": "ccrp:mpx",
+      "dataId": "ccrp:mpx_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "ccrp:msh41",
+      "dataId": "ccrp:msh41_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 566.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0034712953109520095
+    },
+    {
+      "gunId": "ccrp:p90_effen_90",
+      "dataId": "ccrp:p90_effen_90_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 715,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0022
+    },
+    {
+      "gunId": "ccrp:p90_paw",
+      "dataId": "ccrp:p90_paw_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 715,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0022
+    },
+    {
+      "gunId": "ccrp:p90_shround_s",
+      "dataId": "ccrp:p90_shround_s_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 715,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0022
+    },
+    {
+      "gunId": "ccrp:qbu_191",
+      "dataId": "ccrp:qbu_191_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 930,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "ccrp:qbz_191",
+      "dataId": "ccrp:qbz_191_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 930,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "ccrp:rd704",
+      "dataId": "ccrp:rd704_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 738.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001424756482467549
+    },
+    {
+      "gunId": "ccrp:sai_gry_lite_black",
+      "dataId": "ccrp:sai_gry_lite_black_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "ccrp:scar_16s",
+      "dataId": "ccrp:scar_16s_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "ccrp:scar_17s",
+      "dataId": "ccrp:scar_17s_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 850.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0009237332013101507
+    },
+    {
+      "gunId": "ccrp:scar_sc",
+      "dataId": "ccrp:scar_sc_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 633.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0010483406131558026
+    },
+    {
+      "gunId": "ccrp:shield_ots33",
+      "dataId": "ccrp:shield_ots33_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 310.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0016822779371809516
+    },
+    {
+      "gunId": "ccrp:sig277",
+      "dataId": "ccrp:sig277_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 914.4,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.00075
+    },
+    {
+      "gunId": "ccrp:silence_meteor",
+      "dataId": "ccrp:silence_meteor_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 323.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.00047552540249082065
+    },
+    {
+      "gunId": "ccrp:springfield1873_tube_mag",
+      "dataId": "ccrp:springfield1873_tube_mag_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 460.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0012981161152199052
+    },
+    {
+      "gunId": "ccrp:sr25",
+      "dataId": "ccrp:sr25_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 800.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.000806679030674547
+    },
+    {
+      "gunId": "ccrp:sr_3m",
+      "dataId": "ccrp:sr_3m_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 290,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0006
+    },
+    {
+      "gunId": "ccrp:timeless_50",
+      "dataId": "ccrp:timeless_50_long_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 440,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0025
+    },
+    {
+      "gunId": "ccrp:troy_m14_sass",
+      "dataId": "ccrp:troy_m14_sass_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 800.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.000806679030674547
+    },
+    {
+      "gunId": "ccrp:tti_mpx",
+      "dataId": "ccrp:tti_mpx_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "ccrp:type_192",
+      "dataId": "ccrp:type_192_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 837,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "ccrp:type_95_longbow",
+      "dataId": "ccrp:type_95_longbow_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 970,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "ccrp:type_97_gen2",
+      "dataId": "ccrp:type_97_gen2_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "ccrp:uzi45",
+      "dataId": "ccrp:uzi45_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 260.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0007174390485884132
+    },
+    {
+      "gunId": "ccrp:v308",
+      "dataId": "ccrp:v308_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 850.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0009237332013101507
+    },
+    {
+      "gunId": "ccrp:vector10",
+      "dataId": "ccrp:vector10_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 355.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0015180601286800413
+    },
+    {
+      "gunId": "ccrp:x95_smg",
+      "dataId": "ccrp:x95_smg_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "ccrp:x95r",
+      "dataId": "ccrp:x95r_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cib:686",
+      "dataId": "cib:686_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.004533179012345679
+    },
+    {
+      "gunId": "cib:881",
+      "dataId": "cib:881_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 880.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0011169365905484897
+    },
+    {
+      "gunId": "cib:882",
+      "dataId": "cib:882_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 880.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0011169365905484897
+    },
+    {
+      "gunId": "cib:9a91",
+      "dataId": "cib:9a91_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 290,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0006
+    },
+    {
+      "gunId": "cib:ak103",
+      "dataId": "cib:ak103_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 738.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001424756482467549
+    },
+    {
+      "gunId": "cib:ak105",
+      "dataId": "cib:ak105_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 880.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0011169365905484897
+    },
+    {
+      "gunId": "cib:ak24",
+      "dataId": "cib:ak24_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cib:ar2",
+      "dataId": "cib:ar2_data",
+      "action": "preserve",
+      "proposedMuzzleVelocityMps": null,
+      "gravityMps2": null,
+      "effectiveDragPerMeter": null
+    },
+    {
+      "gunId": "cib:asval",
+      "dataId": "cib:asval_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 290,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0006
+    },
+    {
+      "gunId": "cib:cs_ak47",
+      "dataId": "cib:cs_ak47_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 738.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001424756482467549
+    },
+    {
+      "gunId": "cib:cs_awp",
+      "dataId": "cib:cs_awp_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 800.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.000806679030674547
+    },
+    {
+      "gunId": "cib:cslr3",
+      "dataId": "cib:cslr3_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 970,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cib:cslr4",
+      "dataId": "cib:cslr4_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 800.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.000806679030674547
+    },
+    {
+      "gunId": "cib:dprkrpg",
+      "dataId": "cib:dprkrpg_data",
+      "action": "preserve",
+      "proposedMuzzleVelocityMps": null,
+      "gravityMps2": null,
+      "effectiveDragPerMeter": null
+    },
+    {
+      "gunId": "cib:dzj08",
+      "dataId": "cib:dzj08_data",
+      "action": "preserve",
+      "proposedMuzzleVelocityMps": null,
+      "gravityMps2": null,
+      "effectiveDragPerMeter": null
+    },
+    {
+      "gunId": "cib:error",
+      "dataId": "cib:error_data",
+      "action": "preserve",
+      "proposedMuzzleVelocityMps": null,
+      "gravityMps2": null,
+      "effectiveDragPerMeter": null
+    },
+    {
+      "gunId": "cib:evo3",
+      "dataId": "cib:evo3_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "cib:fal",
+      "dataId": "cib:fal_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 850.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0009237332013101507
+    },
+    {
+      "gunId": "cib:g18c",
+      "dataId": "cib:g18c_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "cib:g19",
+      "dataId": "cib:g19_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "cib:g3sg1",
+      "dataId": "cib:g3sg1_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 800.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.000806679030674547
+    },
+    {
+      "gunId": "cib:galil",
+      "dataId": "cib:galil_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 1006.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cib:galilace",
+      "dataId": "cib:galilace_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cib:galilace32",
+      "dataId": "cib:galilace32_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 738.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001424756482467549
+    },
+    {
+      "gunId": "cib:hawk97_1",
+      "dataId": "cib:hawk97_1_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.004533179012345679
+    },
+    {
+      "gunId": "cib:hawk97_2",
+      "dataId": "cib:hawk97_2_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.004533179012345679
+    },
+    {
+      "gunId": "cib:hk433",
+      "dataId": "cib:hk433_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cib:js9",
+      "dataId": "cib:js9_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "cib:k2",
+      "dataId": "cib:k2_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cib:k2c1",
+      "dataId": "cib:k2c1_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cib:la89",
+      "dataId": "cib:la89_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 738.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001424756482467549
+    },
+    {
+      "gunId": "cib:m16a4",
+      "dataId": "cib:m16a4_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 1006.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cib:m4",
+      "dataId": "cib:m4_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cib:m99",
+      "dataId": "cib:m99_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 840,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0005
+    },
+    {
+      "gunId": "cib:mg3",
+      "dataId": "cib:mg3_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 850.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0009237332013101507
+    },
+    {
+      "gunId": "cib:mini",
+      "dataId": "cib:mini_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 850.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0009237332013101507
+    },
+    {
+      "gunId": "cib:mk18",
+      "dataId": "cib:mk18_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 877.74,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cib:negev",
+      "dataId": "cib:negev_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 1006.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cib:nova",
+      "dataId": "cib:nova_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.004533179012345679
+    },
+    {
+      "gunId": "cib:origin12",
+      "dataId": "cib:origin12_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 420,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0025
+    },
+    {
+      "gunId": "cib:origin12db",
+      "dataId": "cib:origin12db_data",
+      "action": "preserve",
+      "proposedMuzzleVelocityMps": null,
+      "gravityMps2": null,
+      "effectiveDragPerMeter": null
+    },
+    {
+      "gunId": "cib:ots14",
+      "dataId": "cib:ots14_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 738.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001424756482467549
+    },
+    {
+      "gunId": "cib:p250",
+      "dataId": "cib:p250_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "cib:pkp",
+      "dataId": "cib:pkp_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 786.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0007665574423252052
+    },
+    {
+      "gunId": "cib:pm9",
+      "dataId": "cib:pm9_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "cib:pp19",
+      "dataId": "cib:pp19_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "cib:ppk",
+      "dataId": "cib:ppk_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 318.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001166044851369392
+    },
+    {
+      "gunId": "cib:ppsh41",
+      "dataId": "cib:ppsh41_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 566.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0034712953109520095
+    },
+    {
+      "gunId": "cib:qba221",
+      "dataId": "cib:qba221_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.004533179012345679
+    },
+    {
+      "gunId": "cib:qba221_burst",
+      "dataId": "cib:qba221_burst_data",
+      "action": "preserve",
+      "proposedMuzzleVelocityMps": null,
+      "gravityMps2": null,
+      "effectiveDragPerMeter": null
+    },
+    {
+      "gunId": "cib:qbs09",
+      "dataId": "cib:qbs09_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.004533179012345679
+    },
+    {
+      "gunId": "cib:qbu10",
+      "dataId": "cib:qbu10_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 840,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0005
+    },
+    {
+      "gunId": "cib:qbu191",
+      "dataId": "cib:qbu191_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 930,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cib:qbu201",
+      "dataId": "cib:qbu201_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 840,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0005
+    },
+    {
+      "gunId": "cib:qbu202",
+      "dataId": "cib:qbu202_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 868.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0005566860520792204
+    },
+    {
+      "gunId": "cib:qbu203",
+      "dataId": "cib:qbu203_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 800.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.000806679030674547
+    },
+    {
+      "gunId": "cib:qbu88",
+      "dataId": "cib:qbu88_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 930,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cib:qbz03",
+      "dataId": "cib:qbz03_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 930,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cib:qbz191",
+      "dataId": "cib:qbz191_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 930,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cib:qbz192",
+      "dataId": "cib:qbz192_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 837,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cib:qbz951",
+      "dataId": "cib:qbz951_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 930,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cib:qbz95b1",
+      "dataId": "cib:qbz95b1_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 837,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cib:qcq171",
+      "dataId": "cib:qcq171_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "cib:qcw05",
+      "dataId": "cib:qcw05_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 480,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0025
+    },
+    {
+      "gunId": "cib:qjb201",
+      "dataId": "cib:qjb201_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 970,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cib:qjb951",
+      "dataId": "cib:qjb951_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 970,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cib:qjy201",
+      "dataId": "cib:qjy201_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 850.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0009237332013101507
+    },
+    {
+      "gunId": "cib:qjy88",
+      "dataId": "cib:qjy88_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 970,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cib:qjz171",
+      "dataId": "cib:qjz171_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 840,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0005
+    },
+    {
+      "gunId": "cib:qlu11",
+      "dataId": "cib:qlu11_data",
+      "action": "preserve",
+      "proposedMuzzleVelocityMps": null,
+      "gravityMps2": null,
+      "effectiveDragPerMeter": null
+    },
+    {
+      "gunId": "cib:qsz193",
+      "dataId": "cib:qsz193_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "cib:qsz92",
+      "dataId": "cib:qsz92_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 480,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0025
+    },
+    {
+      "gunId": "cib:r8",
+      "dataId": "cib:r8_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 385.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018805223150293962
+    },
+    {
+      "gunId": "cib:sig552",
+      "dataId": "cib:sig552_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 877.74,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cib:sig556",
+      "dataId": "cib:sig556_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cib:ssg08",
+      "dataId": "cib:ssg08_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 800.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.000806679030674547
+    },
+    {
+      "gunId": "cib:sv98",
+      "dataId": "cib:sv98_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 786.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0007665574423252052
+    },
+    {
+      "gunId": "cib:svd",
+      "dataId": "cib:svd_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 786.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0007665574423252052
+    },
+    {
+      "gunId": "cib:t91",
+      "dataId": "cib:t91_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cib:type11",
+      "dataId": "cib:type11_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 760,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001
+    },
+    {
+      "gunId": "cib:type14",
+      "dataId": "cib:type14_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 290,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0015
+    },
+    {
+      "gunId": "cib:type20",
+      "dataId": "cib:type20_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cib:type38",
+      "dataId": "cib:type38_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 760,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001
+    },
+    {
+      "gunId": "cib:type56",
+      "dataId": "cib:type56_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 738.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001424756482467549
+    },
+    {
+      "gunId": "cib:type73",
+      "dataId": "cib:type73_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 786.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0007665574423252052
+    },
+    {
+      "gunId": "cib:type79",
+      "dataId": "cib:type79_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 566.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0034712953109520095
+    },
+    {
+      "gunId": "cib:usas12",
+      "dataId": "cib:usas12_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.004533179012345679
+    },
+    {
+      "gunId": "cib:usp",
+      "dataId": "cib:usp_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 260.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0007174390485884132
+    },
+    {
+      "gunId": "cib:widow",
+      "dataId": "cib:widow_data",
+      "action": "preserve",
+      "proposedMuzzleVelocityMps": null,
+      "gravityMps2": null,
+      "effectiveDragPerMeter": null
+    },
+    {
+      "gunId": "cibs:ak103_laffey",
+      "dataId": "cibs:ak103_laffey_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 738.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001424756482467549
+    },
+    {
+      "gunId": "cibs:ak105_kaltsit",
+      "dataId": "cibs:ak105_kaltsit_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 880.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0011169365905484897
+    },
+    {
+      "gunId": "cibs:ak24_texas",
+      "dataId": "cibs:ak24_texas_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cibs:awp_hm",
+      "dataId": "cibs:awp_hm_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 800.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.000806679030674547
+    },
+    {
+      "gunId": "cibs:galilace_lesh",
+      "dataId": "cibs:galilace_lesh_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 738.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001424756482467549
+    },
+    {
+      "gunId": "cibs:hawk97_2_gold",
+      "dataId": "cibs:hawk97_2_gold_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.004533179012345679
+    },
+    {
+      "gunId": "cibs:m4_koei",
+      "dataId": "cibs:m4_koei_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cibs:mk18_jianjiu",
+      "dataId": "cibs:mk18_jianjiu_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 877.74,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cibs:qbu202_lingche",
+      "dataId": "cibs:qbu202_lingche_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 868.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0005566860520792204
+    },
+    {
+      "gunId": "cibs:qbz191_warrior",
+      "dataId": "cibs:qbz191_warrior_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 930,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cibs:qbz951_asiimov",
+      "dataId": "cibs:qbz951_asiimov_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 930,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cibs:qcq171_ocean",
+      "dataId": "cibs:qcq171_ocean_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "cibs:qjb201_sf2403",
+      "dataId": "cibs:qjb201_sf2403_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 970,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cibs:sig556_shiroko",
+      "dataId": "cibs:sig556_shiroko_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cibs:type20_hibiki",
+      "dataId": "cibs:type20_hibiki_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "cibs:type56_commemorate",
+      "dataId": "cibs:type56_commemorate_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 738.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001424756482467549
+    },
+    {
+      "gunId": "cibs:usps",
+      "dataId": "cibs:usps_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 260.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0007174390485884132
+    },
+    {
+      "gunId": "classicr:aa410",
+      "dataId": "classicr:aa410_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.004533179012345679
+    },
+    {
+      "gunId": "classicr:ak12",
+      "dataId": "classicr:ak12_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 880.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0011169365905484897
+    },
+    {
+      "gunId": "classicr:b93r",
+      "dataId": "classicr:b93r_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "classicr:colt_python",
+      "dataId": "classicr:colt_python_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 385.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018805223150293962
+    },
+    {
+      "gunId": "classicr:dp28",
+      "dataId": "classicr:dp28_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 786.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0007665574423252052
+    },
+    {
+      "gunId": "classicr:fn_fal_tac",
+      "dataId": "classicr:fn_fal_tac_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 850.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0009237332013101507
+    },
+    {
+      "gunId": "classicr:glock_18",
+      "dataId": "classicr:glock_18_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "classicr:hk416_a5",
+      "dataId": "classicr:hk416_a5_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "classicr:kar98",
+      "dataId": "classicr:kar98_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 780.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0007588469752487267
+    },
+    {
+      "gunId": "classicr:m1a1_smg",
+      "dataId": "classicr:m1a1_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 260.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0007174390485884132
+    },
+    {
+      "gunId": "classicr:m24_renewed",
+      "dataId": "classicr:m24_renewed_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 800.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.000806679030674547
+    },
+    {
+      "gunId": "classicr:m60",
+      "dataId": "classicr:m60_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 850.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0009237332013101507
+    },
+    {
+      "gunId": "classicr:m82a2",
+      "dataId": "classicr:m82a2_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 853.44,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0005
+    },
+    {
+      "gunId": "classicr:m92fs",
+      "dataId": "classicr:m92fs_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "classicr:mac10",
+      "dataId": "classicr:mac10_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "classicr:mauser_c96",
+      "dataId": "classicr:mauser_c96_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 440,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0024
+    },
+    {
+      "gunId": "classicr:mgl_40mm",
+      "dataId": "classicr:mgl_40mm_data",
+      "action": "preserve",
+      "proposedMuzzleVelocityMps": null,
+      "gravityMps2": null,
+      "effectiveDragPerMeter": null
+    },
+    {
+      "gunId": "classicr:minigun",
+      "dataId": "classicr:minigun_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 850.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0009237332013101507
+    },
+    {
+      "gunId": "classicr:mk18_mod1",
+      "dataId": "classicr:mk18_mod1_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 877.74,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "classicr:mk47",
+      "dataId": "classicr:mk47_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 738.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001424756482467549
+    },
+    {
+      "gunId": "classicr:mp7",
+      "dataId": "classicr:mp7_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 635,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0024
+    },
+    {
+      "gunId": "classicr:mp9",
+      "dataId": "classicr:mp9_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "classicr:mrad",
+      "dataId": "classicr:mrad_white_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 868.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0005566860520792204
+    },
+    {
+      "gunId": "classicr:mrad_elr",
+      "dataId": "classicr:mrad_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 868.68,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.00042
+    },
+    {
+      "gunId": "classicr:ngsw_r_renewed",
+      "dataId": "classicr:ngsw_r_renewed_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 914.4,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.00075
+    },
+    {
+      "gunId": "classicr:qbz191_renewed",
+      "dataId": "classicr:qbz191_renewed_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 930,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "classicr:scar_mk20",
+      "dataId": "classicr:scar_mk20_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 800.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.000806679030674547
+    },
+    {
+      "gunId": "classicr:spr_15",
+      "dataId": "classicr:spr_15_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 1006.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "classicr:sti2011",
+      "dataId": "classicr:sti2011_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "classicr:tec_9",
+      "dataId": "classicr:tec_9_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "classicr:tti_g34",
+      "dataId": "classicr:tti_g34_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "classicr:udp_9",
+      "dataId": "classicr:udp_9_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "gz:1st_vector45acp",
+      "dataId": "gz:1st_vector45acp_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 260.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0007174390485884132
+    },
+    {
+      "gunId": "gz:arx200_nero",
+      "dataId": "gz:arx200_nero_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 850.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0009237332013101507
+    },
+    {
+      "gunId": "gz:aug_9mm",
+      "dataId": "gz:aug_9mm_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "gz:auga3cqc",
+      "dataId": "gz:auga3cqc_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "gz:black_market_akm",
+      "dataId": "gz:black_market_akm_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 738.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001424756482467549
+    },
+    {
+      "gunId": "gz:black_market_rpk74",
+      "dataId": "gz:black_market_rpk74_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 880.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0011169365905484897
+    },
+    {
+      "gunId": "gz:black_market_t81sr",
+      "dataId": "gz:black_market_t81sr_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 738.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001424756482467549
+    },
+    {
+      "gunId": "gz:cargo_terminal",
+      "dataId": "gz:cargo_terminal_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.004533179012345679
+    },
+    {
+      "gunId": "gz:classic_m1a",
+      "dataId": "gz:classic_m1a_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 800.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.000806679030674547
+    },
+    {
+      "gunId": "gz:classic_rpk74",
+      "dataId": "gz:classic_rpk74_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 880.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0011169365905484897
+    },
+    {
+      "gunId": "gz:custom_p416_g3",
+      "dataId": "gz:custom_p416_g3_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "gz:enhanced_pp19",
+      "dataId": "gz:enhanced_pp19_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "gz:lightweight_m4",
+      "dataId": "gz:lightweight_m4_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "gz:lvoa_c",
+      "dataId": "gz:lvoa_c_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "gz:m16a2",
+      "dataId": "gz:m16a2_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "gz:m4_exotic_t1",
+      "dataId": "gz:m4_exotic_t1_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "gz:m4_exotic_t2",
+      "dataId": "gz:m4_exotic_t2_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "gz:m700_carbon",
+      "dataId": "gz:m700_carbon_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 890.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0009049035317837497
+    },
+    {
+      "gunId": "gz:military_ak74",
+      "dataId": "gz:military_ak74_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 880.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0011169365905484897
+    },
+    {
+      "gunId": "gz:military_p416",
+      "dataId": "gz:military_p416_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "gz:mp5a2",
+      "dataId": "gz:mp5a2_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "gz:mp5st",
+      "dataId": "gz:mp5st_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "gz:navy_mp5n",
+      "dataId": "gz:navy_mp5n_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "gz:patriots",
+      "dataId": "gz:patriots_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "gz:police_m4",
+      "dataId": "gz:police_m4_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "gz:pp19",
+      "dataId": "gz:pp19_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "gz:pp19_01",
+      "dataId": "gz:pp19_01_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "gz:sasg_12",
+      "dataId": "gz:sasg_12_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.004533179012345679
+    },
+    {
+      "gunId": "gz:t5smg",
+      "dataId": "gz:t5smg_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "gz:t81lmg",
+      "dataId": "gz:t81lmg_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 738.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001424756482467549
+    },
+    {
+      "gunId": "gz:t81s",
+      "dataId": "gz:t81s_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "gz:t81sr",
+      "dataId": "gz:t81sr_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 738.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001424756482467549
+    },
+    {
+      "gunId": "gz:t97nsrg3",
+      "dataId": "gz:t97nsrg3_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "gz:tactical_pp19_01",
+      "dataId": "gz:tactical_pp19_01_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "gz:tactical_sasg_12k",
+      "dataId": "gz:tactical_sasg_12k_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.004533179012345679
+    },
+    {
+      "gunId": "gz:tactical_t81s",
+      "dataId": "gz:tactical_t81s_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "hamster:auto5",
+      "dataId": "hamster:auto5_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.004533179012345679
+    },
+    {
+      "gunId": "hamster:berthier",
+      "dataId": "hamster:berthier_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 700,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0008028083126080289
+    },
+    {
+      "gunId": "hamster:colt1873",
+      "dataId": "hamster:colt1873_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 251.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0007441448556608332
+    },
+    {
+      "gunId": "hamster:coltm1851",
+      "dataId": "hamster:coltm1851_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 260,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0008869007471471875
+    },
+    {
+      "gunId": "hamster:coltm1892",
+      "dataId": "hamster:coltm1892_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 260,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0008869007471471875
+    },
+    {
+      "gunId": "hamster:coltm1892pair",
+      "dataId": "hamster:coltm1892pair_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 260,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0008869007471471875
+    },
+    {
+      "gunId": "hamster:flaregun",
+      "dataId": "hamster:flaregun_data",
+      "action": "preserve",
+      "proposedMuzzleVelocityMps": null,
+      "gravityMps2": null,
+      "effectiveDragPerMeter": null
+    },
+    {
+      "gunId": "hamster:gew98",
+      "dataId": "hamster:gew98_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 780.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0007588469752487267
+    },
+    {
+      "gunId": "hamster:gras1874",
+      "dataId": "hamster:gras1874_data",
+      "action": "preserve",
+      "proposedMuzzleVelocityMps": null,
+      "gravityMps2": null,
+      "effectiveDragPerMeter": null
+    },
+    {
+      "gunId": "hamster:krag",
+      "dataId": "hamster:krag_data",
+      "action": "preserve",
+      "proposedMuzzleVelocityMps": null,
+      "gravityMps2": null,
+      "effectiveDragPerMeter": null
+    },
+    {
+      "gunId": "hamster:lebel1886",
+      "dataId": "hamster:lebel1886_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 700,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0008028083126080289
+    },
+    {
+      "gunId": "hamster:luger1906",
+      "dataId": "hamster:luger1906_data",
+      "action": "preserve",
+      "proposedMuzzleVelocityMps": null,
+      "gravityMps2": null,
+      "effectiveDragPerMeter": null
+    },
+    {
+      "gunId": "hamster:lugerp08",
+      "dataId": "hamster:lugerp08_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "hamster:m1879revolver",
+      "dataId": "hamster:m1879revolver_data",
+      "action": "preserve",
+      "proposedMuzzleVelocityMps": null,
+      "gravityMps2": null,
+      "effectiveDragPerMeter": null
+    },
+    {
+      "gunId": "hamster:m1887",
+      "dataId": "hamster:m1887_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.004533179012345679
+    },
+    {
+      "gunId": "hamster:m1903",
+      "dataId": "hamster:m1903_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 890.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0009049035317837497
+    },
+    {
+      "gunId": "hamster:m1garand",
+      "dataId": "hamster:m1garand_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 823.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.000942172171598504
+    },
+    {
+      "gunId": "hamster:madsen",
+      "dataId": "hamster:madsen_data",
+      "action": "preserve",
+      "proposedMuzzleVelocityMps": null,
+      "gravityMps2": null,
+      "effectiveDragPerMeter": null
+    },
+    {
+      "gunId": "hamster:makarov",
+      "dataId": "hamster:makarov_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 310.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0016822779371809516
+    },
+    {
+      "gunId": "hamster:martinihenry",
+      "dataId": "hamster:martinihenry_data",
+      "action": "preserve",
+      "proposedMuzzleVelocityMps": null,
+      "gravityMps2": null,
+      "effectiveDragPerMeter": null
+    },
+    {
+      "gunId": "hamster:mg1417",
+      "dataId": "hamster:mg1417_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 780.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0007588469752487267
+    },
+    {
+      "gunId": "hamster:mosin91",
+      "dataId": "hamster:mosin91_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 786.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0007665574423252052
+    },
+    {
+      "gunId": "hamster:mosin9130",
+      "dataId": "hamster:mosin9130_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 786.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0007665574423252052
+    },
+    {
+      "gunId": "hamster:mp18",
+      "dataId": "hamster:mp18_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "hamster:nagantcarbine",
+      "dataId": "hamster:nagantcarbine_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 225,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001002487743651372
+    },
+    {
+      "gunId": "hamster:nagantm1895",
+      "dataId": "hamster:nagantm1895_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 225,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001002487743651372
+    },
+    {
+      "gunId": "hamster:one_barrel",
+      "dataId": "hamster:one_barrel_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.004533179012345679
+    },
+    {
+      "gunId": "hamster:sharps",
+      "dataId": "hamster:sharps_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 460.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0012981161152199052
+    },
+    {
+      "gunId": "hamster:sks",
+      "dataId": "hamster:sks_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 738.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001424756482467549
+    },
+    {
+      "gunId": "hamster:smle_mk3",
+      "dataId": "hamster:smle_mk3_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 755.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0007849864648665218
+    },
+    {
+      "gunId": "hamster:sw_mk2",
+      "dataId": "hamster:sw_mk2_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 213.36,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0008
+    },
+    {
+      "gunId": "hamster:sw_mk2_41",
+      "dataId": "hamster:sw_mk2_41_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 213.36,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0008
+    },
+    {
+      "gunId": "hamster:type99",
+      "dataId": "hamster:type99_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 730,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001
+    },
+    {
+      "gunId": "hamster:webley",
+      "dataId": "hamster:webley_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 213.36,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0008
+    },
+    {
+      "gunId": "hamster:win1873",
+      "dataId": "hamster:win1873_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0012
+    },
+    {
+      "gunId": "hamster:win1894",
+      "dataId": "hamster:win1894_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 728.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0016705408466316624
+    },
+    {
+      "gunId": "origin:cove-a",
+      "dataId": "origin:cove-a_data",
+      "action": "preserve",
+      "proposedMuzzleVelocityMps": null,
+      "gravityMps2": null,
+      "effectiveDragPerMeter": null
+    },
+    {
+      "gunId": "origin:p90",
+      "dataId": "origin:p90_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 715,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0022
+    },
+    {
+      "gunId": "rainforest:56",
+      "dataId": "rainforest:56_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 738.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001424756482467549
+    },
+    {
+      "gunId": "rainforest:at4",
+      "dataId": "rainforest:at4_data",
+      "action": "preserve",
+      "proposedMuzzleVelocityMps": null,
+      "gravityMps2": null,
+      "effectiveDragPerMeter": null
+    },
+    {
+      "gunId": "rainforest:em2",
+      "dataId": "rainforest:em2_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 850.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0009237332013101507
+    },
+    {
+      "gunId": "rainforest:fal",
+      "dataId": "rainforest:fal_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 850.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0009237332013101507
+    },
+    {
+      "gunId": "rainforest:famas",
+      "dataId": "rainforest:famas_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 1006.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "rainforest:frf2",
+      "dataId": "rainforest:frf2_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 800.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.000806679030674547
+    },
+    {
+      "gunId": "rainforest:hk_spg1",
+      "dataId": "rainforest:hk_spg1_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 850.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0009237332013101507
+    },
+    {
+      "gunId": "rainforest:l85a1",
+      "dataId": "rainforest:l85a1_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 1006.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "rainforest:l86a2",
+      "dataId": "rainforest:l86a2_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 1006.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "rainforest:m60",
+      "dataId": "rainforest:m60_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 850.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0009237332013101507
+    },
+    {
+      "gunId": "rainforest:m72",
+      "dataId": "rainforest:m72_data",
+      "action": "preserve",
+      "proposedMuzzleVelocityMps": null,
+      "gravityMps2": null,
+      "effectiveDragPerMeter": null
+    },
+    {
+      "gunId": "rainforest:pm12s",
+      "dataId": "rainforest:pm12s_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "rainforest:pm63",
+      "dataId": "rainforest:pm63_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 310.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0016822779371809516
+    },
+    {
+      "gunId": "rainforest:rpd",
+      "dataId": "rainforest:rpd_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 738.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001424756482467549
+    },
+    {
+      "gunId": "rainforest:rpdms",
+      "dataId": "rainforest:rpdms_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 738.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001424756482467549
+    },
+    {
+      "gunId": "rainforest:vz64",
+      "dataId": "rainforest:vz64_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 291.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001049787634103956
+    },
+    {
+      "gunId": "rainforest:vz68",
+      "dataId": "rainforest:vz68_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "suffuse:aiyasinrpg",
+      "dataId": "suffuse:aiyasinrpg_data",
+      "action": "preserve",
+      "proposedMuzzleVelocityMps": null,
+      "gravityMps2": null,
+      "effectiveDragPerMeter": null
+    },
+    {
+      "gunId": "suffuse:aks74u",
+      "dataId": "suffuse:aks74u_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 735,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0011169365905484897
+    },
+    {
+      "gunId": "suffuse:an94",
+      "dataId": "suffuse:an94_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 880.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0011169365905484897
+    },
+    {
+      "gunId": "suffuse:ar57",
+      "dataId": "suffuse:ar57_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 715,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0022
+    },
+    {
+      "gunId": "suffuse:ash12",
+      "dataId": "suffuse:ash12_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 300,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0008
+    },
+    {
+      "gunId": "suffuse:aw50",
+      "dataId": "suffuse:aw50_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 853.44,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0005
+    },
+    {
+      "gunId": "suffuse:axmc",
+      "dataId": "suffuse:axmc_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 868.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0005566860520792204
+    },
+    {
+      "gunId": "suffuse:axsr",
+      "dataId": "suffuse:axsr_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 868.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0005566860520792204
+    },
+    {
+      "gunId": "suffuse:dvl10",
+      "dataId": "suffuse:dvl10_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 800.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.000806679030674547
+    },
+    {
+      "gunId": "suffuse:gepardpdw",
+      "dataId": "suffuse:gepardpdw_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "suffuse:gm6",
+      "dataId": "suffuse:gm6_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 853.44,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0005
+    },
+    {
+      "gunId": "suffuse:kacpdw",
+      "dataId": "suffuse:kacpdw_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 740,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0017
+    },
+    {
+      "gunId": "suffuse:ks23m",
+      "dataId": "suffuse:ks23m_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 300,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.004
+    },
+    {
+      "gunId": "suffuse:lifecard",
+      "dataId": "suffuse:lifecard_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 320.04,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0028
+    },
+    {
+      "gunId": "suffuse:m1895",
+      "dataId": "suffuse:m1895_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 460.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0012981161152199052
+    },
+    {
+      "gunId": "suffuse:m200",
+      "dataId": "suffuse:m200_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 868.68,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0004
+    },
+    {
+      "gunId": "suffuse:m203",
+      "dataId": "suffuse:m203_data",
+      "action": "preserve",
+      "proposedMuzzleVelocityMps": null,
+      "gravityMps2": null,
+      "effectiveDragPerMeter": null
+    },
+    {
+      "gunId": "suffuse:m79",
+      "dataId": "suffuse:m79_data",
+      "action": "preserve",
+      "proposedMuzzleVelocityMps": null,
+      "gravityMps2": null,
+      "effectiveDragPerMeter": null
+    },
+    {
+      "gunId": "suffuse:mas38",
+      "dataId": "suffuse:mas38_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 350,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018
+    },
+    {
+      "gunId": "suffuse:mpdr",
+      "dataId": "suffuse:mpdr_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 877.74,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "suffuse:n4",
+      "dataId": "suffuse:n4_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "suffuse:np762",
+      "dataId": "suffuse:np762_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 566.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0034712953109520095
+    },
+    {
+      "gunId": "suffuse:pf98a",
+      "dataId": "suffuse:pf98a_data",
+      "action": "preserve",
+      "proposedMuzzleVelocityMps": null,
+      "gravityMps2": null,
+      "effectiveDragPerMeter": null
+    },
+    {
+      "gunId": "suffuse:pkp",
+      "dataId": "suffuse:pkp_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 786.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0007665574423252052
+    },
+    {
+      "gunId": "suffuse:pp19",
+      "dataId": "suffuse:pp19_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "suffuse:python",
+      "dataId": "suffuse:python_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 385.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018805223150293962
+    },
+    {
+      "gunId": "suffuse:qbu191",
+      "dataId": "suffuse:qbu191_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 930,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "suffuse:qbz191",
+      "dataId": "suffuse:qbz191_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 930,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "suffuse:qbz192",
+      "dataId": "suffuse:qbz192_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 837,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "suffuse:qbz951",
+      "dataId": "suffuse:qbz951_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 930,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "suffuse:qbz951s",
+      "dataId": "suffuse:qbz951s_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 930,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "suffuse:qlu11",
+      "dataId": "suffuse:qlu11_data",
+      "action": "preserve",
+      "proposedMuzzleVelocityMps": null,
+      "gravityMps2": null,
+      "effectiveDragPerMeter": null
+    },
+    {
+      "gunId": "suffuse:rm277",
+      "dataId": "suffuse:rm277_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 900,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0008
+    },
+    {
+      "gunId": "suffuse:saddam_golden_ak",
+      "dataId": "suffuse:saddam_golden_ak_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 738.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001424756482467549
+    },
+    {
+      "gunId": "suffuse:spas12",
+      "dataId": "suffuse:spas12_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.004533179012345679
+    },
+    {
+      "gunId": "suffuse:svd",
+      "dataId": "suffuse:svd_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 786.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0007665574423252052
+    },
+    {
+      "gunId": "suffuse:tec9",
+      "dataId": "suffuse:tec9_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "suffuse:trapper50cal",
+      "dataId": "suffuse:trapper50cal_data",
+      "action": "preserve",
+      "proposedMuzzleVelocityMps": null,
+      "gravityMps2": null,
+      "effectiveDragPerMeter": null
+    },
+    {
+      "gunId": "suffuse:tt33",
+      "dataId": "suffuse:tt33_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 566.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0034712953109520095
+    },
+    {
+      "gunId": "suffuse:tti2011",
+      "dataId": "suffuse:tti2011_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "suffuse:ump45",
+      "dataId": "suffuse:ump45_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 260.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0007174390485884132
+    },
+    {
+      "gunId": "suffuse:usp45",
+      "dataId": "suffuse:usp45_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 260.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0007174390485884132
+    },
+    {
+      "gunId": "suffuse:usp45_black",
+      "dataId": "suffuse:usp45_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 260.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0007174390485884132
+    },
+    {
+      "gunId": "suffuse:viper2011",
+      "dataId": "suffuse:viper2011_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "suffuse:webley1913",
+      "dataId": "suffuse:webley1913_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 230,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0009
+    },
+    {
+      "gunId": "suffuse:xm7",
+      "dataId": "suffuse:xm7_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 850.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0009237332013101507
+    },
+    {
+      "gunId": "tacz:aa12",
+      "dataId": "tacz:aa12_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.004533179012345679
+    },
+    {
+      "gunId": "tacz:ai_awp",
+      "dataId": "tacz:ai_awp_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 868.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0006915746699386564
+    },
+    {
+      "gunId": "tacz:ak47",
+      "dataId": "tacz:ak47_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 738.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001424756482467549
+    },
+    {
+      "gunId": "tacz:aug",
+      "dataId": "tacz:aug_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "tacz:b93r",
+      "dataId": "tacz:b93r_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "tacz:cz75",
+      "dataId": "tacz:cz75_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "tacz:db_long",
+      "dataId": "tacz:db_long_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.004533179012345679
+    },
+    {
+      "gunId": "tacz:db_short",
+      "dataId": "tacz:db_short_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.004533179012345679
+    },
+    {
+      "gunId": "tacz:deagle",
+      "dataId": "tacz:deagle_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 440,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0025
+    },
+    {
+      "gunId": "tacz:deagle_golden",
+      "dataId": "tacz:deagle_golden_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 385.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018805223150293962
+    },
+    {
+      "gunId": "tacz:fn_evolys",
+      "dataId": "tacz:fn_evolys_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 1006.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "tacz:fn_fal",
+      "dataId": "tacz:fn_fal_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 850.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0009237332013101507
+    },
+    {
+      "gunId": "tacz:g36k",
+      "dataId": "tacz:g36k_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 877.74,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "tacz:glock_17",
+      "dataId": "tacz:glock_17_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "tacz:hk416d",
+      "dataId": "tacz:hk416d_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "tacz:hk_g3",
+      "dataId": "tacz:hk_g3_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 850.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0009237332013101507
+    },
+    {
+      "gunId": "tacz:hk_mk23",
+      "dataId": "tacz:hk_mk23_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 260.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0007174390485884132
+    },
+    {
+      "gunId": "tacz:hk_mp5a5",
+      "dataId": "tacz:hk_mp5a5_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "tacz:kar98",
+      "dataId": "tacz:kar98_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 780.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0007588469752487267
+    },
+    {
+      "gunId": "tacz:lonetrail",
+      "dataId": "tacz:lonetrail_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 890.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0009049035317837497
+    },
+    {
+      "gunId": "tacz:m1014",
+      "dataId": "tacz:m1014_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.004533179012345679
+    },
+    {
+      "gunId": "tacz:m107",
+      "dataId": "tacz:m107_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 853.44,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0005
+    },
+    {
+      "gunId": "tacz:m16a1",
+      "dataId": "tacz:m16a1_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 1006.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "tacz:m16a4",
+      "dataId": "tacz:m16a4_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 1006.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "tacz:m1911",
+      "dataId": "tacz:m1911_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 260.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0007174390485884132
+    },
+    {
+      "gunId": "tacz:m249",
+      "dataId": "tacz:m249_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 1006.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "tacz:m320",
+      "dataId": "tacz:m320_data",
+      "action": "preserve",
+      "proposedMuzzleVelocityMps": null,
+      "gravityMps2": null,
+      "effectiveDragPerMeter": null
+    },
+    {
+      "gunId": "tacz:m4a1",
+      "dataId": "tacz:m4a1_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "tacz:m700",
+      "dataId": "tacz:m700_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 800.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.000806679030674547
+    },
+    {
+      "gunId": "tacz:m870",
+      "dataId": "tacz:m870_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.004533179012345679
+    },
+    {
+      "gunId": "tacz:m95",
+      "dataId": "tacz:m95_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 853.44,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0005
+    },
+    {
+      "gunId": "tacz:m9a4",
+      "dataId": "tacz:m9a4_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "tacz:minigun",
+      "dataId": "tacz:minigun_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 850.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0009237332013101507
+    },
+    {
+      "gunId": "tacz:mk14",
+      "dataId": "tacz:mk14_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 850.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0009237332013101507
+    },
+    {
+      "gunId": "tacz:p320",
+      "dataId": "tacz:p320_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "tacz:p90",
+      "dataId": "tacz:p90_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 715,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0022
+    },
+    {
+      "gunId": "tacz:qbz_191",
+      "dataId": "tacz:qbz_191_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 930,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "tacz:qbz_95",
+      "dataId": "tacz:qbz_95_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 930,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "tacz:rhino357",
+      "dataId": "tacz:rhino357_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 385.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018805223150293962
+    },
+    {
+      "gunId": "tacz:rpg7",
+      "dataId": "tacz:rpg7_data",
+      "action": "preserve",
+      "proposedMuzzleVelocityMps": null,
+      "gravityMps2": null,
+      "effectiveDragPerMeter": null
+    },
+    {
+      "gunId": "tacz:rpk",
+      "dataId": "tacz:rpk_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 738.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001424756482467549
+    },
+    {
+      "gunId": "tacz:scar_h",
+      "dataId": "tacz:scar_h_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 850.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0009237332013101507
+    },
+    {
+      "gunId": "tacz:scar_l",
+      "dataId": "tacz:scar_l_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 940.96,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "tacz:sks_tactical",
+      "dataId": "tacz:sks_tactical_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 738.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001424756482467549
+    },
+    {
+      "gunId": "tacz:spas_12",
+      "dataId": "tacz:spas_12_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.004533179012345679
+    },
+    {
+      "gunId": "tacz:spr15hb",
+      "dataId": "tacz:spr15hb_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 1006.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0013723035828750144
+    },
+    {
+      "gunId": "tacz:springfield1873",
+      "dataId": "tacz:springfield1873_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 460.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0012981161152199052
+    },
+    {
+      "gunId": "tacz:taurus500",
+      "dataId": "tacz:taurus500_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 440,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0024
+    },
+    {
+      "gunId": "tacz:taurus943",
+      "dataId": "tacz:taurus943_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 320.04,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0028
+    },
+    {
+      "gunId": "tacz:timeless50",
+      "dataId": "tacz:timeless50_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 440,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0025
+    },
+    {
+      "gunId": "tacz:type_81",
+      "dataId": "tacz:type_81_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 738.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.001424756482467549
+    },
+    {
+      "gunId": "tacz:ump45",
+      "dataId": "tacz:ump45_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 260.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0007174390485884132
+    },
+    {
+      "gunId": "tacz:uzi",
+      "dataId": "tacz:uzi_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 360.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0018901054494475126
+    },
+    {
+      "gunId": "tacz:vector45",
+      "dataId": "tacz:vector45_data",
+      "action": "apply",
+      "proposedMuzzleVelocityMps": 260.0,
+      "gravityMps2": 9.80665,
+      "effectiveDragPerMeter": 0.0007174390485884132
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/handheld",
+  "textures": {
+    "layer0": "tacz_pubg:item/item_spawn_area_stick"
+  }
+}

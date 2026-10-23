@@ -1,0 +1,8 @@
+{
+  "required": true,
+  "minVersion": "0.8.5",
+  "package": "com.example.examplemod.lootspawn.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": ["RoundLootStackMixin", "RoundLootProductMixin", "RoundLootBrewingMixin"],
+  "injectors": {"defaultRequire": 1}
+}

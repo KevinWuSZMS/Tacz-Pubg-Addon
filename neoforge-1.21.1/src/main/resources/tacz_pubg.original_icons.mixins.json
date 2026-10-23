@@ -1,0 +1,8 @@
+{
+  "required": true,
+  "minVersion": "0.8.5",
+  "package": "com.example.examplemod.originalicons.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": ["OriginalIconRendererMixin"],
+  "injectors": {"defaultRequire": 1}
+}

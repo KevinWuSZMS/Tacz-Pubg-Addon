@@ -1,0 +1,95 @@
+package com.example.examplemod.vitals.client;
+
+import com.example.examplemod.localization.Texts;
+import com.example.examplemod.vitals.MatchVitalsPayloads;
+import com.example.examplemod.vitals.PubgMedicineItem;
+import com.example.examplemod.vitals.PubgMedicineModel;
+import com.example.examplemod.hud.client.HudLayoutClient;
+import com.example.examplemod.hud.client.HudLayoutModel;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
+
+/** The cast ring is local presentation; recovery forecasts come from the server's fixed budget. */
+public final class PubgMedicineHud {
+    private static MatchVitalsPayloads.RecoveryState recovery = MatchVitalsPayloads.RecoveryState.INACTIVE;
+    private static int recoveryAge;
+    private PubgMedicineHud() {}
+    static void acceptRecovery(MatchVitalsPayloads.RecoveryState state) { recovery = state; recoveryAge = 0; }
+    static void clear() { recovery = MatchVitalsPayloads.RecoveryState.INACTIVE; recoveryAge = 0; }
+    static void tick() {
+        var mc = Minecraft.getInstance();
+        var player = mc.player;
+        if (player == null) { clear(); return; }
+        if (mc.isPaused() || MatchVitalsHud.paused()) return;
+        if (++recoveryAge > 100) clear();
+        if (mc.gameMode == null || !player.isUsingItem() || !(player.getUseItem().getItem() instanceof PubgMedicineItem medicine)) return;
+        boolean capped = !medicine.kind().isBoost() && !medicine.kind().canUse(player.getHealth(), player.getMaxHealth(), 0);
+        if (capped || mc.options.keySprint.isDown() || mc.options.keyJump.isDown()) mc.gameMode.releaseUsingItem(player);
+    }
+    private static boolean recoveryValid() {
+        return recovery.remaining() > 0 && (recovery.session().equals(MatchVitalsPayloads.NO_SESSION)
+                ? !MatchVitalsHud.active() : MatchVitalsHud.activeSession(recovery.session()));
+    }
+    public record Target(double total, double next) {}
+    public static Target target(double health, double maximum) {
+        var player = Minecraft.getInstance().player;
+        double budget = recoveryValid() ? recovery.remaining() : 0, step = recoveryValid() ? recovery.next() : 0;
+        double ceiling = recoveryValid() ? recovery.ceiling() : 0;
+        if (player != null && player.isUsingItem() && player.getUseItem().getItem() instanceof PubgMedicineItem medicine && !medicine.kind().isBoost()) {
+            double castBudget = medicine.kind().healingBudget(health, maximum);
+            budget += castBudget; ceiling = Math.max(ceiling, medicine.kind().ceiling());
+            var settings = com.example.examplemod.pubgsettings.PubgSettingsService.client();
+            step += medicine.kind() == PubgMedicineModel.Kind.FIRST_AID_KIT
+                    ? Math.min(castBudget, maximum * settings.number("medicine.first_aid_step_percent") / 100)
+                    : medicine.kind() == PubgMedicineModel.Kind.BANDAGE
+                    ? castBudget * settings.integer("medicine.recovery_step_ticks") / settings.integer("medicine.bandage_recovery_ticks") : castBudget;
+        }
+        return new Target(Math.max(health, Math.min(maximum * ceiling, health + budget)),
+                Math.max(health, Math.min(maximum * ceiling, health + step)));
+    }
+    public static boolean recovering() {
+        var mc = Minecraft.getInstance();
+        if (mc.player == null || mc.isPaused() || MatchVitalsHud.paused()) return false;
+        var combat = com.example.examplemod.combat.client.CombatHudClient.snapshot();
+        if (combat != null && MatchVitalsHud.activeSession(combat.session()) && combat.rescue().active()
+                && (combat.rescue().rescuer().equals(mc.player.getUUID()) || combat.rescue().target().equals(mc.player.getUUID()))) return true;
+        if (combat != null && MatchVitalsHud.activeSession(combat.session()) && combat.downed()) return false;
+        if (mc.player.isUsingItem() && mc.player.getUseItem().getItem() instanceof PubgMedicineItem) return true;
+        return mc.player.getHealth() < mc.player.getMaxHealth()
+                && (target(mc.player.getHealth(), mc.player.getMaxHealth()).total() > mc.player.getHealth() + 1e-6 || MatchVitalsHud.currentBoost() > 0);
+    }
+    public static HudLayoutModel.Rect previewBounds(int width, int height) {
+        return ActionCircleRenderer.bounds(width, height, Texts.of("screen.tacz_pubg.medicine.action_using", Component.translatable("item.tacz_pubg.first_aid_kit")));
+    }
+    public static void preview(GuiGraphics g, HudLayoutModel.Rect bounds) {
+        var stack = new ItemStack(com.example.examplemod.vitals.PubgMedicineItems.FIRST_AID_KIT.get());
+        int duration = stack.getUseDuration(Minecraft.getInstance().player);
+        ActionCircleRenderer.draw(g, bounds, stack, false,
+                (int) Math.round(duration * .78), duration, Texts.of("screen.tacz_pubg.medicine.action_using", Component.translatable("item.tacz_pubg.first_aid_kit")),
+                Texts.of("screen.tacz_pubg.medicine.action_cancel", Component.keybind("key.tacz_pubg.cancel_use")));
+    }
+    static void render(GuiGraphics graphics) {
+        var mc = Minecraft.getInstance();
+        var player = mc.player;
+        if (player == null || mc.options.hideGui) return;
+        var combat = com.example.examplemod.combat.client.CombatHudClient.snapshot();
+        boolean rescue = combat != null && MatchVitalsHud.activeSession(combat.session()) && combat.rescue().active()
+                && (combat.rescue().rescuer().equals(player.getUUID()) || combat.rescue().target().equals(player.getUUID()));
+        PubgMedicineItem medicine = player.isUsingItem() && player.getUseItem().getItem() instanceof PubgMedicineItem m ? m : null;
+        if (!rescue && medicine == null) return;
+        int duration = rescue ? combat.rescue().durationTicks() : medicine.getUseDuration(player.getUseItem(), player);
+        int remaining = rescue ? duration - combat.rescue().elapsedTicks() : Math.clamp(player.getUseItemRemainingTicks(), 0, duration);
+        Component label = rescue ? Texts.of(combat.rescue().rescuer().equals(player.getUUID())
+                ? "screen.tacz_pubg.medicine.action_rescuing" : "screen.tacz_pubg.medicine.action_being_rescued",
+                combat.rescue().rescuer().equals(player.getUUID()) ? combat.rescue().targetName() : combat.rescue().rescuerName())
+                : Texts.of("screen.tacz_pubg.medicine.action_using", player.getUseItem().getHoverName());
+        Component cancel = Texts.of("screen.tacz_pubg.medicine.action_cancel", Component.keybind(rescue
+                ? "key.tacz_pubg.pickup_loot" : "key.tacz_pubg.cancel_use"));
+        var bounds = ActionCircleRenderer.bounds(graphics.guiWidth(), graphics.guiHeight(), label);
+        try (var ignored = HudLayoutClient.apply(graphics, "medicine_progress", bounds.x(), bounds.y(), bounds.width(), bounds.height())) {
+            ActionCircleRenderer.draw(graphics, bounds, rescue ? ItemStack.EMPTY : player.getUseItem(), rescue, remaining, duration, label, cancel);
+        }
+    }
+}

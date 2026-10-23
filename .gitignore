@@ -1,0 +1,92 @@
+# This is a source repository inside an existing development workspace.
+# Keep local installations, saves, downloads and source assets in place.
+# New top-level directories are private until explicitly admitted below.
+/*
+!/.gitignore
+!/.gitattributes
+!/LICENSE
+!/README.md
+!/neoforge-1.21.1/
+!/scripts/
+!/model-workflows/
+!/docs/
+
+# Admit the actual mod sources and build definition, not its runtime instances.
+/neoforge-1.21.1/*
+!/neoforge-1.21.1/.gitignore
+!/neoforge-1.21.1/.gitattributes
+!/neoforge-1.21.1/build.gradle
+!/neoforge-1.21.1/settings.gradle
+!/neoforge-1.21.1/gradle.properties
+!/neoforge-1.21.1/gradlew
+!/neoforge-1.21.1/gradlew.bat
+!/neoforge-1.21.1/TEMPLATE_LICENSE.txt
+!/neoforge-1.21.1/gradle/
+!/neoforge-1.21.1/src/
+/neoforge-1.21.1/gradle/*
+!/neoforge-1.21.1/gradle/wrapper/
+/neoforge-1.21.1/gradle/wrapper/*
+!/neoforge-1.21.1/gradle/wrapper/gradle-wrapper.jar
+!/neoforge-1.21.1/gradle/wrapper/gradle-wrapper.properties
+
+# Visual assets stay local pending a separate publication/source review.
+# JSON meshes are assets too. Do not admit them solely by file extension.
+/neoforge-1.21.1/src/main/resources/assets/*
+!/neoforge-1.21.1/src/main/resources/assets/tacz_pubg/
+!/neoforge-1.21.1/src/main/resources/assets/cbrg/
+/neoforge-1.21.1/src/main/resources/assets/cbrg/*
+!/neoforge-1.21.1/src/main/resources/assets/cbrg/lang/
+/neoforge-1.21.1/src/main/resources/assets/tacz_pubg/meshes/
+/neoforge-1.21.1/src/main/resources/assets/tacz_pubg/textures/*
+!/neoforge-1.21.1/src/main/resources/assets/tacz_pubg/textures/pubg_original/
+/neoforge-1.21.1/src/main/resources/assets/tacz_pubg/textures/pubg_original/*
+!/neoforge-1.21.1/src/main/resources/assets/tacz_pubg/textures/pubg_original/sources.json
+!/neoforge-1.21.1/src/main/resources/assets/tacz_pubg/textures/gui/
+/neoforge-1.21.1/src/main/resources/assets/tacz_pubg/textures/gui/*
+!/neoforge-1.21.1/src/main/resources/assets/tacz_pubg/textures/gui/equipment/
+/neoforge-1.21.1/src/main/resources/assets/tacz_pubg/textures/gui/equipment/*
+!/neoforge-1.21.1/src/main/resources/assets/tacz_pubg/textures/gui/equipment/sources.json
+/neoforge-1.21.1/src/main/resources/assets/tacz_pubg/models/*
+!/neoforge-1.21.1/src/main/resources/assets/tacz_pubg/models/item/
+/neoforge-1.21.1/src/main/resources/assets/tacz_pubg/models/item/*
+!/neoforge-1.21.1/src/main/resources/assets/tacz_pubg/models/item/item_spawn_*.json
+!/neoforge-1.21.1/src/main/resources/assets/tacz_pubg/models/item/pubg_config_map.json
+
+# Offline tools are source; downloaded tools, outputs and backup copies are not.
+/model-workflows/*
+!/model-workflows/.gitignore
+!/model-workflows/README.md
+!/model-workflows/requirements.txt
+!/model-workflows/*.py
+!/model-workflows/*.mjs
+
+# Retain authored maintenance notes and the publication/dependency manifests.
+# Third-party tutorials, API mirrors and raw gunpack fixtures remain local.
+/docs/*
+!/docs/*.md
+/docs/NeoForge-1.21.1-开发教程全集.md
+/docs/TaCZ-官方附属制作教程.md
+!/docs/repository/
+!/docs/gun-balance/
+!/docs/compatibility/
+/docs/gun-balance/*
+!/docs/gun-balance/*.md
+/docs/compatibility/*
+!/docs/compatibility/*.md
+
+# Never accidentally publish local credentials, environments or generated files.
+**/.env
+**/.env.*
+!**/.env.example
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+**/credentials.json
+**/secrets.json
+**/__pycache__/
+**/*.pyc
+**/.venv/
+**/node_modules/
+**/.DS_Store
+**/src/generated/**/.cache/

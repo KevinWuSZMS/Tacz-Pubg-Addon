@@ -1,0 +1,9 @@
+{
+  "required": true,
+  "minVersion": "0.8.5",
+  "package": "com.example.examplemod.zones.match.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": ["MatchBoundaryEntityMixin", "MatchBoundaryConnectionMixin",
+    "MatchBoundaryProjectilePositionMixin", "MatchBoundaryProjectileCollisionMixin", "MatchBoundaryArrowImpactMixin"],
+  "injectors": {"defaultRequire": 1}
+}

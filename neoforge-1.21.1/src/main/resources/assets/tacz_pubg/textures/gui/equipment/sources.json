@@ -1,0 +1,78 @@
+{
+  "description": "Unmodified two-dimensional PUBGMC equipment HUD textures; attribution is to PUBGMC, not a claim of official PUBG provenance.",
+  "sourceCommit": "f8c341eb784425b1bf7e015f36b851e760ab2999",
+  "files": [
+    {
+      "target": "helmet_1.png",
+      "source": "assets/pubgmc/textures/overlay/helmet_level1.png",
+      "sourceUrl": "https://github.com/Toma1O6/PUBGMC/blob/f8c341eb784425b1bf7e015f36b851e760ab2999/src/main/resources/assets/pubgmc/textures/overlay/helmet_level1.png",
+      "sha256": "8efcea40e7274efa588f7429c6dbc9c438ce12c12923f7dcce262b21ba246e9f",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "target": "helmet_2.png",
+      "source": "assets/pubgmc/textures/overlay/helmet_level2.png",
+      "sourceUrl": "https://github.com/Toma1O6/PUBGMC/blob/f8c341eb784425b1bf7e015f36b851e760ab2999/src/main/resources/assets/pubgmc/textures/overlay/helmet_level2.png",
+      "sha256": "46236c3a8bb39005272bb86db015e80f6c09c83c8c42812b19a0028815ede991",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "target": "helmet_3.png",
+      "source": "assets/pubgmc/textures/overlay/helmet_level3.png",
+      "sourceUrl": "https://github.com/Toma1O6/PUBGMC/blob/f8c341eb784425b1bf7e015f36b851e760ab2999/src/main/resources/assets/pubgmc/textures/overlay/helmet_level3.png",
+      "sha256": "9117e938c178d46a01daaf4d906b53b55311f88bdd3d4dd13c790b38a9e4189a",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "target": "vest_1.png",
+      "source": "assets/pubgmc/textures/overlay/vest_level1.png",
+      "sourceUrl": "https://github.com/Toma1O6/PUBGMC/blob/f8c341eb784425b1bf7e015f36b851e760ab2999/src/main/resources/assets/pubgmc/textures/overlay/vest_level1.png",
+      "sha256": "59412b7afb98cc68f6a869e460a5b4504f12ee917a91f1c4dddb0091188a6e16",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "target": "vest_2.png",
+      "source": "assets/pubgmc/textures/overlay/vest_level2.png",
+      "sourceUrl": "https://github.com/Toma1O6/PUBGMC/blob/f8c341eb784425b1bf7e015f36b851e760ab2999/src/main/resources/assets/pubgmc/textures/overlay/vest_level2.png",
+      "sha256": "89149defeaf6d797ca46d37ceddf85ab8fa46734742274c92c5dd8491fc81924",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "target": "vest_3.png",
+      "source": "assets/pubgmc/textures/overlay/vest_level3.png",
+      "sourceUrl": "https://github.com/Toma1O6/PUBGMC/blob/f8c341eb784425b1bf7e015f36b851e760ab2999/src/main/resources/assets/pubgmc/textures/overlay/vest_level3.png",
+      "sha256": "19d2e8fd68b0d6a5f5cc0521a59161d078066469b8e34a1603a594edf131a286",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "target": "backpack_1.png",
+      "source": "assets/pubgmc/textures/overlay/backpack1.png",
+      "sourceUrl": "https://github.com/Toma1O6/PUBGMC/blob/f8c341eb784425b1bf7e015f36b851e760ab2999/src/main/resources/assets/pubgmc/textures/overlay/backpack1.png",
+      "sha256": "d80fac4a6bea3cd0e250311b817687727b4737780a525da6cc2382d380d33f86",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "target": "backpack_2.png",
+      "source": "assets/pubgmc/textures/overlay/backpack2.png",
+      "sourceUrl": "https://github.com/Toma1O6/PUBGMC/blob/f8c341eb784425b1bf7e015f36b851e760ab2999/src/main/resources/assets/pubgmc/textures/overlay/backpack2.png",
+      "sha256": "c71b475f4b406bf7e8d0131cfb72753f2d1a656129b68c4e22d677856bf605a4",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "target": "backpack_3.png",
+      "source": "assets/pubgmc/textures/overlay/backpack3.png",
+      "sourceUrl": "https://github.com/Toma1O6/PUBGMC/blob/f8c341eb784425b1bf7e015f36b851e760ab2999/src/main/resources/assets/pubgmc/textures/overlay/backpack3.png",
+      "sha256": "f901c6747ce7b0bac9ff68e0056db9c4e1e7e938b69ccd916253bbd3cecbd2f5",
+      "width": 32,
+      "height": 32
+    }
+  ]
+}

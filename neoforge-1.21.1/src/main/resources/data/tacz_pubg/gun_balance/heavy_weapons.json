@@ -1,0 +1,161 @@
+{
+  "schemaVersion": 1,
+  "guns": [
+    {
+      "gunId": "cib:dprkrpg",
+      "dataId": "cib:dprkrpg_data",
+      "directDamage": 10,
+      "explosionDamage": 38,
+      "damageRadius": 10,
+      "terrainPower": 6,
+      "maximumCenterKnockbackImpulse": 1.0,
+      "grenade": false,
+      "curveP": 1.6,
+      "curveQ": 1.4
+    },
+    {
+      "gunId": "cib:dzj08",
+      "dataId": "cib:dzj08_data",
+      "directDamage": 8,
+      "explosionDamage": 30,
+      "damageRadius": 8,
+      "terrainPower": 6,
+      "maximumCenterKnockbackImpulse": 1.0,
+      "grenade": false,
+      "curveP": 1.6,
+      "curveQ": 1.4
+    },
+    {
+      "gunId": "cib:qlu11",
+      "dataId": "cib:qlu11_data",
+      "directDamage": 5,
+      "explosionDamage": 18,
+      "damageRadius": 8,
+      "terrainPower": 3,
+      "maximumCenterKnockbackImpulse": 0.6,
+      "grenade": true,
+      "curveP": 1.35,
+      "curveQ": 1.65
+    },
+    {
+      "gunId": "classicr:mgl_40mm",
+      "dataId": "classicr:mgl_40mm_data",
+      "directDamage": 4,
+      "explosionDamage": 18,
+      "damageRadius": 8,
+      "terrainPower": 3,
+      "maximumCenterKnockbackImpulse": 0.6,
+      "grenade": true,
+      "curveP": 1.35,
+      "curveQ": 1.65
+    },
+    {
+      "gunId": "rainforest:at4",
+      "dataId": "rainforest:at4_data",
+      "directDamage": 10,
+      "explosionDamage": 34,
+      "damageRadius": 9,
+      "terrainPower": 6,
+      "maximumCenterKnockbackImpulse": 1.0,
+      "grenade": false,
+      "curveP": 1.6,
+      "curveQ": 1.4
+    },
+    {
+      "gunId": "rainforest:m72",
+      "dataId": "rainforest:m72_data",
+      "directDamage": 8,
+      "explosionDamage": 30,
+      "damageRadius": 8,
+      "terrainPower": 6,
+      "maximumCenterKnockbackImpulse": 1.0,
+      "grenade": false,
+      "curveP": 1.6,
+      "curveQ": 1.4
+    },
+    {
+      "gunId": "suffuse:aiyasinrpg",
+      "dataId": "suffuse:aiyasinrpg_data",
+      "directDamage": 12,
+      "explosionDamage": 38,
+      "damageRadius": 10,
+      "terrainPower": 6,
+      "maximumCenterKnockbackImpulse": 1.0,
+      "grenade": false,
+      "curveP": 1.6,
+      "curveQ": 1.4
+    },
+    {
+      "gunId": "suffuse:m203",
+      "dataId": "suffuse:m203_data",
+      "directDamage": 4,
+      "explosionDamage": 24,
+      "damageRadius": 8,
+      "terrainPower": 3,
+      "maximumCenterKnockbackImpulse": 0.6,
+      "grenade": true,
+      "curveP": 1.35,
+      "curveQ": 1.65
+    },
+    {
+      "gunId": "suffuse:m79",
+      "dataId": "suffuse:m79_data",
+      "directDamage": 5,
+      "explosionDamage": 26,
+      "damageRadius": 8,
+      "terrainPower": 3,
+      "maximumCenterKnockbackImpulse": 0.6,
+      "grenade": true,
+      "curveP": 1.35,
+      "curveQ": 1.65
+    },
+    {
+      "gunId": "suffuse:pf98a",
+      "dataId": "suffuse:pf98a_data",
+      "directDamage": 14,
+      "explosionDamage": 44,
+      "damageRadius": 12,
+      "terrainPower": 6.5,
+      "maximumCenterKnockbackImpulse": 1.2,
+      "grenade": false,
+      "curveP": 1.6,
+      "curveQ": 1.4
+    },
+    {
+      "gunId": "suffuse:qlu11",
+      "dataId": "suffuse:qlu11_data",
+      "directDamage": 5,
+      "explosionDamage": 20,
+      "damageRadius": 8,
+      "terrainPower": 3,
+      "maximumCenterKnockbackImpulse": 0.6,
+      "grenade": true,
+      "curveP": 1.35,
+      "curveQ": 1.65
+    },
+    {
+      "gunId": "tacz:m320",
+      "dataId": "tacz:m320_data",
+      "directDamage": 5,
+      "explosionDamage": 26,
+      "damageRadius": 8,
+      "terrainPower": 3,
+      "maximumCenterKnockbackImpulse": 0.6,
+      "grenade": true,
+      "curveP": 1.35,
+      "curveQ": 1.65
+    },
+    {
+      "gunId": "tacz:rpg7",
+      "dataId": "tacz:rpg7_data",
+      "directDamage": 10,
+      "explosionDamage": 34,
+      "damageRadius": 9,
+      "terrainPower": 6,
+      "maximumCenterKnockbackImpulse": 1.0,
+      "grenade": false,
+      "curveP": 1.6,
+      "curveQ": 1.4
+    }
+  ]
+}

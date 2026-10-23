@@ -1,0 +1,880 @@
+{
+  "description": "Balanced mod defaults adapted from PUBG patch notes and PUBGMC. Not official PUBG spawn percentages.",
+  "profiles": {
+    "very_low": {
+      "categoryProbabilities": {
+        "gun": 0.22,
+        "scope": 0.04,
+        "magazine": 0.05,
+        "muzzle": 0.04,
+        "grip": 0.04,
+        "stock": 0.02,
+        "laser": 0.01,
+        "medical": 0.24,
+        "throwable": 0.12,
+        "helmet": 0.07,
+        "vest": 0.07,
+        "backpack": 0.08,
+        "ammo": 0,
+        "other_attachment": 0,
+        "item": 0
+      },
+      "items": [
+        {
+          "kind": "item",
+          "id": "tacz_pubg:bandage",
+          "minCount": 5,
+          "maxCount": 5,
+          "weight": 45
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:first_aid_kit",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 15
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:med_kit",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 1
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:energy_drink",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 28
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:painkiller",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 10
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:adrenaline_syringe",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 1
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:frag_grenade",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 30
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:smoke_grenade",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 32
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:stun_grenade",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 21
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:molotov",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 14
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:sticky_bomb",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 1
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:c4",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 1
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:blue_zone_grenade",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 1
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:helmet_1",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 85
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:helmet_2",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 15
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:helmet_3",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 0
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:vest_1",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 80
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:vest_2",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 19
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:vest_3",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 1
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:backpack_1",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 80
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:backpack_2",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 19
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:backpack_3",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 1
+        }
+      ]
+    },
+    "low": {
+      "categoryProbabilities": {
+        "gun": 0.24,
+        "scope": 0.05,
+        "magazine": 0.05,
+        "muzzle": 0.04,
+        "grip": 0.04,
+        "stock": 0.02,
+        "laser": 0.01,
+        "medical": 0.22,
+        "throwable": 0.12,
+        "helmet": 0.07,
+        "vest": 0.07,
+        "backpack": 0.07,
+        "ammo": 0,
+        "other_attachment": 0,
+        "item": 0
+      },
+      "items": [
+        {
+          "kind": "item",
+          "id": "tacz_pubg:bandage",
+          "minCount": 5,
+          "maxCount": 5,
+          "weight": 38
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:first_aid_kit",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 20
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:med_kit",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 2
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:energy_drink",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 28
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:painkiller",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 11
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:adrenaline_syringe",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 1
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:frag_grenade",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 30
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:smoke_grenade",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 34
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:stun_grenade",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 19
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:molotov",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 13
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:sticky_bomb",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 2
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:c4",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 1
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:blue_zone_grenade",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 1
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:helmet_1",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 70
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:helmet_2",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 30
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:helmet_3",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 0
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:vest_1",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 65
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:vest_2",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 32
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:vest_3",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 3
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:backpack_1",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 65
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:backpack_2",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 32
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:backpack_3",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 3
+        }
+      ]
+    },
+    "medium": {
+      "categoryProbabilities": {
+        "gun": 0.25,
+        "scope": 0.06,
+        "magazine": 0.06,
+        "muzzle": 0.05,
+        "grip": 0.04,
+        "stock": 0.02,
+        "laser": 0.01,
+        "medical": 0.2,
+        "throwable": 0.12,
+        "helmet": 0.06,
+        "vest": 0.06,
+        "backpack": 0.07,
+        "ammo": 0,
+        "other_attachment": 0,
+        "item": 0
+      },
+      "items": [
+        {
+          "kind": "item",
+          "id": "tacz_pubg:bandage",
+          "minCount": 5,
+          "maxCount": 5,
+          "weight": 30
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:first_aid_kit",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 24
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:med_kit",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 3
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:energy_drink",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 28
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:painkiller",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 13
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:adrenaline_syringe",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 2
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:frag_grenade",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 30
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:smoke_grenade",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 35
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:stun_grenade",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 17
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:molotov",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 12
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:sticky_bomb",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 3
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:c4",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 1
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:blue_zone_grenade",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 2
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:helmet_1",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 50
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:helmet_2",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 49
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:helmet_3",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 1
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:vest_1",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 48
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:vest_2",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 46
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:vest_3",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 6
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:backpack_1",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 48
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:backpack_2",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 46
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:backpack_3",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 6
+        }
+      ]
+    },
+    "high": {
+      "categoryProbabilities": {
+        "gun": 0.26,
+        "scope": 0.06,
+        "magazine": 0.06,
+        "muzzle": 0.05,
+        "grip": 0.04,
+        "stock": 0.02,
+        "laser": 0.01,
+        "medical": 0.2,
+        "throwable": 0.12,
+        "helmet": 0.06,
+        "vest": 0.06,
+        "backpack": 0.06,
+        "ammo": 0,
+        "other_attachment": 0,
+        "item": 0
+      },
+      "items": [
+        {
+          "kind": "item",
+          "id": "tacz_pubg:bandage",
+          "minCount": 5,
+          "maxCount": 5,
+          "weight": 25
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:first_aid_kit",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 28
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:med_kit",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 4
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:energy_drink",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 26
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:painkiller",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 14
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:adrenaline_syringe",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 3
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:frag_grenade",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 30
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:smoke_grenade",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 35
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:stun_grenade",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 16
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:molotov",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 12
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:sticky_bomb",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 3
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:c4",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 1
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:blue_zone_grenade",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 3
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:helmet_1",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 35
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:helmet_2",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 63
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:helmet_3",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 2
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:vest_1",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 35
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:vest_2",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 55
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:vest_3",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 10
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:backpack_1",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 35
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:backpack_2",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 55
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:backpack_3",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 10
+        }
+      ]
+    },
+    "very_high": {
+      "categoryProbabilities": {
+        "gun": 0.28,
+        "scope": 0.07,
+        "magazine": 0.07,
+        "muzzle": 0.06,
+        "grip": 0.04,
+        "stock": 0.02,
+        "laser": 0.01,
+        "medical": 0.18,
+        "throwable": 0.12,
+        "helmet": 0.05,
+        "vest": 0.05,
+        "backpack": 0.05,
+        "ammo": 0,
+        "other_attachment": 0,
+        "item": 0
+      },
+      "items": [
+        {
+          "kind": "item",
+          "id": "tacz_pubg:bandage",
+          "minCount": 5,
+          "maxCount": 5,
+          "weight": 15
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:first_aid_kit",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 32
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:med_kit",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 7
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:energy_drink",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 27
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:painkiller",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 15
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:adrenaline_syringe",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 4
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:frag_grenade",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 28
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:smoke_grenade",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 35
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:stun_grenade",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 15
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:molotov",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 12
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:sticky_bomb",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 4
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:c4",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 2
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:blue_zone_grenade",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 4
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:helmet_1",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 15
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:helmet_2",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 80
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:helmet_3",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 5
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:vest_1",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 15
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:vest_2",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 60
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:vest_3",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 25
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:backpack_1",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 15
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:backpack_2",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 60
+        },
+        {
+          "kind": "item",
+          "id": "tacz_pubg:backpack_3",
+          "minCount": 1,
+          "maxCount": 1,
+          "weight": 25
+        }
+      ]
+    }
+  }
+}

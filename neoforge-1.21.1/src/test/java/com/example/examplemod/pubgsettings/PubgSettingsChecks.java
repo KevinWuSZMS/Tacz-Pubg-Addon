@@ -1,0 +1,66 @@
+package com.example.examplemod.pubgsettings;
+
+import com.example.examplemod.pubgsettings.client.PubgSettingsScreen;
+import io.netty.buffer.Unpooled;
+import java.util.LinkedHashMap;
+import java.util.Locale;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.neoforged.neoforge.network.connection.ConnectionType;
+
+public final class PubgSettingsChecks {
+    private static int checks;
+    public static void main(String[] args) {
+        var initial=PubgSettings.initial();
+        check(initial.values().isEmpty()&&initial.toJson().equals("{}"),"Old worlds retain all versioned defaults without verbose overrides");
+        check(initial.integer("medicine.recovery_step_ticks")==4&&initial.number("medicine.first_aid_step_percent")==15,"Screenshot inference remains an explicit configurable 15 point / 0.2s default");
+        check(!initial.enabled("hud.hide_hotbar"),"Native slots six to nine retain visibility by default");
+        check(initial.integer("map.entity_recording_prompt_side_length")==500,"Large-map entity choice defaults to the area of a 500 by 500 block map");
+        check(PubgSettings.parse(initial.with("map.entity_recording_prompt_side_length",8192).toJson()).integer("map.entity_recording_prompt_side_length")==8192,"Administrator threshold persists independently");
+        rejects(()->initial.with("map.entity_recording_prompt_side_length",0));
+        rejects(()->initial.with("map.entity_recording_prompt_side_length",500.5));
+        var all=new LinkedHashMap<String,Double>();
+        for(var f:PubgSettings.fields()) {
+            f.validate(f.initial()); f.validate(f.minimum()); f.validate(f.maximum());
+            check(Double.isFinite(initial.number(f.key())),"Every field has a finite default");
+            if(!f.key().endsWith("threshold"))all.put(f.key(),f.maximum());
+        }
+        all.put("hud.health_red_threshold",.2);all.put("hud.health_apricot_threshold",.6);
+        var maximum=new PubgSettings(all);
+        check(maximum.toJson().length()<PubgSettings.MAX_JSON,"All 100 team colors and numeric overrides fit the wire bound");
+        check(PubgSettings.parse(maximum.toJson()).equals(maximum),"Full catalog round trip");
+        for(String bad:new String[]{"null","[]","{\"hud.bar_width\":200,\"hud.bar_width\":220}","{\"unknown\":1}","{\"hud.bar_width\":\"240\"}","{\"hud.bar_width\":239.5}","{\"hud.bar_width\":99999}","{\"hud.bar_width\":NaN}","{} trailing","{\"hud.hide_hotbar\":2}","{\"hud.health_red_threshold\":0.5,\"hud.health_apricot_threshold\":0.4}"})rejects(()->PubgSettings.parse(bad));
+        rejects(()->PubgSettings.parse(" ".repeat(PubgSettings.MAX_JSON+1)));
+        rejects(()->initial.with("map.arrowSpeed",Double.POSITIVE_INFINITY));
+        var raw=new LinkedHashMap<String,String>();
+        for(var f:PubgSettings.fields())raw.put(f.key(),f.kind()==PubgSettings.Kind.COLOR?String.format(Locale.ROOT,"#%08X",(long)f.initial()):Double.toString(f.initial()));
+        check(PubgSettingsScreen.parseDraft(raw).equals(initial),"Editor accepts all initial field types");
+        raw.put("hud.health_red","#123456");check(PubgSettingsScreen.parseDraft(raw).color("hud.health_red")==0xff123456,"Six-digit color gets full alpha");
+        raw.put("hud.health_red","#40123456");check(PubgSettingsScreen.parseDraft(raw).color("hud.health_red")==0x40123456,"Eight-digit color retains authored opacity");
+        raw.put("hud.health_red","#GG123456");rejects(()->PubgSettingsScreen.parseDraft(raw));
+        raw.put("hud.health_red","#40123456");raw.put("combat.message_rows","");rejects(()->PubgSettingsScreen.parseDraft(raw));
+        var data=PubgSettingsSavedData.load(new CompoundTag(),null);
+        check(data.readable()&&data.revision()==0,"Empty world starts at revision zero");
+        check(data.update(0,maximum)&&data.revision()==1,"Matching revision saves atomically");
+        check(!data.update(0,initial)&&data.settings().equals(maximum),"Stale admin cannot overwrite a concurrent edit");
+        var encoded=data.save(new CompoundTag(),null);var restored=PubgSettingsSavedData.load(encoded,null);
+        check(restored.readable()&&restored.settings().equals(maximum)&&restored.revision()==1,"Saved overrides and revision survive restart");
+        var corrupt=encoded.copy();corrupt.putString("settings","{broken");var protectedData=PubgSettingsSavedData.load(corrupt,null);
+        check(!protectedData.readable()&&!protectedData.update(1,initial)&&protectedData.save(new CompoundTag(),null).equals(corrupt),"Malformed source is preserved and protected from overwrite");
+        var future=encoded.copy();future.putInt("version",99);check(!PubgSettingsSavedData.load(future,null).readable(),"Unknown future version protected");
+        check(round(PubgSettingsPayloads.Request.CODEC,new PubgSettingsPayloads.Request(20)).requestId()==20,"Explicit reload identity survives wire");
+        var save=new PubgSettingsPayloads.Save(21,7,maximum);check(round(PubgSettingsPayloads.Save.CODEC,save).equals(save),"Save identity/revision/settings remain in order");
+        for(int status=0;status<4;status++){var state=new PubgSettingsPayloads.State(21,8,maximum,status);check(round(PubgSettingsPayloads.State.CODEC,state).equals(state),"Reply status and request identity survive wire");}
+        rejects(()->new PubgSettingsPayloads.Request(0));rejects(()->new PubgSettingsPayloads.Save(0,0,initial));rejects(()->new PubgSettingsPayloads.State(0,0,initial,1));
+        check(round(PubgSettingsPayloads.State.CODEC,new PubgSettingsPayloads.State(0,8,maximum,0)).requestId()==0,"Broadcast is distinct from explicit acknowledgement");
+        System.out.println("PubgSettingsChecks: "+checks+" checks passed; no game launched.");
+    }
+    private static <T>T round(StreamCodec<RegistryFriendlyByteBuf,T> codec,T value) {
+        var b=new RegistryFriendlyByteBuf(Unpooled.buffer(),RegistryAccess.EMPTY,ConnectionType.NEOFORGE);
+        try{codec.encode(b,value);T copy=codec.decode(b);check(b.readableBytes()==0,"No unread wire data");return copy;}finally{b.release();}
+    }
+    private static void rejects(Runnable action){try{action.run();}catch(IllegalArgumentException expected){checks++;return;}throw new AssertionError("Invalid value accepted");}
+    private static void check(boolean value,String why){checks++;if(!value)throw new AssertionError(why);}
+}
