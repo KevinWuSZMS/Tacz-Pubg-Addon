@@ -388,6 +388,7 @@ tasks.named('check').configure { dependsOn droppedLootTransitionChecks }
         detailedItemGeometryChecks: 'com.example.examplemod.originalicons.client.DetailedItemGeometryChecks',
         seamlessPixelGeometryChecks: 'com.example.examplemod.originalicons.client.SeamlessPixelGeometryChecks',
         throwableTrajectoryGeometryChecks: 'com.example.examplemod.throwables.client.ThrowableTrajectoryGeometryChecks',
+        radialWheelChecks: 'com.example.examplemod.throwables.client.RadialWheelChecks',
         modelScaleChecks: 'com.example.examplemod.modelscale.ModelScaleChecks',
         throwableSettingsChecks: 'com.example.examplemod.throwables.ThrowableSettingsChecks',
         throwableSettingsFieldNamesChecks: 'com.example.examplemod.throwables.client.ThrowableSettingsFieldNamesChecks',

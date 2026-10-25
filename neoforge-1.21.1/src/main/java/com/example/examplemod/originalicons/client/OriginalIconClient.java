@@ -3,6 +3,7 @@ package com.example.examplemod.originalicons.client;
 import com.example.examplemod.originalicons.OriginalIconCatalog;
 import com.example.examplemod.originalicons.OriginalIconPayloads;
 import com.example.examplemod.originalicons.OriginalIconState;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.tacz.guns.api.item.IAmmo;
 import com.tacz.guns.api.item.IAttachment;
@@ -10,6 +11,7 @@ import com.tacz.guns.api.item.IGun;
 import java.util.HashMap;
 import java.util.Map;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -53,6 +55,30 @@ public final class OriginalIconClient {
         if (stack.getItem() instanceof me.xjqsh.lrtactical.api.item.IThrowable throwable)
             return OriginalIconCatalog.find("throwable", throwable.getId(stack).toString());
         return null;
+    }
+    /** Fixed UI artwork: bypasses item models and the inventory icon preference. */
+    public static boolean drawGui(GuiGraphics graphics, ItemStack stack, int x, int y, int size) {
+        if (stack.isEmpty() || size <= 0) return false;
+        var icon = find(stack);
+        if (icon == null) return false;
+        var texture = ResourceLocation.parse(icon.texture());
+        if (!AVAILABLE.computeIfAbsent(texture, id -> Minecraft.getInstance().getResourceManager().getResource(id).isPresent()))
+            return false;
+        int width = Math.max(1, Math.round(size * Math.min(1f, (float) icon.width() / icon.height())));
+        int height = Math.max(1, Math.round(size * Math.min(1f, (float) icon.height() / icon.width())));
+        // Finish buffered backgrounds before the immediate texture draw.
+        graphics.flush();
+        float[] previous = RenderSystem.getShaderColor().clone();
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.setShaderColor(1, 1, 1, 1);
+        try {
+            graphics.blit(texture, x + (size - width) / 2, y + (size - height) / 2, width, height,
+                    0, 0, icon.width(), icon.height(), icon.width(), icon.height());
+        } finally {
+            RenderSystem.setShaderColor(previous[0], previous[1], previous[2], previous[3]);
+        }
+        return true;
     }
     public static boolean render(ItemStack stack, ItemDisplayContext context, PoseStack pose, MultiBufferSource buffers) {
         if (context != ItemDisplayContext.GUI || !OriginalIconState.enabled() || stack.isEmpty()) return false;

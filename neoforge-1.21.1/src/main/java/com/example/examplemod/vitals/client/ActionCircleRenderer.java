@@ -1,6 +1,7 @@
 package com.example.examplemod.vitals.client;
 
 import com.example.examplemod.hud.client.HudLayoutModel;
+import com.example.examplemod.originalicons.client.OriginalIconClient;
 import com.example.examplemod.pubgsettings.PubgSettingsService;
 import java.util.Locale;
 import net.minecraft.client.Minecraft;
@@ -29,7 +30,7 @@ public final class ActionCircleRenderer {
         CombatHudDraw.arc(graphics, cx, cy, radius, settings.number("medicine.circle_line_width"), 0, 360, settings.color("medicine.circle_track"));
         CombatHudDraw.arc(graphics, cx, cy, radius, settings.number("medicine.circle_line_width"), 0,
                 progress(remaining, duration) * 360, settings.color("medicine.circle_progress"));
-        if (!picture.isEmpty()) graphics.renderItem(picture, cx - 8, cy - 8);
+        if (!picture.isEmpty()) OriginalIconClient.drawGui(graphics, picture, cx - 8, cy - 8, 16);
         else if (rescue) CombatHudDraw.plus(graphics, cx - 8, cy - 8, 16, 0x707F817E);
         graphics.pose().pushPose(); graphics.pose().translate(0, 0, 200);
         CombatHudNumbers.drawCentered(graphics, String.format(Locale.ROOT, "%.1f", Math.max(0, remaining) / 20.0), cx, cy - 4.5f, 9, 0xFFFFFFFF);

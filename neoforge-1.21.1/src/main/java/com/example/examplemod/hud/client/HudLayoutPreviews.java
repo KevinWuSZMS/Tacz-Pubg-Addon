@@ -2,6 +2,7 @@ package com.example.examplemod.hud.client;
 
 import com.example.examplemod.localization.Texts;
 import com.example.examplemod.lootspawn.client.GroundLootClient;
+import com.example.examplemod.throwables.client.RadialWheelRenderer;
 import com.example.examplemod.vitals.client.PubgVitalsLayout;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -24,11 +25,7 @@ final class HudLayoutPreviews {
                     Math.max(Math.min(150, w - 24), textWidth(medicineLabel())), 16);
             case "throwable_status" -> centeredRect(w, Math.min(h - 105, h / 2 + 35) - 22,
                     Math.max(textWidth(translated("screen.tacz_pubg.throwable.fuse", "3.5")), textWidth(throwableControls())), 45);
-            case "throwable_wheel", "medicine_wheel" -> {
-                double ring = Math.min(82, Math.min(w, h) * .3);
-                int width = (int) Math.ceil(ring * 2 + 60), height = (int) Math.ceil(ring * 2 + 85);
-                yield rect(w / 2 - width / 2, h / 2 - height / 2, width, height);
-            }
+            case "throwable_wheel", "medicine_wheel" -> RadialWheelRenderer.bounds(w, h);
             case "match_phase" -> HudLayoutClient.mapHeader(w, h);
             case "alive_counter" -> {
                 int width = (int) Math.ceil(textWidth("64") * 1.6)
@@ -165,21 +162,7 @@ final class HudLayoutPreviews {
         }
     }
     private static void wheel(GuiGraphics g, HudLayoutModel.Rect r, boolean medical) {
-        String[] items = medical ? new String[]{"med_kit", "first_aid_kit", "bandage", "energy_drink", "painkiller", "adrenaline_syringe"}
-                : new String[]{"frag_grenade", "stun_grenade", "smoke_grenade", "molotov", "sticky_bomb", "c4", "blue_zone_grenade"};
-        double radius = Math.max(0, (r.width() - 60) * .5);
-        for (int i = 0; i < items.length; i++) {
-            double angle = i * Math.PI * 2 / items.length - Math.PI / 2;
-            int x = r.x() + r.width() / 2 + (int) (Math.cos(angle) * radius);
-            int y = r.y() + r.height() / 2 + (int) (Math.sin(angle) * radius);
-            g.fill(x - 25, y - 25, x + 25, y + 25, i == 0 ? 0xD0B68B38 : 0xB02A3038);
-            icon(g, items[i], x - 8, y - 13);
-            g.drawCenteredString(Minecraft.getInstance().font, "1", x, y + 8, 0xFFFFFFFF);
-        }
-        centered(g, binding(medical ? "medicine_wheel" : "throwable_wheel").getString(),
-                r, r.y() + r.height() / 2 - 4, 0xFFE6E4D9);
-        centered(g, translated(medical ? "screen.tacz_pubg.throwable.medicine_wheel" : "screen.tacz_pubg.throwable.throwable_wheel"),
-                r, r.y() + 4, 0xFFFFE4A0);
+        RadialWheelRenderer.draw(g, r, medical, 0, new int[]{1, 1, 1, 1, 1, 1});
     }
     private static int textWidth(String text) { return Minecraft.getInstance().font.width(text); }
     private static String translated(String key, Object... args) { return Texts.of(key, args).getString(); }
