@@ -1,0 +1,33 @@
+{
+  "font": "Bebas Neue Regular",
+  "license": "SIL Open Font License 1.1",
+  "font_source": "https://github.com/google/fonts/blob/main/ofl/bebasneue/BebasNeue-Regular.ttf",
+  "license_source": "https://github.com/google/fonts/blob/main/ofl/bebasneue/OFL.txt",
+  "font_sha256": "08e4623805102d819f58601e46e345648846075e363b2ceb23313c2d1c83ec73",
+  "characters": "0123456789%∞.—-:/",
+  "cell": 64,
+  "columns": 8,
+  "padding": 4,
+  "cap_height": 48.5,
+  "advances": [
+    26.75,
+    26.75,
+    26.75,
+    26.75,
+    26.75,
+    26.75,
+    26.75,
+    26.75,
+    26.75,
+    26.75,
+    39.5,
+    43.0,
+    12.5,
+    33.5,
+    18.0,
+    12.5,
+    26.0
+  ],
+  "generator": "scripts/build-hud-number-atlas.py",
+  "notes": "All glyphs are rasterized from the bundled font with 4x supersampling. No hand-drawn digits."
+}

@@ -1,0 +1,203 @@
+{
+  "source": "docs/repository/status-bar-assets/equipment-generated.png",
+  "source_sha256": "ff7fa96d32cd79d98ffd0b0bff6f0bd53c84c4c0cedb1d3e898c9c99809a9463",
+  "reference": "docs/repository/status-bar-assets/equipment-reference-grid.png",
+  "prompt": "docs/repository/status-bar-assets/imagegen-final-prompt.txt",
+  "generator": "Built-in image_gen; no API fallback",
+  "postprocess": "User-approved neutral-color alpha cleanup, speckle removal, white mask normalization, crop and resample; no redrawn geometry.",
+  "script": "scripts/prepare-status-equipment.py",
+  "outputs": [
+    {
+      "file": "backpack_0.png",
+      "atlas_cell_xyxy": [
+        0,
+        0,
+        362,
+        362
+      ],
+      "alpha_bounds": [
+        50,
+        50,
+        77,
+        77
+      ],
+      "sha256": "9aa5ee3edebc0d59739c22c315eaee42336dca817ddcfefd2e0b9e78be23e3a5"
+    },
+    {
+      "file": "helmet_0.png",
+      "atlas_cell_xyxy": [
+        362,
+        0,
+        724,
+        362
+      ],
+      "alpha_bounds": [
+        19,
+        10,
+        108,
+        118
+      ],
+      "sha256": "94ea7f7a3260b388f3a4b933018f18ba835b321f0efcccf122a3301f6ce38c57"
+    },
+    {
+      "file": "armor_0.png",
+      "atlas_cell_xyxy": [
+        724,
+        0,
+        1086,
+        362
+      ],
+      "alpha_bounds": [
+        10,
+        17,
+        118,
+        111
+      ],
+      "sha256": "1cf7119501e353a85cb8d9d889798fe58e935f60c3100fc263c946c2fd143200"
+    },
+    {
+      "file": "backpack_1.png",
+      "atlas_cell_xyxy": [
+        0,
+        362,
+        362,
+        724
+      ],
+      "alpha_bounds": [
+        14,
+        10,
+        114,
+        118
+      ],
+      "sha256": "efc4dc427b2036769a1b35edd34048c3f04b9c57b2dbc77f740a77d3cfa7969d"
+    },
+    {
+      "file": "helmet_1.png",
+      "atlas_cell_xyxy": [
+        362,
+        362,
+        724,
+        724
+      ],
+      "alpha_bounds": [
+        10,
+        15,
+        118,
+        112
+      ],
+      "sha256": "bffdcdd40dd1c31c986a918db3f9b301ca5e7c2b1f95ff8398f799a72793f018"
+    },
+    {
+      "file": "armor_1.png",
+      "atlas_cell_xyxy": [
+        724,
+        362,
+        1086,
+        724
+      ],
+      "alpha_bounds": [
+        14,
+        10,
+        113,
+        118
+      ],
+      "sha256": "ee9728c1b141c1053161fe0ddfbcc98096eb4003f1ae7df403f0303d1adce36e"
+    },
+    {
+      "file": "backpack_2.png",
+      "atlas_cell_xyxy": [
+        0,
+        724,
+        362,
+        1086
+      ],
+      "alpha_bounds": [
+        11,
+        10,
+        116,
+        118
+      ],
+      "sha256": "fb0993d8d5a47621dad0f25e8fef1204979788d2ec797598bd7b685c9c78bd30"
+    },
+    {
+      "file": "helmet_2.png",
+      "atlas_cell_xyxy": [
+        362,
+        724,
+        724,
+        1086
+      ],
+      "alpha_bounds": [
+        10,
+        26,
+        118,
+        102
+      ],
+      "sha256": "7131fb4c45d138dbf0555d3fed83dc64e8dc13e04c325d75204ea8f4a98a4989"
+    },
+    {
+      "file": "armor_2.png",
+      "atlas_cell_xyxy": [
+        724,
+        724,
+        1086,
+        1086
+      ],
+      "alpha_bounds": [
+        14,
+        10,
+        114,
+        118
+      ],
+      "sha256": "a691f2f398b2c572682beb7a05968f5f1c982e3fb0255db78729152ce7802422"
+    },
+    {
+      "file": "backpack_3.png",
+      "atlas_cell_xyxy": [
+        0,
+        1086,
+        362,
+        1448
+      ],
+      "alpha_bounds": [
+        12,
+        10,
+        116,
+        118
+      ],
+      "sha256": "3ca3580816d0981fec0af08c94357d039ef5ba3c103efc86991e6b3fc60dfabd"
+    },
+    {
+      "file": "helmet_3.png",
+      "atlas_cell_xyxy": [
+        362,
+        1086,
+        724,
+        1448
+      ],
+      "alpha_bounds": [
+        10,
+        23,
+        118,
+        105
+      ],
+      "sha256": "75b179816e1e92589efb54459b80f7360f99b6723f0280ffe3cfc420f89e6cae"
+    },
+    {
+      "file": "armor_3.png",
+      "atlas_cell_xyxy": [
+        724,
+        1086,
+        1086,
+        1448
+      ],
+      "alpha_bounds": [
+        16,
+        10,
+        111,
+        118
+      ],
+      "sha256": "a561053dc9aab97f09cea56b07e05dfee5b9e1ab2be204c899b2360543b5102c"
+    }
+  ]
+}

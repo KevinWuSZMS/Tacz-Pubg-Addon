@@ -32,7 +32,7 @@ public final class ActionCircleRenderer {
         if (!picture.isEmpty()) graphics.renderItem(picture, cx - 8, cy - 8);
         else if (rescue) CombatHudDraw.plus(graphics, cx - 8, cy - 8, 16, 0x707F817E);
         graphics.pose().pushPose(); graphics.pose().translate(0, 0, 200);
-        graphics.drawCenteredString(Minecraft.getInstance().font, String.format(Locale.ROOT, "%.1f", Math.max(0, remaining) / 20.0), cx, cy - 4, 0xFFFFFFFF);
+        CombatHudNumbers.drawCentered(graphics, String.format(Locale.ROOT, "%.1f", Math.max(0, remaining) / 20.0), cx, cy - 4.5f, 9, 0xFFFFFFFF);
         graphics.pose().popPose();
         var font = Minecraft.getInstance().font;
         int textX = cx + radius + 9, maxWidth = Math.max(1, bounds.width() - radius * 2 - 12);

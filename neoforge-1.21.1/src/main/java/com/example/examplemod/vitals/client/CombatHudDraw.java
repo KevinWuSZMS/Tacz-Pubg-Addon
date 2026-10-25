@@ -27,23 +27,9 @@ public final class CombatHudDraw {
         }
     }
     public static void plus(GuiGraphics g, int x, int y, int size, int color) {
-        int stroke = Math.max(2, size / 4), middle = (size - stroke) / 2;
-        g.fill(x + middle, y, x + middle + stroke, y + size, color);
-        g.fill(x, y + middle, x + size, y + middle + stroke, color);
+        CombatHudTextures.draw(g, CombatHudTextures.HEAL, x, y, size, size, color);
     }
     public static void runner(GuiGraphics g, int x, int y, int size, int color) {
-        float scale = size / 16f;
-        g.pose().pushPose(); g.pose().translate(x, y, 0); g.pose().scale(scale, scale, 1);
-        disk(g, 10, 2, 2, color);
-        line(g, 8, 5, 6, 9, 2, color); line(g, 8, 5, 12, 7, 2, color); line(g, 12, 7, 14, 5, 2, color);
-        line(g, 8, 5, 4, 6, 2, color); line(g, 4, 6, 2, 10, 2, color);
-        line(g, 6, 9, 10, 12, 2, color); line(g, 10, 12, 8, 16, 2, color);
-        line(g, 6, 9, 4, 12, 2, color); line(g, 4, 12, 0, 13, 2, color);
-        g.pose().popPose();
-    }
-    private static void line(GuiGraphics g, int x1, int y1, int x2, int y2, int thickness, int color) {
-        int steps = Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1));
-        for (int i = 0; i <= steps; i++) { int x = x1 + (x2 - x1) * i / Math.max(1, steps), y = y1 + (y2 - y1) * i / Math.max(1, steps);
-            g.fill(x, y, x + thickness, y + thickness, color); }
+        CombatHudTextures.draw(g, CombatHudTextures.SPRINT, x, y, size, size, color);
     }
 }

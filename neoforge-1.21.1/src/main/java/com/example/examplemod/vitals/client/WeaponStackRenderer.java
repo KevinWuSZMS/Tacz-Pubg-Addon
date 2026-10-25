@@ -75,7 +75,7 @@ public final class WeaponStackRenderer {
                 int y = bounds.y() + bounds.height() - (row + 1) * step;
                 drawGunSilhouette(g, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("tacz", row == 1 ? "m1911" : "m4a1"),
                         bounds.x(), y + 3, bounds.width() - 14, Math.max(1, Math.min(step - 4, (bounds.width() - 14) / 3)), row == 0 ? 0xFFFFFFFF : 0x70FFFFFF);
-                g.drawString(mc.font, Integer.toString(row == 0 ? 1 : row == 1 ? 3 : 5), bounds.x() + bounds.width() - 7, y + 5, 0xFFC7C8C7, false);
+                CombatHudNumbers.draw(g, Integer.toString(row == 0 ? 1 : row == 1 ? 3 : 5), bounds.x() + bounds.width() - 7, y + 5, 0xFFC7C8C7);
             }
             return;
         }
@@ -87,7 +87,7 @@ public final class WeaponStackRenderer {
             var gun = WeaponHudData.read(mc.player, item);
             boolean empty = chosen && gun.present() && gun.loaded() == 0;
             int color = empty ? 0xFFFF5555 : ((int) (alpha * 255) << 24) | 0xFFFFFF;
-            g.drawString(mc.font, Integer.toString(slot + 1), bounds.x() + bounds.width() - 7, y + 6, color, false);
+            CombatHudNumbers.draw(g, Integer.toString(slot + 1), bounds.x() + bounds.width() - 7, y + 6, color);
             if (item.getItem() instanceof IThrowable) {
                 var types = new LinkedHashMap<ThrowableKey, ItemStack>();
                 for (ItemStack stack : mc.player.getInventory().items) if (!stack.isEmpty() && stack.getItem() instanceof IThrowable) {
@@ -103,7 +103,7 @@ public final class WeaponStackRenderer {
                     g.pose().pushPose(); g.pose().translate(x, y, 0); g.pose().scale(size / 16f, size / 16f, 1);
                     g.renderItem(stack, 0, 0); g.pose().popPose();
                     RenderSystem.setShaderColor(1, 1, 1, 1);
-                    g.drawString(mc.font, Integer.toString(stack.getCount()), x, y + 15, ((int) (typeAlpha * 255) << 24) | 0xFFFFFF, false);
+                    CombatHudNumbers.draw(g, Integer.toString(stack.getCount()), x, y + 15, ((int) (typeAlpha * 255) << 24) | 0xFFFFFF);
                 }
             } else if (gun.present() && gun.texture() != null) {
                 drawGunSilhouette(g, item, bounds.x(), y + 3, bounds.width() - 13, step - 4, color);
