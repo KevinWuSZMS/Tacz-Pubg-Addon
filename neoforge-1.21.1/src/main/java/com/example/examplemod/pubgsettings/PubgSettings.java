@@ -132,6 +132,7 @@ public record PubgSettings(Map<String, Double> values) {
         c(f,"combat.kill_color",0xFFFF6B3DL); c(f,"combat.assist_color",0xFFFFB526L);
         c(f,"combat.own_color",0xFF57BDD8L); c(f,"combat.text_color",0xFFF1F1EEL);
         c(f,"combat.older_color",0xFFADB3B8L);
+        n(f,"lean.body_penetration_tolerance",.06,0,.15,false);
         n(f,"map.entity_recording_prompt_side_length",500,1,60000000,true);
         n(f,"map.headerGap",0,0,24,true); n(f,"map.headerHeight",18,12,40,true);
         n(f,"map.gaugeHeight",3,1,8,true); n(f,"map.headerBackgroundOpacity",.18,0,1,false);

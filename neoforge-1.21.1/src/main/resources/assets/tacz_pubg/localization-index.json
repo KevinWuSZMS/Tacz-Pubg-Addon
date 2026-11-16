@@ -2627,5 +2627,8 @@
   "70f31585040b": "screen.tacz_pubg.map_entities.description",
   "0a1639296d07": "screen.tacz_pubg.map_entities.record_all",
   "c8ee11f45f15": "screen.tacz_pubg.map_entities.record_none",
-  "3d76398764f2": "screen.tacz_pubg.map_entities.title"
+  "3d76398764f2": "screen.tacz_pubg.map_entities.title",
+  "ca4519f40368": "screen.tacz_pubg.battle_settings.field.lean.body_penetration_tolerance",
+  "d5cb194c0455": "screen.tacz_pubg.battle_settings.group.lean",
+  "73db83305df1": "screen.tacz_pubg.battle_settings.lean_body_tolerance_hint"
 }

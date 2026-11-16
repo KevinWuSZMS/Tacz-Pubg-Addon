@@ -62,14 +62,16 @@ public final class LeanViewTransition {
             double[] minimum = {box.minX, box.minY, box.minZ}, maximum = {box.maxX, box.maxY, box.maxZ};
             boolean intersects = true;
             for (int axis = 0; axis < 3; axis++) {
-                if (Math.abs(directions[axis]) < 1.0e-12) {
-                    if (origins[axis] < minimum[axis] || origins[axis] > maximum[axis]) { intersects = false; break; }
+                if (directions[axis] == 0) {
+                    // Only entering the open interior blocks; contact may slide along a face.
+                    if (origins[axis] <= minimum[axis] || origins[axis] >= maximum[axis]) { intersects = false; break; }
                 } else {
                     double a = (minimum[axis] - origins[axis]) / directions[axis];
                     double b = (maximum[axis] - origins[axis]) / directions[axis];
                     near = Math.max(near, Math.min(a, b));
                     far = Math.min(far, Math.max(a, b));
-                    if (near > far) { intersects = false; break; }
+                    // A single-point contact also permits retreat from a face and corner grazing.
+                    if (near >= far) { intersects = false; break; }
                 }
             }
             if (intersects) limit = Math.min(limit, Math.max(0, near - 1.0e-6));

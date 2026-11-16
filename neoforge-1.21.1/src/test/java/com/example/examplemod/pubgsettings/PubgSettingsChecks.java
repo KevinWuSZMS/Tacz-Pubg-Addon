@@ -17,6 +17,16 @@ public final class PubgSettingsChecks {
         check(initial.values().isEmpty()&&initial.toJson().equals("{}"),"Old worlds retain all versioned defaults without verbose overrides");
         check(initial.integer("medicine.recovery_step_ticks")==4&&initial.number("medicine.first_aid_step_percent")==15,"Screenshot inference remains an explicit configurable 15 point / 0.2s default");
         check(!initial.enabled("hud.hide_hotbar"),"Native slots six to nine retain visibility by default");
+        String leanTolerance="lean.body_penetration_tolerance";
+        check(initial.number(leanTolerance)==.06,"Lean body tolerance defaults to 0.06 blocks for the standard player scale");
+        check(PubgSettings.field(leanTolerance).kind()==PubgSettings.Kind.NUMBER&&PubgSettings.field(leanTolerance).group().equals("lean"),"Lean tolerance is a decimal field in the lean category");
+        check(PubgSettings.parse("{\"hud.bar_width\":200}").number(leanTolerance)==.06,"Existing settings without a lean override receive the new default");
+        check(PubgSettings.parse(initial.with(leanTolerance,.035).toJson()).number(leanTolerance)==.035,"Fractional lean tolerance survives storage without integer rounding");
+        check(initial.with(leanTolerance,0).number(leanTolerance)==0&&initial.with(leanTolerance,.15).number(leanTolerance)==.15,"Lean tolerance accepts both administrator range endpoints");
+        rejects(()->initial.with(leanTolerance,-.001));
+        rejects(()->initial.with(leanTolerance,.150001));
+        rejects(()->initial.with(leanTolerance,Double.NaN));
+        rejects(()->initial.with(leanTolerance,Double.POSITIVE_INFINITY));
         check(initial.integer("map.entity_recording_prompt_side_length")==500,"Large-map entity choice defaults to the area of a 500 by 500 block map");
         check(PubgSettings.parse(initial.with("map.entity_recording_prompt_side_length",8192).toJson()).integer("map.entity_recording_prompt_side_length")==8192,"Administrator threshold persists independently");
         rejects(()->initial.with("map.entity_recording_prompt_side_length",0));
@@ -37,6 +47,9 @@ public final class PubgSettingsChecks {
         var raw=new LinkedHashMap<String,String>();
         for(var f:PubgSettings.fields())raw.put(f.key(),f.kind()==PubgSettings.Kind.COLOR?String.format(Locale.ROOT,"#%08X",(long)f.initial()):Double.toString(f.initial()));
         check(PubgSettingsScreen.parseDraft(raw).equals(initial),"Editor accepts all initial field types");
+        raw.put(leanTolerance,"0.035");check(PubgSettingsScreen.parseDraft(raw).number(leanTolerance)==.035,"Administrator editor preserves decimal lean tolerance");
+        raw.put(leanTolerance,"0.16");rejects(()->PubgSettingsScreen.parseDraft(raw));
+        raw.put(leanTolerance,"0.06");
         raw.put("hud.health_red","#123456");check(PubgSettingsScreen.parseDraft(raw).color("hud.health_red")==0xff123456,"Six-digit color gets full alpha");
         raw.put("hud.health_red","#40123456");check(PubgSettingsScreen.parseDraft(raw).color("hud.health_red")==0x40123456,"Eight-digit color retains authored opacity");
         raw.put("hud.health_red","#GG123456");rejects(()->PubgSettingsScreen.parseDraft(raw));

@@ -25,7 +25,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 /** Administrator editor: raw drafts survive invalid input, category changes and conflicts. */
 public final class PubgSettingsScreen extends Screen implements ConfigUi.DraftPage {
-    private static final List<String> GROUPS = List.of("all","hud","medicine","dbno","rescue","combat","map","team");
+    private static final List<String> GROUPS = List.of("all","hud","medicine","dbno","rescue","combat","lean","map","team");
     private final Screen parent;
     private final Map<String,String> raw = new LinkedHashMap<>();
     private PubgSettings baseline = PubgSettingsService.client();
@@ -188,6 +188,8 @@ public final class PubgSettingsScreen extends Screen implements ConfigUi.DraftPa
             }
             widget.active=loaded&&!saving;
             widget.setTooltip(Tooltip.create(field.key().equals("map.entity_recording_prompt_side_length")?text("entity_recording_threshold_hint")
+                    :field.key().equals("lean.body_penetration_tolerance")?text("range",format(field,field.minimum()),format(field,field.maximum()),format(field,field.initial()))
+                            .copy().append("\n").append(text("lean_body_tolerance_hint"))
                     :field.kind()==PubgSettings.Kind.COLOR?text("color_hint")
                     :text("range",format(field,field.minimum()),format(field,field.maximum()),format(field,field.initial()))));
         }

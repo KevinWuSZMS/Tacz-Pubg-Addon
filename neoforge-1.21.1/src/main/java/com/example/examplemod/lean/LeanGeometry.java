@@ -3,6 +3,8 @@ package com.example.examplemod.lean;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
+import com.example.examplemod.pubgsettings.PubgSettingsService;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
@@ -11,6 +13,7 @@ import net.minecraft.world.phys.Vec3;
 /** Shared world-space lean rig. Its boxes are combat geometry, never the player's movement AABB. */
 public final class LeanGeometry {
     public static final double ROLL_RADIANS = Math.toRadians(22);
+    public static final double EYE_RADIUS = .08;
     private static final double MODEL_UNIT = .9375 / 16;
     private static final double WAIST_HALF_WIDTH = 4 * MODEL_UNIT;
     private static final double WAIST_HALF_DEPTH = 2 * MODEL_UNIT;
@@ -247,7 +250,7 @@ public final class LeanGeometry {
         if (Math.abs(proposed) < EPSILON) return 0;
         Vec3 feet = player.position(), eyes = feet.add(0, pose.eyeHeight(), 0);
         Frame neutral = frame(feet, pose, 0), target = frame(feet, pose, proposed);
-        AABB envelope = sweptEyeBounds(neutral, target, eyes, .08 * pose.scale());
+        AABB envelope = sweptEyeBounds(neutral, target, eyes, EYE_RADIUS * pose.scale());
         for (int index = 1; index < neutral.boxes().size(); index++) {
             envelope = envelope.minmax(sweptBounds(neutral, target, index));
         }
@@ -255,7 +258,20 @@ public final class LeanGeometry {
         List<AABB> obstacles = new ArrayList<>();
         for (var shape : player.level().getBlockCollisions(player, envelope)) obstacles.addAll(shape.toAabbs());
         if (obstacles.isEmpty() && player.level().getWorldBorder().isWithinBounds(envelope)) return proposed;
-        return clampPath(proposed, (from, to) -> clearPath(player, feet, pose, neutral, from, to, obstacles));
+        var settings = player.level().isClientSide ? PubgSettingsService.client() : PubgSettingsService.server(player.getServer());
+        double tolerance = settings.number("lean.body_penetration_tolerance") * pose.scale();
+        LeanCollision collision = new LeanCollision(player.getBoundingBox(), neutral, tolerance, obstacles);
+        return clampPath(proposed, (from, to) -> clearPath(feet, pose, collision, from, to, obstacles,
+                player.level().getWorldBorder()::isWithinBounds));
+    }
+
+    /** Same collision policy with supplied world shapes; bodyTolerance is already scaled to world units. */
+    public static double clamp(Vec3 feet, Pose pose, AABB movementBox, double proposedFraction,
+            double bodyTolerance, List<AABB> obstacles) {
+        double proposed = bounded(proposedFraction);
+        if (Math.abs(proposed) < EPSILON) return 0;
+        LeanCollision collision = new LeanCollision(movementBox, frame(feet, pose, 0), bodyTolerance, obstacles);
+        return clampPath(proposed, (from, to) -> clearPath(feet, pose, collision, from, to, obstacles, box -> true));
     }
     @FunctionalInterface public interface Sweep { boolean clear(double from, double to); }
     /** Sweep in short intervals before refining first contact; clear endpoints alone cannot skip a thin obstacle. */
@@ -276,15 +292,17 @@ public final class LeanGeometry {
         }
         return proposed;
     }
-    private static boolean clearPath(Player player, Vec3 feet, Pose pose, Frame neutral,
-            double previous, double next, List<AABB> obstacles) {
+    private static boolean clearPath(Vec3 feet, Pose pose, LeanCollision collision,
+            double previous, double next, List<AABB> obstacles, Predicate<AABB> withinBorder) {
         Frame before = frame(feet, pose, previous), after = frame(feet, pose, next);
         Vec3 eyes = feet.add(0, pose.eyeHeight(), 0);
-        if (blocked(player, sweptEyeBounds(before, after, eyes, .08 * pose.scale()), null, obstacles)) return false;
-        // A pre-existing shoulder overlap from vanilla's narrower movement box is not newly occupied space.
+        AABB eyeSweep = sweptEyeBounds(before, after, eyes, EYE_RADIUS * pose.scale());
+        if (!withinBorder.test(eyeSweep)) return false;
+        for (AABB block : obstacles) if (block.intersects(eyeSweep)) return false;
+        // Body contact is soft and directional; the eye path above stays strict.
         for (int index = 1; index < after.boxes().size(); index++) {
             AABB swept = sweptBounds(before, after, index);
-            if (blocked(player, swept, neutral.boxes().get(index).bounds(), obstacles)) return false;
+            if (!withinBorder.test(swept) || collision.blocked(before, after, index, swept)) return false;
         }
         return true;
     }
@@ -307,17 +325,5 @@ public final class LeanGeometry {
         // or (circle-center lever + circle radius) for crouch's pitched and twisted waist.
         // This remains valid across support changes and the max(0, requiredDrop) corner.
         return radius * angle * angle / 8 + Math.max(before.seatRadius(), after.seatRadius()) * angle / 2;
-    }
-    private static boolean blocked(Player player, AABB bounds, AABB previouslyOccupied, List<AABB> obstacles) {
-        if (!player.level().getWorldBorder().isWithinBounds(bounds)) return true;
-        for (AABB block : obstacles) {
-            if (!block.intersects(bounds)) continue;
-            if (previouslyOccupied == null) return true;
-            AABB overlap = block.intersect(bounds);
-            if (overlap.minX < previouslyOccupied.minX - EPSILON || overlap.maxX > previouslyOccupied.maxX + EPSILON
-                    || overlap.minY < previouslyOccupied.minY - EPSILON || overlap.maxY > previouslyOccupied.maxY + EPSILON
-                    || overlap.minZ < previouslyOccupied.minZ - EPSILON || overlap.maxZ > previouslyOccupied.maxZ + EPSILON) return true;
-        }
-        return false;
     }
 }

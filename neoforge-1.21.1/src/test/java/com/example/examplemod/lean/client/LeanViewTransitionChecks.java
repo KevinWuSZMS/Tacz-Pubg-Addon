@@ -17,6 +17,7 @@ public final class LeanViewTransitionChecks {
         liveAimAndLean();
         resetAndTimeRollback();
         sweptObstacles();
+        sweptBoundaryContact();
         System.out.println("LeanViewTransitionChecks: " + checks + " view transition and sweep checks passed; no game launched");
     }
 
@@ -142,6 +143,41 @@ public final class LeanViewTransitionChecks {
         AABB vertical = new AABB(-1, 2, -1, 1, 2.0001, 1);
         contact(LeanViewTransition.sweepFraction(Vec3.ZERO, new Vec3(0, 4, 0), List.of(vertical), .08), .48,
                 "vertical stance transition sweeps through a thin ceiling");
+    }
+
+    private static void sweptBoundaryContact() {
+        AABB wall = new AABB(0, 0, 0, 1, 1, 1);
+        for (double radius : new double[]{0, .08}) {
+            for (boolean positive : new boolean[]{false, true}) {
+                double face = positive ? 1 + radius : -radius;
+                double outward = positive ? 1 : -1;
+                Vec3 contact = new Vec3(face, .5, .5);
+                scalar(LeanViewTransition.sweepFraction(contact, contact.add(outward * .2, 0, 0), List.of(wall), radius),
+                        1, "a sweep touching either inflated face may retreat from the wall");
+                scalar(LeanViewTransition.sweepFraction(contact, contact.add(0, .2, 0), List.of(wall), radius),
+                        1, "a sweep touching either inflated face may slide along the wall");
+                scalar(LeanViewTransition.sweepFraction(contact, contact, List.of(wall), radius),
+                        1, "stationary boundary contact does not count as interior overlap");
+                scalar(LeanViewTransition.sweepFraction(contact, contact.add(-outward * .2, 0, 0), List.of(wall), radius),
+                        0, "a sweep touching either inflated face cannot enter the wall");
+                scalar(LeanViewTransition.sweepFraction(contact, contact.add(-outward * 5.0e-13, 0, 0), List.of(wall), radius),
+                        0, "even a sub-picoblock movement into a touching face remains blocked");
+                Vec3 inside = contact.add(-outward * .01, 0, 0);
+                scalar(LeanViewTransition.sweepFraction(inside, contact.add(outward * .2, 0, 0), List.of(wall), radius),
+                        0, "a strictly interior start remains blocked even when the endpoint is outside");
+                scalar(LeanViewTransition.sweepFraction(inside, inside, List.of(wall), radius),
+                        0, "stationary strictly interior overlap remains blocked");
+            }
+            double lower = -radius;
+            Vec3 beforeCorner = new Vec3(lower - 1, lower + 1, .5);
+            Vec3 afterCorner = new Vec3(lower + 1, lower - 1, .5);
+            scalar(LeanViewTransition.sweepFraction(beforeCorner, afterCorner, List.of(wall), radius),
+                    1, "a segment grazing only an inflated corner does not enter the wall");
+            scalar(LeanViewTransition.sweepFraction(afterCorner, beforeCorner, List.of(wall), radius),
+                    1, "corner grazing is unobstructed in either direction");
+            scalar(LeanViewTransition.sweepFraction(new Vec3(lower, lower, .5), new Vec3(.5, .5, .5), List.of(wall), radius),
+                    0, "a sweep from an inflated corner into the interior remains blocked");
+        }
     }
 
     private static LeanViewTransition.Eyes eyes(double scale) {

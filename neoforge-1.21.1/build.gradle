@@ -427,6 +427,7 @@ tasks.named('check').configure { dependsOn droppedLootTransitionChecks }
         movementWireChecks: 'com.example.examplemod.movement.MovementWireChecks',
         leanMotionChecks: 'com.example.examplemod.lean.LeanMotionChecks',
         leanGeometryChecks: 'com.example.examplemod.lean.LeanGeometryChecks',
+        leanCollisionChecks: 'com.example.examplemod.lean.LeanCollisionChecks',
         leanShotLedgerChecks: 'com.example.examplemod.lean.LeanShotLedgerChecks',
         leanShotDispatchChecks: 'com.example.examplemod.lean.client.LeanShotDispatchChecks',
         leanTrajectoryChecks: 'com.example.examplemod.lean.LeanTrajectoryChecks',

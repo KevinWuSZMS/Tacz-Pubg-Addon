@@ -71,7 +71,7 @@ public final class LeanCameraView {
 
     private static Vec3 constrained(Player player, Vec3 legalEye, Vec3 candidate) {
         if (candidate.distanceToSqr(legalEye) < 1.0e-12) return candidate;
-        double radius = .08 * player.getScale();
+        double radius = LeanGeometry.EYE_RADIUS * player.getScale();
         var obstacles = new ArrayList<AABB>();
         for (var shape : player.level().getBlockCollisions(player, new AABB(legalEye, candidate).inflate(radius)))
             obstacles.addAll(shape.toAabbs());
