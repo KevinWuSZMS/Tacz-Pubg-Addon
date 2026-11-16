@@ -136,6 +136,7 @@ public final class MovementClient {
                 && !(ParachuteItem.isEquipped(p) && !p.onGround()) && !CombatService.downed(p);
     }
     private static void adoptRescueStance() {
+        if (Minecraft.getInstance().player == null) { wasRescuing = false; return; }
         acceptRescueStance(CombatPayloads.latest().rescue());
     }
     private static void acceptRescueStance(CombatPayloads.Rescue state) {

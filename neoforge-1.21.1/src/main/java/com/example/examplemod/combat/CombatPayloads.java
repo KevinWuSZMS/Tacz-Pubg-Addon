@@ -78,14 +78,18 @@ public final class CombatPayloads {
         };
         public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
-    private static volatile Snapshot latest = Snapshot.EMPTY;
+    // Snapshot.TYPE and Rescue.NONE can initialize the outer class first. Do not read their
+    // defaults until that initialization has finished, regardless of which payload loads first.
+    private static final class ClientState {
+        private static volatile Snapshot latest = Snapshot.EMPTY;
+    }
     private static Consumer<Snapshot> snapshots = ignored -> {};
     private static Consumer<Rescue> rescueUpdates = ignored -> {};
     private static Consumer<Event> events = ignored -> {};
     private static BiPredicate<UUID,Connection> clientGate = (session,connection) -> false;
-    public static Snapshot latest() { return latest; }
-    public static void clearClient() { latest = Snapshot.EMPTY; rescueUpdates.accept(Rescue.NONE); }
-    public static boolean clientDowned(UUID id) { return latest.players.stream().anyMatch(p -> p.id.equals(id) && p.downed); }
+    public static Snapshot latest() { return ClientState.latest; }
+    public static void clearClient() { ClientState.latest = Snapshot.EMPTY; rescueUpdates.accept(Rescue.NONE); }
+    public static boolean clientDowned(UUID id) { return latest().players.stream().anyMatch(p -> p.id.equals(id) && p.downed); }
     public static void setClientHandlers(Consumer<Snapshot> snapshot, Consumer<Event> event) { snapshots = snapshot; events = event; }
     public static void setClientRescueHandler(Consumer<Rescue> handler) { rescueUpdates = handler; }
     public static void setClientSessionGate(BiPredicate<UUID,Connection> gate) { clientGate=gate; }
@@ -93,11 +97,16 @@ public final class CombatPayloads {
         var registrar = event.registrar("1-combat");
         registrar.playToClient(Snapshot.TYPE, Snapshot.CODEC, (p,c) -> {
             Connection connection=c.connection();
-            c.enqueueWork(() -> {if(clientGate.test(p.session,connection)&&(!latest.session.equals(p.session)||p.sequence>=latest.sequence)){latest=p;rescueUpdates.accept(p.rescue);snapshots.accept(p);}});
+            c.enqueueWork(() -> {
+                Snapshot current=latest();
+                if(clientGate.test(p.session,connection)&&(!current.session.equals(p.session)||p.sequence>=current.sequence)) {
+                    ClientState.latest=p;rescueUpdates.accept(p.rescue);snapshots.accept(p);
+                }
+            });
         });
         registrar.playToClient(EventMessage.TYPE, EventMessage.CODEC, (p,c) -> {
             Connection connection=c.connection();
-            c.enqueueWork(() -> {if(clientGate.test(p.event.session,connection)&&latest.session.equals(p.event.session))events.accept(p.event);});
+            c.enqueueWork(() -> {if(clientGate.test(p.event.session,connection)&&latest().session.equals(p.event.session))events.accept(p.event);});
         });
         registrar.playToServer(RescueAction.TYPE, RescueAction.CODEC, (p,c) -> c.enqueueWork(() -> {
             if (c.player() instanceof ServerPlayer player) CombatService.rescue(player, p.target, p.cancel);

@@ -462,6 +462,27 @@ tasks.named('check').configure { dependsOn droppedLootTransitionChecks }
     tasks.named('check').configure { dependsOn logicalCheck }
 }
 
+// Each entry uses a fresh JVM: static initialization order cannot be reset within one run.
+def combatInitializationChecks = tasks.register('combatInitializationChecks') {
+    group = 'verification'
+    description = 'Checks combat client defaults with each possible first-loaded payload class.'
+}
+['snapshot', 'outer', 'rescue', 'actor'].each { first ->
+    def initializationCheck = tasks.register("combatInitialization${first.capitalize()}Checks", JavaExec) {
+        dependsOn tasks.named('testClasses')
+        classpath = sourceSets.test.runtimeClasspath + files(
+                '../downloads/tacz/tacz-neoforge-1.21.1-1.1.8-hotfix-r7.jar',
+                '../downloads/lrtactical/LesRaisins-Tactical-Equipements-1.21.1-0.4.3.jar')
+        mainClass = 'com.example.examplemod.combat.CombatInitializationChecks'
+        args first
+        workingDir = layout.buildDirectory.dir("checks/combat-initialization/${first}").get().asFile
+        doFirst { task -> task.workingDir.mkdirs() }
+        javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(21) }
+    }
+    combatInitializationChecks.configure { dependsOn initializationCheck }
+}
+tasks.named('check').configure { dependsOn combatInitializationChecks }
+
 def lootRespawnSnapshotChecks = tasks.register('lootRespawnSnapshotChecks', JavaExec) {
     group = 'verification'
     description = 'Checks region coefficient refresh snapshots in memory without starting Minecraft.'
