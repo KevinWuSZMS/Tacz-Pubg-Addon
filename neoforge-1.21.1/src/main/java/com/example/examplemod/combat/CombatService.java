@@ -179,9 +179,10 @@ public final class CombatService {
                 ||e.getSource().is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY)
                 ||g.engine.elapsedTicks()<g.engine.settings().preparationSeconds()*20L||g.players.get(p.getUUID()).down!=null)return;
         if(refreshDirectDeath(g,p))return;
-        e.setCanceled(true);p.setHealth(1);p.setAbsorptionAmount(0);p.stopRiding();p.stopFallFlying();p.stopUsingItem();
+        e.setCanceled(true);p.setAbsorptionAmount(0);p.stopRiding();p.stopFallFlying();p.stopUsingItem();
         ThrowableService.cancel(p);
         Player state=g.players.get(p.getUUID());state.downs++;state.down=new Down(hit(e.getSource()),g.engine.combatTicks(),(float)number(p.server,"dbno.health"),p.position());
+        syncDownedHealth(p,state.down);
         MatchBotService.suspend(p);
         setPose(p);cancelRescues(g,p.getUUID());
         if(state.down.hit.attacker!=null && g.players.containsKey(state.down.hit.attacker) && !sameTeam(g,state.down.hit.attacker,p.getUUID()))g.players.get(state.down.hit.attacker).knocks++;
@@ -218,9 +219,19 @@ public final class CombatService {
                 factor=protection*number(p.server,h.weapon.contains("crossbow")?"dbno.crossbow_multiplier":"dbno.sniper_multiplier");
             } else factor=number(p.server,"dbno.damage_multiplier");
         } else if(e.getSource().getDirectEntity() instanceof PubgThrowableEntity t&&t.kind()==ThrowableKind.FRAG)factor=number(p.server,"dbno.frag_multiplier")*number(p.server,"dbno.damage_multiplier");
-        double damage=CombatRules.pubgDamage(e.getAmount(),p.getMaxHealth())*factor;record(g,p.getUUID(),h,damage);cancelRescues(g,p.getUUID());
+        double damage=CombatRules.pubgDamage(e.getAmount(),p.getMaxHealth())*factor;
+        if(!Double.isFinite(damage)||damage<=0)return;
+        record(g,p.getUUID(),h,damage);cancelRescues(g,p.getUUID());
         down.hp=(float)Math.max(0,down.hp-damage);
-        if(down.hp<=0)finish(p,g,h,h.cause);else pushAll(g,p.server);
+        // Incoming damage is handled by the DBNO pool, so vanilla never reaches its hurt feedback.
+        p.hurtDuration=10;p.hurtTime=p.hurtDuration;
+        p.serverLevel().broadcastDamageEvent(p,e.getSource());
+        if(down.hp<=0)finish(p,g,h,h.cause);else {syncDownedHealth(p,down);pushAll(g,p.server);}
+    }
+    private static void syncDownedHealth(ServerPlayer p,Down down) {
+        // Keep the native entity, nameplate mods and the independent DBNO bar at the same fraction.
+        // Zero health is applied only by finish(), which must still see a living entity on entry.
+        p.setHealth((float)Math.max(Float.MIN_NORMAL,p.getMaxHealth()*(double)down.hp/down.max));
     }
     /** Called once from MatchService's authoritative final-death path, before roster elimination. */
     public static UUID finalDeath(ServerPlayer p,MatchEngine engine,DamageSource source) {
@@ -347,7 +358,7 @@ public final class CombatService {
                 ServerPlayer p=server.getPlayerList().getPlayer(entry.getKey());if(p==null)continue;
                 if(!g.engine.alive(entry.getKey())) {state.down=null;restorePose(p);continue;}
                 if(refreshDirectDeath(g,p)){finish(p,g,new Hit(null,"",false,"team_wipe",""),"team_wipe");continue;}
-                Down down=state.down;setPose(p);p.stopUsingItem();p.setHealth(1);
+                Down down=state.down;setPose(p);p.stopUsingItem();
                 Vec3 position=p.position();double horizontal=position.subtract(down.position).horizontalDistance();
                 double limit=.215*number(server,p.isInWater()?"dbno.swim_multiplier":"dbno.crawl_multiplier")+.012;
                 if(horizontal>limit*1.5) {Vec3 delta=position.subtract(down.position);Vec3 correct=down.position.add(delta.x*limit/horizontal,delta.y,delta.z*limit/horizontal);p.connection.teleport(correct.x,correct.y,correct.z,p.getYRot(),p.getXRot());position=correct;}
@@ -356,6 +367,7 @@ public final class CombatService {
                 boolean healing=enabled(server,"rescue.pause_bleeding")&&g.rescues.values().stream().anyMatch(r->r.target.equals(p.getUUID()));
                 down.hp=CombatRules.bleed(down.hp,down.max,bleedSeconds(server,state.downs,moving),healing);
                 if(down.underwater>=number(server,"dbno.underwater_seconds")*20||down.hp<=0)finish(p,g,new Hit(null,"",false,"bleedout",""),"bleedout");
+                else syncDownedHealth(p,down);
             }
             if(server.getTickCount()%2==0)pushAll(g,server);
         }

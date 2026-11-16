@@ -10,6 +10,9 @@ public final class PubgVitalsLayout {
     public static final int BACKGROUND = 0x66212427, BORDER = 0x80494D50;
     public static final int HEALTH = 0xF2E8E9E7, LOW_HEALTH = 0xFFE65F57, APRICOT = 0xFFFFDC9F;
     public static final int DAMAGE_TRAIL = 0xC9AA403D, ABSORPTION = 0xFF9ED6E7, BOOST = 0xFFF09A27;
+    public static final int DOWNED_HEALTH = 0xFFF22424, DOWNED_DAMAGE_TRAIL = 0xFF9D2025;
+    public static final int DOWNED_FILL_HATCH = 0x24FFFFFF, DOWNED_TRAIL_HATCH = 0x76FF7777,
+            DOWNED_EMPTY_HATCH = 0x65898B8E;
     private static final int[] BOOST_THRESHOLDS = {0, 20, 60, 90, 100};
     public record Rectangle(int left, int top, int right, int bottom, int color) {}
     public record Style(int width, int healthHeight, int boostHeight, int gap, int bottom, int rowHeight,
@@ -64,6 +67,36 @@ public final class PubgVitalsLayout {
         add(rectangles, left + actual, top, left + nextStep, bottom, style.nextStep());
         add(rectangles, left, top, left + actual, bottom, healthColor(ratio, style));
         if (absorption > 0) add(rectangles, left, top, left + pixels(width, fraction(absorption, maximum)), top + 2, ABSORPTION);
+        addBoost(rectangles, f, boost, style);
+        return List.copyOf(rectangles);
+    }
+    /** DBNO uses its own red blood pool, with continuous hatching through its depleted portion. */
+    public static List<Rectangle> downedBars(int screenWidth, int screenHeight, double health, double maximum,
+                                           double damageTrail, Style style) {
+        var f = frame(screenWidth, screenHeight, style);
+        int left = f.left(), width = f.width(), top = f.healthTop(), bottom = top + style.healthHeight();
+        int actual = pixels(width, fraction(health, maximum));
+        int trail = Math.max(actual, pixels(width, fraction(damageTrail, maximum)));
+        var rectangles = new ArrayList<Rectangle>();
+        add(rectangles, left, top, left + width, bottom, style.background());
+        add(rectangles, left, top, left + actual, bottom, DOWNED_HEALTH);
+        add(rectangles, left + actual, top, left + trail, bottom, DOWNED_DAMAGE_TRAIL);
+        downedHatch(rectangles, left, top, bottom, 0, actual, DOWNED_FILL_HATCH);
+        downedHatch(rectangles, left, top, bottom, actual, trail, DOWNED_TRAIL_HATCH);
+        downedHatch(rectangles, left, top, bottom, trail, width, DOWNED_EMPTY_HATCH);
+        addBoost(rectangles, f, 0, style);
+        return List.copyOf(rectangles);
+    }
+    private static void downedHatch(List<Rectangle> rectangles, int left, int top, int bottom,
+                                    int start, int end, int color) {
+        for (int y = top; y < bottom; y++) {
+            int first = start - Math.floorMod(start + y - top, 6);
+            for (int x = first; x < end; x += 6)
+                add(rectangles, left + Math.max(start, x), y, left + Math.min(end, x + 2), y + 1, color);
+        }
+    }
+    private static void addBoost(List<Rectangle> rectangles, Frame f, double boost, Style style) {
+        int left = f.left(), width = f.width();
         double safeBoost = Math.clamp(Double.isFinite(boost) ? boost : 0, 0, 100);
         for (int tier = 0; tier < 4; tier++) {
             int start = BOOST_THRESHOLDS[tier], end = BOOST_THRESHOLDS[tier + 1];
@@ -72,7 +105,6 @@ public final class PubgVitalsLayout {
             add(rectangles, x1, f.boostTop(), x1 + pixels(x2 - x1, Math.clamp((safeBoost - start) / (end - start), 0, 1)),
                     f.boostTop() + style.boostHeight(), style.boost());
         }
-        return List.copyOf(rectangles);
     }
     private static int pixels(int width, double fraction) { return (int) Math.round(width * fraction); }
     private static void add(List<Rectangle> result, int left, int top, int right, int bottom, int color) {
