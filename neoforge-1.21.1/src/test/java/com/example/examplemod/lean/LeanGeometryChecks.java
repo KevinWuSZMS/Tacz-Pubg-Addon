@@ -41,6 +41,7 @@ public final class LeanGeometryChecks {
         double leftLimit = LeanGeometry.clampPath(-1, (from, to) -> !(from > -.401 && to < -.400));
         check(leftLimit >= -.400 && leftLimit < -.399, "left contact refines with the same signed-distance rule");
         check(LeanGeometry.clampPath(.37, (from, to) -> true) == .37, "clear sweep preserves exact requested progress");
+        checkConnectedArms();
         Random random = new Random(751911);
         for (int index = 0; index < 200; index++) {
             double yaw = random.nextDouble() * 2 * Math.PI, bodyYaw = random.nextDouble() * 2 * Math.PI;
@@ -60,6 +61,40 @@ public final class LeanGeometryChecks {
             }
         }
         System.out.println("Lean geometry checks passed: " + checks + "; no world or game launched.");
+    }
+    private static void checkConnectedArms() {
+        for (int stance = 0; stance < 3; stance++) {
+            boolean prone = stance == 2;
+            double eyeHeight = stance == 0 ? 1.62 : prone ? .4 : 1.27;
+            double yaw = .83, bodyYaw = -.37, scale = 1.2;
+            var neutral = LeanGeometry.frame(Vec3.ZERO, yaw, bodyYaw, eyeHeight, scale, prone, 0);
+            for (double fraction : new double[]{-1, -.5, 0, .5, 1}) {
+                var frame = LeanGeometry.frame(Vec3.ZERO, yaw, bodyYaw, eyeHeight, scale, prone, fraction);
+                var chest = frame.boxes().get(2);
+                var first = frame.boxes().get(3);
+                var second = frame.boxes().get(4);
+                close(first.center().add(second.center()).scale(.5), chest.center(), "both shoulders stay centered on the shared chest pivot");
+                check(Math.abs(first.center().distanceTo(second.center()) - .703125 * scale) < 1e-10,
+                        "shoulder separation is rigid in every stance and intermediate lean");
+                for (int index = 3; index <= 4; index++) {
+                    var arm = frame.boxes().get(index);
+                    Vec3 shoulder = arm.center().subtract(chest.center());
+                    check(Math.abs(shoulder.length() - .3515625 * scale) < 1e-10, "each shoulder retains its distance from the chest");
+                    check(Math.abs(shoulder.dot(chest.up())) < 1e-10 && Math.abs(shoulder.dot(chest.forward())) < 1e-10,
+                            "shoulders rotate in the chest frame rather than translating independently");
+                    close(arm.right(), chest.right(), "native arm basis receives the same lean rotation as the chest");
+                    var sweep = LeanGeometry.sweptBounds(neutral, frame, index).inflate(1e-10);
+                    for (int step = 0; step <= 12; step++) {
+                        var middle = LeanGeometry.frame(Vec3.ZERO, yaw, bodyYaw, eyeHeight, scale, prone, fraction * step / 12).boxes().get(index);
+                        for (int x : new int[]{-1, 1}) for (int y : new int[]{-1, 1}) for (int z : new int[]{-1, 1}) {
+                            Vec3 corner = middle.center().add(middle.right().scale(x * middle.half().x))
+                                    .add(middle.up().scale(y * middle.half().y)).add(middle.forward().scale(z * middle.half().z));
+                            check(sweep.contains(corner), "full collision sweep contains arm corners orbiting the shared chest pivot");
+                        }
+                    }
+                }
+            }
+        }
     }
     private static void close(Vec3 actual, Vec3 expected, String message) { check(actual.distanceToSqr(expected) < 1e-12, message); }
     private static void check(boolean value, String message) { if (!value) throw new AssertionError(message); checks++; }

@@ -42,29 +42,42 @@ public final class LeanPlayerRender {
             Vector3f forward = inverseBody.transformDirection(
                     new Vector3f(-(float) Math.sin(yaw), 0, (float) Math.cos(yaw))).normalize();
             Quaternionf roll = new Quaternionf().rotationAxis(MAX_ROLL * fraction, forward);
-            float armCenterX = model.rightArm.getInitialPose().y == 2.5f ? 0.5f : 1f;
             transform(model.head, new Vector3f(0, -4, 0), delta, 1, roll);
-            transform(model.body, new Vector3f(0, 6, 0), delta, 0.5f, roll);
-            transform(model.rightArm, new Vector3f(-armCenterX, 4, 0), delta, 0.7f, roll);
-            transform(model.leftArm, new Vector3f(armCenterX, 4, 0), delta, 0.7f, roll);
+            transformTorso(model.body, model.rightArm, model.leftArm, delta, roll);
             copy(model.hat, model.head);
             copy(model.jacket, model.body);
             copy(model.rightSleeve, model.rightArm);
             copy(model.leftSleeve, model.leftArm);
         }
 
+        /** A shared parent transform preserves the animated shoulder attachments, including slim arms. */
+        void transformTorso(ModelPart body, ModelPart rightArm, ModelPart leftArm, Vector3f delta, Quaternionf roll) {
+            Vector3f pivot = center(body, new Vector3f(0, 6, 0));
+            Vector3f translation = new Vector3f(delta).mul(.5f);
+            transformAround(body, pivot, translation, roll);
+            transformAround(rightArm, pivot, translation, roll);
+            transformAround(leftArm, pivot, translation, roll);
+        }
+
+        private static Vector3f center(ModelPart part, Vector3f local) {
+            local.mul(part.xScale, part.yScale, part.zScale);
+            return new Quaternionf().rotationZYX(part.zRot, part.yRot, part.xRot).transform(local)
+                    .add(part.x, part.y, part.z);
+        }
+
         private void transform(ModelPart part, Vector3f center, Vector3f delta, float weight, Quaternionf roll) {
+            transformAround(part, center(part, center), new Vector3f(delta).mul(weight), roll);
+        }
+
+        private void transformAround(ModelPart part, Vector3f pivot, Vector3f translation, Quaternionf roll) {
             saved.add(new SavedPart(part));
-            center.mul(part.xScale, part.yScale, part.zScale);
             Quaternionf nativeRotation = new Quaternionf().rotationZYX(part.zRot, part.yRot, part.xRot);
-            Vector3f nativeCenter = nativeRotation.transform(new Vector3f(center));
             Quaternionf leanedRotation = new Quaternionf(roll).mul(nativeRotation);
-            Vector3f leanedCenter = leanedRotation.transform(new Vector3f(center));
-            // Rotate each solid about its actual center, then apply the same center
-            // displacement as the gameplay hit geometry. Part origins are not centers.
-            part.x += nativeCenter.x - leanedCenter.x + delta.x * weight;
-            part.y += nativeCenter.y - leanedCenter.y + delta.y * weight;
-            part.z += nativeCenter.z - leanedCenter.z + delta.z * weight;
+            Vector3f position = roll.transform(new Vector3f(part.x, part.y, part.z).sub(pivot))
+                    .add(pivot).add(translation);
+            part.x = position.x;
+            part.y = position.y;
+            part.z = position.z;
             Vector3f euler = LeanRenderMath.modelPartEuler(leanedRotation);
             part.xRot = euler.x;
             part.yRot = euler.y;

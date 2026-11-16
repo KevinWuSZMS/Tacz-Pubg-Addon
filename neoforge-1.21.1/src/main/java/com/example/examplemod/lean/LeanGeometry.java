@@ -125,7 +125,7 @@ public final class LeanGeometry {
         }
         boxes.add(new Box(chestCenter.add(delta.scale(.5)), tiltedRight, chestUp, chestForward, bodyHalf, false));
         for (int side : new int[]{-1, 1}) {
-            boxes.add(new Box(chestCenter.add(right.scale(side * .3515625 * scale)).add(delta.scale(.7)),
+            boxes.add(new Box(chestCenter.add(tiltedRight.scale(side * .3515625 * scale)).add(delta.scale(.5)),
                     tiltedRight, tiltedUp, tiltedForward, armHalf, false));
         }
         AABB bounds = boxes.getFirst().bounds();
@@ -148,10 +148,9 @@ public final class LeanGeometry {
         Vec3 eyes = player.getEyePosition(), eyeTarget = eyes.add(offset(Math.toRadians(yaw), proposed).scale(player.getScale()));
         AABB envelope = new AABB(eyes, eyeTarget).inflate(.08 * player.getScale());
         for (int index = 1; index < neutral.boxes().size(); index++) {
-            envelope = envelope.minmax(neutral.boxes().get(index).bounds()).minmax(target.boxes().get(index).bounds());
+            envelope = envelope.minmax(sweptBounds(neutral, target, index));
         }
-        // Covers intermediate rotation arcs as well as endpoint boxes; collect voxel collisions only once.
-        envelope = envelope.inflate(.05 * player.getScale());
+        // Collect voxel collisions once, including the arms' full arc around the common chest pivot.
         List<AABB> obstacles = new ArrayList<>();
         for (var shape : player.level().getBlockCollisions(player, envelope)) obstacles.addAll(shape.toAabbs());
         if (obstacles.isEmpty() && player.level().getWorldBorder().isWithinBounds(envelope)) return proposed;
@@ -184,13 +183,19 @@ public final class LeanGeometry {
         Frame before = frame(player, previous, yaw), after = frame(player, next, yaw);
         // A pre-existing shoulder overlap from vanilla's narrower movement box is not newly occupied space.
         for (int index = 1; index < after.boxes().size(); index++) {
-            Box startBox = before.boxes().get(index), endBox = after.boxes().get(index);
-            // A rotating corner follows an arc outside its endpoint chord. Bound that sagitta too.
-            double arcMargin = startBox.half().length() * (1 - Math.cos(ROLL_RADIANS * (next - previous) / 2));
-            AABB swept = startBox.bounds().minmax(endBox.bounds()).inflate(arcMargin);
+            AABB swept = sweptBounds(before, after, index);
             if (blocked(player, swept, neutral.boxes().get(index).bounds(), obstacles)) return false;
         }
         return true;
+    }
+    /** Bounds a same-side lean interval; its center translation is linear and its corners follow rotation arcs. */
+    static AABB sweptBounds(Frame before, Frame after, int index) {
+        Box startBox = before.boxes().get(index), endBox = after.boxes().get(index);
+        double radius = startBox.half().length();
+        // Head/body rotate about their own centers; each arm now also travels around the chest center.
+        if (index >= 3) radius += startBox.center().distanceTo(before.boxes().get(2).center());
+        double arcMargin = radius * (1 - Math.cos(ROLL_RADIANS * (after.fraction() - before.fraction()) / 2));
+        return startBox.bounds().minmax(endBox.bounds()).inflate(arcMargin);
     }
     private static boolean blocked(Player player, AABB bounds, AABB previouslyOccupied, List<AABB> obstacles) {
         if (!player.level().getWorldBorder().isWithinBounds(bounds)) return true;

@@ -63,6 +63,7 @@ public final class LeanRenderChecks {
                 close(rebuilt.transform(new Vector3f(.3f,.7f,-.4f)), combined.transform(new Vector3f(.3f,.7f,-.4f)), "ModelPart Euler roundtrip");
             }
         }
+        LeanShoulderChecks.run();
         System.out.println("PASS " + checks + " projection, aperture, and upper-body invariants");
     }
 }
