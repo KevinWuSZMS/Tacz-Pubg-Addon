@@ -131,6 +131,8 @@ public final class MatchSpectatorService {
 
     /** Used before vanilla spawn-block lookup, so death spectating never consumes a respawn anchor. */
     @Nullable public static DimensionTransition respawnTransition(ServerPlayer player, boolean keepEverything) {
+        DimensionTransition botTransition = MatchBotService.respawnTransition(player, keepEverything);
+        if (botTransition != null) return botTransition;
         if (keepEverything || MatchBotService.isCarpetPlayer(player)) return null;
         MatchEngine game = MatchService.participantGame(player.server, player.getUUID());
         if (game == null || game.alive(player.getUUID()) || !shouldSpectate(player, game)) return null;

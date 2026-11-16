@@ -78,6 +78,11 @@ public final class CombatAbiChecks {
         for (String side : List.of("mixins", "client")) for (var entry : config.getAsJsonArray(side)) {
             String name = entry.getAsString();
             check(seenMixins.add(name), "manifest does not duplicate " + name);
+            if (name.equals("CombatCarpetDeathMixin")) {
+                check(side.equals("mixins"), "Carpet death compatibility is available on the server");
+                verifyCarpetDeath();
+                continue;
+            }
             check(owners.containsKey(name), "manifest mixin is explicitly covered: " + name);
             String owner = owners.get(name);
             check(owner.startsWith("net/minecraft/client/") == side.equals("client"),
@@ -114,7 +119,9 @@ public final class CombatAbiChecks {
             }
             check(injectors > 0, name + " has at least one verified injection");
         }
-        check(seenMixins.equals(owners.keySet()), "all six combat mixins are registered exactly once");
+        var allMixins = new HashSet<>(owners.keySet());
+        allMixins.add("CombatCarpetDeathMixin");
+        check(seenMixins.equals(allMixins), "all native and optional Carpet combat mixins are registered exactly once");
         check(seenTargets.equals(expected.keySet()), "all eleven combat target signatures are exercised");
 
         // Pose is a Player/Entity API while the shared jump hook belongs to LivingEntity.
@@ -130,6 +137,59 @@ public final class CombatAbiChecks {
     private static void add(Map<String, Target> expected, String owner, String method, String descriptor) {
         Target target = new Target(owner, method, descriptor);
         expected.put(target.key(), target);
+    }
+
+    private static void verifyCarpetDeath() throws Exception {
+        String owner = "carpet/patches/EntityPlayerMPFake";
+        String descriptor = "(Lnet/minecraft/world/damagesource/DamageSource;)V";
+        ClassNode mixin = type(ROOT + "CombatCarpetDeathMixin"), carpet = type(owner);
+        annotation(mixin, "Lorg/spongepowered/asm/mixin/Pseudo;");
+        AnnotationNode target = annotation(mixin, MIXIN);
+        check(List.of(owner.replace('/', '.')).equals(value(target, "targets")),
+                "optional compatibility targets the installed Carpet fake-player class");
+        check(Boolean.FALSE.equals(value(target, "remap")), "Carpet class names are not remapped as vanilla targets");
+        MethodNode death = unique(carpet, "die");
+        verifyTarget(carpet, death, descriptor, false);
+        MethodNode handler = mixin.methods.stream()
+                .filter(method -> find(method.visibleAnnotations, method.invisibleAnnotations, INJECT) != null)
+                .findFirst().orElseThrow();
+        verifyHandler(mixin, handler, death);
+        AnnotationNode inject = find(handler.visibleAnnotations, handler.invisibleAnnotations, INJECT);
+        check(List.of("die").equals(value(inject, "method")) && Boolean.TRUE.equals(value(inject, "cancellable")),
+                "Carpet death can be stopped after the superclass chooses DBNO or final death");
+        @SuppressWarnings("unchecked") var points = (List<AnnotationNode>) value(inject, "at");
+        check(points != null && points.size() == 1, "Carpet compatibility has exactly one reviewed injection point");
+        AnnotationNode point = points.getFirst();
+        check("INVOKE".equals(value(point, "value"))
+                && ("Lnet/minecraft/server/level/ServerPlayer;die" + descriptor).equals(value(point, "target")),
+                "Carpet compatibility follows the actual superclass death call");
+        Object shift = value(point, "shift");
+        check(shift instanceof String[] values && values.length == 2 && values[1].equals("AFTER"),
+                "The cancellation runs after NeoForge death events, preserving real death/drop processing");
+        int index = 0, superclass = -1, heal = -1, disconnect = -1, calls = 0;
+        for (var instruction : death.instructions) {
+            if (instruction instanceof MethodInsnNode call) {
+                if (call.owner.equals("net/minecraft/server/level/ServerPlayer")
+                        && call.name.equals("die") && call.desc.equals(descriptor)) {
+                    superclass = index;
+                    calls++;
+                    check(call.getOpcode() == Opcodes.INVOKESPECIAL, "The injection anchor is the superclass death invocation");
+                }
+                if (call.name.equals("setHealth") && heal < 0) heal = index;
+                if (call.name.equals("kill") && disconnect < 0) disconnect = index;
+            }
+            index++;
+        }
+        check(calls == 1 && superclass >= 0 && heal > superclass && disconnect > heal,
+                "Installed Carpet resets health and queues removal after exactly one superclass death call");
+        boolean downed = false, ownedFinalDeath = false;
+        for (var instruction : handler.instructions) if (instruction instanceof MethodInsnNode call) {
+            downed |= call.owner.equals("com/example/examplemod/combat/CombatService") && call.name.equals("downed");
+            ownedFinalDeath |= call.owner.equals("com/example/examplemod/zones/match/bot/MatchBotService")
+                    && call.name.equals("retainAfterDeath");
+        }
+        check(downed && ownedFinalDeath, "The hook distinguishes downed players and retained owned final deaths");
+        System.out.println("TARGET " + owner + ".die" + descriptor + " AFTER ServerPlayer.die");
     }
 
     private static void verifyTarget(ClassNode owner, MethodNode method, String descriptor, boolean isStatic) throws Exception {

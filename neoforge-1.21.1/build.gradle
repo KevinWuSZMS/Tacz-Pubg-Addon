@@ -75,7 +75,7 @@ neoForge {
         // The gametest system is also enabled by default for other run configs under the /test command.
         gameTestServer {
             type = "gameTestServer"
-            systemProperty 'neoforge.enabledGameTestNamespaces', providers.gradleProperty('pubgEntityBenchmark').isPresent() ? 'entity_benchmark' : project.mod_id
+            systemProperty 'neoforge.enabledGameTestNamespaces', providers.gradleProperty('pubgEntityBenchmark').isPresent() ? 'entity_benchmark' : providers.gradleProperty('pubgCombatGameTests').isPresent() ? 'combat_dbno' : project.mod_id
             gameDirectory = project.file(providers.gradleProperty('pubgEntityBenchmark').isPresent() ? 'run-entity-benchmark' : 'run-inventory-tests')
             if (providers.gradleProperty('pubgEntityBenchmark').isPresent()) {
                 systemProperty 'tacz_pubg.entityBenchmark', 'true'
@@ -116,7 +116,7 @@ neoForge {
         // multi mod projects should define one per mod
         "${mod_id}" {
             sourceSet(sourceSets.main)
-            if (providers.gradleProperty('pubgInventoryGameTests').isPresent()) {
+            if (providers.gradleProperty('pubgInventoryGameTests').isPresent() || providers.gradleProperty('pubgCombatGameTests').isPresent()) {
                 sourceSet(sourceSets.test)
             }
         }
@@ -443,6 +443,9 @@ tasks.named('check').configure { dependsOn droppedLootTransitionChecks }
         mainClass = checkClass
         if (checkName in ['heavyWeaponChecks', 'heavyWeaponExplosionChecks']) {
             classpath += files('../downloads/tacz/tacz-neoforge-1.21.1-1.1.8-hotfix-r7.jar')
+        }
+        if (checkName == 'combatAbiChecks') {
+            classpath += files('run/mods/neoforge-carpet-1.21.1-1.0.8+v251027.jar')
         }
         if (checkName in ['throwableSettingsFieldNamesChecks', 'gunAmmoConfigChecks', 'combatRulesChecks', 'combatWireChecks', 'pubgSettingsChecks']) {
             classpath += files('../downloads/lrtactical/LesRaisins-Tactical-Equipements-1.21.1-0.4.3.jar')

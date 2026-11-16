@@ -115,7 +115,7 @@ public record PubgSettings(Map<String, Double> values) {
         n(f,"dbno.sniper_multiplier",1.35,.01,3,false); n(f,"dbno.crossbow_multiplier",1.125,.01,3,false);
         n(f,"dbno.underwater_seconds",10,1,60,false);
         n(f,"rescue.distance",3,1,8,false); n(f,"rescue.ticks",200,20,1200,true);
-        n(f,"rescue.health_percent",30,1,100,false); n(f,"rescue.move_tolerance",.35,.05,2,false);
+        n(f,"rescue.health_percent",10,1,100,false); n(f,"rescue.move_tolerance",.35,.05,2,false);
         n(f,"rescue.aim_dot",.75,.1,1,false);
         b(f,"rescue.pause_bleeding",true);
         n(f,"combat.assist_window_ticks",1200,20,12000,true); n(f,"combat.assist_min_damage",1,0,100,false);
