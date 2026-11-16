@@ -35,6 +35,8 @@ public final class MapZoneChecks {
         strictJson();
         flightPathsAndTwoDimensionalCoordinates();
         identityAndAtomicEdits();
+        forcedDeletion();
+        forcedDeletionGuards();
         countLimits();
         persistence();
         malformedDataProtection();
@@ -317,6 +319,67 @@ public final class MapZoneChecks {
         check(bombs.revision() == 1 && bombs.map(1).equals(maximum), "over-limit bombing edit preserves original map");
     }
 
+    private static void forcedDeletion() {
+        var data = new MapZoneSavedData();
+        var survivor = data.saveMap(0, map(0, null, List.of(bomb(0, new Circle(0, 0, 1)))));
+        var removed = data.saveMap(1, inDimension(map(0, null, List.of()), ResourceLocation.parse("missing:dimension")));
+        var before = data.save(new CompoundTag(), null);
+        rejects(() -> data.forceDeleteMap(0, removed.id()), "force delete still rejects stale revisions");
+        rejects(() -> data.forceDeleteMap(data.revision(), 999), "force delete still rejects unknown maps");
+        check(data.save(new CompoundTag(), null).equals(before), "rejected force deletes preserve every map and counter");
+        data.forceDeleteMap(data.revision(), removed.id());
+        check(data.maps().equals(List.of(survivor)) && data.revision() == 3 && data.isDirty(),
+                "force delete removes only its target and invalidates stale clients");
+        var loaded = MapZoneSavedData.load(data.save(new CompoundTag(), null), null);
+        check(loaded.loadError().isEmpty() && loaded.maps().equals(List.of(survivor)),
+                "force deletion survives persistence without changing another map");
+        var replacement = loaded.saveMap(loaded.revision(), map(0, null, List.of(bomb(0, new Circle(0, 0, 1)))));
+        check(replacement.id() == removed.id() && replacement.bombingZones().getFirst().id() > survivor.bombingZones().getFirst().id(),
+                "force-deleted high IDs are reusable while bombing IDs remain unique");
+        long staleRevision = loaded.revision();
+        loaded.forceDeleteMap(staleRevision, replacement.id());
+        var next = loaded.saveMap(loaded.revision(), map(0, null, List.of()));
+        rejects(() -> loaded.forceDeleteMap(staleRevision, next.id()), "stale deletion cannot remove a reused map ID");
+        check(loaded.map(next.id()).equals(next), "replacement survives stale deletion");
+        loaded.forceDeleteMap(loaded.revision(), survivor.id());
+        loaded.forceDeleteMap(loaded.revision(), next.id());
+        check(loaded.maps().isEmpty() && loaded.saveMap(loaded.revision(), map(0, null, List.of())).id() == 1,
+                "force deleting all maps resets the allocator without renumbering survivors");
+    }
+
+    /** Verify the runtime branch abandons work without entering ordinary edit readiness gates. */
+    private static void forcedDeletionGuards() {
+        var method = bytecode("com/example/examplemod/zones/MapZoneSavedData", "deleteMap", "JJZ");
+        int forceStart = -1, commonStart = -1, ready = -1, writable = -1, associations = -1, abort = -1, clear = -1, journal = -1;
+        for (int i = 1; i < method.instructions.size(); i++) {
+            var insn = method.instructions.get(i);
+            if (insn instanceof org.objectweb.asm.tree.JumpInsnNode branch && branch.getOpcode() == org.objectweb.asm.Opcodes.IFNE
+                    && method.instructions.get(i - 1) instanceof org.objectweb.asm.tree.VarInsnNode value
+                    && value.getOpcode() == org.objectweb.asm.Opcodes.ILOAD && value.var == 5)
+                forceStart = method.instructions.indexOf(branch.label);
+            if (insn instanceof org.objectweb.asm.tree.MethodInsnNode call) {
+                if (call.name.equals("requireWritable")) writable = i;
+                if (call.name.equals("requireEditable")) ready = i;
+                if (call.name.equals("requireMapAssociationsRemovable")) associations = i;
+                if (call.name.equals("abortForMapDeletion")) abort = i;
+                if (call.name.equals("clearMapAssociations")) clear = i;
+                if (call.name.equals("deleted")) journal = i;
+            }
+        }
+        for (int i = ready + 1; i < forceStart; i++)
+            if (method.instructions.get(i) instanceof org.objectweb.asm.tree.JumpInsnNode branch
+                    && branch.getOpcode() == org.objectweb.asm.Opcodes.GOTO)
+                commonStart = method.instructions.indexOf(branch.label);
+        check(forceStart > ready && ready > writable && writable >= 0 && commonStart > abort,
+                "normal readiness gate and forced cancellation occupy mutually exclusive branches after shared validation");
+        check(forceStart < associations && associations < abort && abort < clear && clear < journal,
+                "force preflights associated saves before canceling work, then removes associations and recovery tasks");
+        var deletable = bytecode("com/example/examplemod/backup/MapResetService", "requireDeletable", null);
+        check(calls(deletable, "com/example/examplemod/backup/MapResetData", "requireWritable")
+                        && !calls(deletable, "com/example/examplemod/backup/MapResetService", "requireEditable"),
+                "force deletion protects shared corrupt data without waiting for the target task state");
+    }
+
     private static void persistence() {
         MapZoneSavedData data = new MapZoneSavedData();
         data.saveMap(0, map(0, new Circle(1, 1, 50), List.of(bomb(0, new Circle(10, 0, 40)))));
@@ -351,6 +414,7 @@ public final class MapZoneChecks {
         exhaustedRevision.putLong("revision", Long.MAX_VALUE);
         MapZoneSavedData noRevision = MapZoneSavedData.load(exhaustedRevision, null);
         rejects(() -> noRevision.deleteMap(Long.MAX_VALUE, 1), "revision overflow cannot occur on delete");
+        rejects(() -> noRevision.forceDeleteMap(Long.MAX_VALUE, 1), "revision overflow cannot occur on force delete");
         rejects(() -> noRevision.saveMap(Long.MAX_VALUE, noRevision.map(1)), "revision overflow cannot occur on edit");
     }
 
@@ -395,6 +459,7 @@ public final class MapZoneChecks {
         check(!data.loadError().isEmpty() && data.maps().isEmpty() && !data.isDirty(), label + " freezes editing without scheduling destructive writeback");
         rejects(() -> data.saveMap(data.revision(), map(0, null, List.of())), label + " rejects creation");
         rejects(() -> data.deleteMap(data.revision(), 1), label + " rejects deletion");
+        rejects(() -> data.forceDeleteMap(data.revision(), 1), label + " rejects forced deletion of shared corrupt data");
         malformed.putString("external_mutation", "must not leak into protected data");
         data.setDirty();
         check(data.save(new CompoundTag(), null).equals(original), label + " preserves original NBT even after external dirty flag");

@@ -32,6 +32,7 @@ public final class MapCommandChecks {
     public static void main(String[] args) throws Exception {
         commandTree();
         confirmationGate();
+        destructionConfirmationGate();
         mapDefaults();
         System.out.println("MapCommandChecks: " + checks + " command and context assertions passed");
     }
@@ -46,14 +47,14 @@ public final class MapCommandChecks {
         for (String command : new String[] {
                 "help", "help config", "help map", "help match", "help create", "help destroy", "help loot", "help player",
                 "config", "config help", "map", "map help", "map list", "map info", "map info 7", "map select 7",
-                "map create 0 0 30 40", "map create ~ ~ ~30 ~40", "map destroy", "map destroy 7",
+                "map create 0 0 30 40", "map create ~ ~ ~30 ~40", "map destroy", "map destroy 7", "map destroy 7 confirm",
                 "map freeze", "map freeze 7", "map unfreeze", "map unfreeze 7", "map journal status", "map journal status 7",
                 "map journal retry", "map journal retry 7", "map journal list",
                 "create map 0 0 30 40", "create safezone 15 15 10", "create safezone 15 15 10 7",
                 "create bombingzone 15 15 10", "create bombingzone 15 15 10 7",
                 "create staging 15 15 3", "create staging 15 15 3 7",
                 "create flightpath 0 0 30 30", "create flightpath 0 0 30 30 7", "create loot",
-                "destroy map", "destroy map 7", "destroy safezone", "destroy safezone 7", "destroy bombingzone 12",
+                "destroy map", "destroy map 7", "destroy map 7 confirm", "destroy safezone", "destroy safezone 7", "destroy bombingzone 12",
                 "destroy bombingzone 12 7", "destroy flightpath", "destroy flightpath 7", "destroy staging", "destroy staging 7", "destroy loot",
                 "match start", "match start 7", "match end", "match end 7", "match pause", "match pause 7",
                 "match resume", "match resume 7", "match info", "match info 7",
@@ -86,6 +87,28 @@ public final class MapCommandChecks {
         check(root.getChild("map").getChild("destroy").getCommand()
                         == root.getChild("destroy").getChild("map").getCommand(),
                 "both grouped map deletion conveniences share the same operation");
+        var destroy = root.getChild("map").getChild("destroy");
+        var destroyId = destroy.getChild("mapId");
+        check(destroyId == root.getChild("destroy").getChild("map").getChild("mapId"),
+                "deletion aliases share the same ID and confirmation nodes");
+        check(destroyId instanceof ArgumentCommandNode<?, ?> argument && argument.getCustomSuggestions() == PubgSuggestions.MAPS,
+                "forced deletion suggests existing map IDs");
+        check(destroy.getChild("confirm") == null && destroyId.getCommand() != destroyId.getChild("confirm").getCommand(),
+                "forced deletion requires an explicit ID and has a distinct confirmation branch");
+        for (int permission = 0; permission <= 4; permission++) {
+            check(destroy.getRequirement().test(source(permission)) == (permission >= 2), "deletion retains OP 2 protection");
+            for (String prefix : new String[] {"map destroy", "destroy map"}) {
+                var parsed = dispatcher.parse("pubgdebug " + prefix + " 7 confirm", source(permission));
+                check((!parsed.getReader().canRead() && parsed.getContext().getCommand() != null) == (permission >= 2),
+                        "confirmed deletion permission: " + prefix + " at level " + permission);
+            }
+        }
+        for (String prefix : new String[] {"map destroy", "destroy map"})
+            for (String suffix : new String[] {" confirm", " 0 confirm", " -1 confirm", " confirm 7", " 7 yes", " 7 confirm confirm"}) {
+                var parsed = dispatcher.parse("pubgdebug " + prefix + suffix, source(2));
+                check(parsed.getReader().canRead() || !parsed.getExceptions().isEmpty(),
+                        "invalid deletion confirmation cannot execute: " + prefix + suffix);
+            }
         check(root.getChild("loot").getChild("area").getChild("add").getCommand()
                         == root.getChild("create").getChild("loot").getCommand(),
                 "both grouped loot creation conveniences share the same operation");
@@ -180,6 +203,33 @@ public final class MapCommandChecks {
         var restarted = data.saveMap(data.revision(), draft("restarted", OVERWORLD));
         check(restarted.id() == 1 && MapCommandContext.containing(data.maps(), OVERWORLD, 0, 0).getFirst().id() == 1,
                 "deleting every map and restarting numbering retains the newest-map invariant");
+    }
+
+    /** A preview must return before the forced deletion call, even for an explicit map ID. */
+    private static void destructionConfirmationGate() throws Exception {
+        try (var input = MapCommandChecks.class.getResourceAsStream("/com/example/examplemod/zones/MapZoneCommands.class")) {
+            check(input != null, "map commands are bundled");
+            var node = new ClassNode();
+            new ClassReader(input).accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+            var method = node.methods.stream().filter(m -> m.name.equals("destroyMap")).findFirst().orElseThrow();
+            var instructions = method.instructions;
+            int mutationBranch = -1, delete = -1;
+            boolean previewReturns = false;
+            for (int i = 1; i < instructions.size(); i++) {
+                if (instructions.get(i) instanceof JumpInsnNode branch && branch.getOpcode() == Opcodes.IFNE
+                        && instructions.get(i - 1) instanceof VarInsnNode value && value.getOpcode() == Opcodes.ILOAD && value.var == 3)
+                    mutationBranch = instructions.indexOf(branch.label);
+                if (instructions.get(i) instanceof MethodInsnNode call
+                        && call.owner.equals("com/example/examplemod/zones/MapZoneSavedData")) {
+                    check(!call.name.equals("deleteMap"), "command deletion always uses the explicit force entry point");
+                    if (call.name.equals("forceDeleteMap")) delete = i;
+                }
+            }
+            for (int i = 0; i < mutationBranch; i++)
+                if (instructions.get(i).getOpcode() == Opcodes.IRETURN) previewReturns = true;
+            check(mutationBranch >= 0 && delete > mutationBranch && previewReturns,
+                    "unconfirmed destruction returns before forced deletion and only confirmation reaches it");
+        }
     }
 
     private static MapZoneModel.MapDefinition draft(String name, ResourceLocation dimension) {

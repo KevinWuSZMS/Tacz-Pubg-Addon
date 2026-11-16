@@ -50,6 +50,19 @@ public final class LobbyService {
     public static boolean isPreparing(MinecraftServer server, long mapId) {
         var pending = PREPARING.get(server); return pending != null && pending.containsKey(mapId);
     }
+    /** Cancel preparation without asking a broken/deleted map to restore itself. */
+    public static void abortForMapDeletion(MinecraftServer server, long mapId) {
+        requireThread(server);
+        var pending = PREPARING.get(server);
+        Preparing preparation = pending == null ? null : pending.remove(mapId);
+        if (preparation != null) {
+            preparation.canceled = true;
+            if (preparation.token != null) MatchBotService.cancel(server, preparation.token);
+            if (preparation.spawnToken != null) MatchSpawnPreparation.cancel(server, preparation.spawnToken);
+            if (preparation.spawnPlan != null) preparation.spawnPlan.rollback();
+        }
+        forgetDeletedMap(server, mapId);
+    }
     public static boolean preparingParticipant(MinecraftServer server, UUID id) {
         var pending = PREPARING.get(server);
         return pending != null && pending.values().stream().anyMatch(p -> p.room.members().stream()

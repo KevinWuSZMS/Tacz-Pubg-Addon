@@ -179,6 +179,13 @@ public final class MatchSpawnPreparation {
         Task task = tasks == null ? null : tasks.remove(token);
         if (task != null) task.plan.rollback();
     }
+    public static void cancelMap(MinecraftServer server, long mapId) {
+        requireThread(server);
+        var tasks = TASKS.get(server);
+        if (tasks == null) return;
+        for (Task task : new ArrayList<>(tasks.values())) if (task.plan.map.id() == mapId)
+            cancel(server, task.plan.token);
+    }
     public static void stopped(MinecraftServer server) {
         var tasks = TASKS.remove(server);
         if (tasks != null) for (Task task : tasks.values()) task.plan.rollback();

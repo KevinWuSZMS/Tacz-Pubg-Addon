@@ -132,6 +132,10 @@ public final class MapResetService {
         if (entry != null && !entry.state.equals("PROTECTED") && !entry.state.equals("EDITING"))
             throw new IllegalStateException(Texts.tr("message.tacz_pubg.journal.not_ready"));
     }
+    /** Forced deletion accepts capturing, restoring and failed tasks without waiting for chunks. */
+    public static void requireDeletable(MinecraftServer server) {
+        runtime(server).data.requireWritable();
+    }
     /** Finish the previous restore's save boundary before allowing permanent world edits. */
     public static void unfreeze(MinecraftServer server, long id) {
         var run = runtime(server); run.data.requireWritable();

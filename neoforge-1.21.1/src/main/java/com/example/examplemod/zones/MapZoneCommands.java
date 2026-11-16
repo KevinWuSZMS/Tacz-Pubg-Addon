@@ -48,7 +48,12 @@ public final class MapZoneCommands {
                         .then(Commands.argument("pos2", Vec2Argument.vec2(false))
                                 .executes(context -> createMap(context.getSource(),
                                         Vec2Argument.getVec2(context, "pos1"), Vec2Argument.getVec2(context, "pos2"))))).build();
-        var destroyMap = mapCommand("destroy", MapZoneCommands::destroyMap).build();
+        var destroyMap = Commands.literal("destroy").requires(source -> source.hasPermission(2))
+                .executes(context -> destroyMap(context.getSource(), 0, false))
+                .then(mapArgument()
+                        .executes(context -> destroyMap(context.getSource(), LongArgumentType.getLong(context, "mapId"), false))
+                        .then(Commands.literal("confirm").executes(context -> destroyMap(context.getSource(),
+                                LongArgumentType.getLong(context, "mapId"), true)))).build();
         var map = PubgCommandHelp.group("map")
                 .then(createMap).then(destroyMap)
                 .then(mapCommand("freeze", (source, id) -> freeze(source, id, true)))
@@ -230,12 +235,18 @@ public final class MapZoneCommands {
                 map.flightPath(), map.visualStyle(), staging);
     }
 
-    private static int destroyMap(CommandSourceStack source, long mapId) {
+    private static int destroyMap(CommandSourceStack source, long mapId, boolean confirmed) {
         try {
             var map = MapCommandContext.resolve(source, mapId);
+            if (!confirmed) {
+                // Pin confirmation to the resolved ID even when the preview uses the caller's location.
+                success(source, Texts.tr("command.tacz_pubg.map.destroy_preview", map.id(), map.name(),
+                        "/pubgdebug map destroy " + map.id() + " confirm"));
+                return 0;
+            }
             var data = availableData(source.getServer());
-            data.deleteMap(data.revision(), map.id());
-            success(source, Texts.tr("command.tacz_pubg.map.deleted", map.id(), map.name()));
+            data.forceDeleteMap(data.revision(), map.id());
+            success(source, Texts.tr("command.tacz_pubg.map.force_deleted", map.id(), map.name()));
             return 1;
         } catch (IllegalArgumentException | IllegalStateException error) { return failure(source, error); }
     }

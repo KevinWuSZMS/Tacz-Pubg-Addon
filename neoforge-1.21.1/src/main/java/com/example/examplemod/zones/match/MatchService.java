@@ -247,6 +247,22 @@ public final class MatchService {
         return session;
     }
     public static MatchSession end(MinecraftServer server, long mapId) {
+        MatchSession ended = endSession(server, mapId);
+        MapResetService.ended(server, ended.map()); return ended;
+    }
+    /** Retire this map's live work immediately; deletion abandons its recovery journal. */
+    public static void abortForMapDeletion(MinecraftServer server, MapDefinition map) {
+        if (!server.isSameThread()) throw new IllegalStateException("Map deletion must run on the server thread");
+        boolean retiringRound = isRunning(server, map.id());
+        LobbyService.abortForMapDeletion(server, map.id());
+        // Direct command starts also have staging tasks, outside the lobby coordinator.
+        // Remove them now: the numeric map ID can be reused before the next server tick.
+        MatchSpawnPreparation.cancelMap(server, map.id());
+        if (session(server, map.id()) != null) endSession(server, map.id());
+        if (retiringRound) com.example.examplemod.lootspawn.RoundLootService.end(server, map);
+        else com.example.examplemod.lootspawn.LootRespawnService.cancelMap(server, map);
+    }
+    private static MatchSession endSession(MinecraftServer server, long mapId) {
         MatchRuntimeState state = STATES.get(server);
         if (state == null) throw new IllegalStateException(Texts.tr("message.tacz_pubg.match_runtime_state.map_has_no_active_match", mapId));
         MatchSession ended = state.end(mapId);
@@ -256,7 +272,7 @@ public final class MatchService {
         BombingService.stop(server, ended.sessionId());
         MatchBotService.stop(server, ended.sessionId());
         restoreFinishedModes(server, state);
-        MapResetService.ended(server, ended.map()); return ended;
+        return ended;
     }
     public static void pause(MinecraftServer server, long mapId) {
         MatchRuntimeState state = requireState(server);

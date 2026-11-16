@@ -83,10 +83,27 @@ public final class MapZoneSavedData extends SavedData {
     }
 
     public void deleteMap(long expectedRevision, long id) {
+        deleteMap(expectedRevision, id, false);
+    }
+
+    /** Explicit administrator confirmation abandons pending recovery instead of waiting for it. */
+    public void forceDeleteMap(long expectedRevision, long id) {
+        deleteMap(expectedRevision, id, true);
+    }
+
+    private void deleteMap(long expectedRevision, long id, boolean force) {
         requireWritable(expectedRevision);
-        requireNotRunning(id);
-        if (runtimeOwner != null) com.example.examplemod.backup.MapResetService.requireEditable(runtimeOwner, id);
         if (!maps.containsKey(id)) throw new IllegalArgumentException(Texts.tr("message.tacz_pubg.map_zone_saved_data.map_does_not_exist", id));
+        if (!force) {
+            requireNotRunning(id);
+            if (runtimeOwner != null) com.example.examplemod.backup.MapResetService.requireEditable(runtimeOwner, id);
+        } else if (runtimeOwner != null) {
+            // Check every persistent store before canceling any live work. Force bypasses task
+            // readiness, not corruption of shared save files containing other maps' data.
+            com.example.examplemod.backup.MapResetService.requireDeletable(runtimeOwner);
+            requireMapAssociationsRemovable(id);
+            com.example.examplemod.zones.match.MatchService.abortForMapDeletion(runtimeOwner, maps.get(id));
+        }
         clearMapAssociations(id);
         maps.remove(id);
         if (runtimeOwner != null) com.example.examplemod.backup.MapResetService.deleted(runtimeOwner, id);
@@ -102,12 +119,16 @@ public final class MapZoneSavedData extends SavedData {
         var settings = com.example.examplemod.zones.match.MatchConfigSavedData.get(runtimeOwner);
         var rooms = com.example.examplemod.zones.match.lobby.LobbySavedData.get(runtimeOwner);
         // Validate both persistent stores before removing either record.
-        settings.requireMapRemovable(id);
-        rooms.requireMapRemovable(id);
+        requireMapAssociationsRemovable(id);
         com.example.examplemod.zones.match.MatchService.forgetDeletedMap(runtimeOwner, id);
         settings.removeMap(id);
         rooms.removeMap(id);
         com.example.examplemod.zones.match.lobby.LobbyService.forgetDeletedMap(runtimeOwner, id);
+    }
+
+    private void requireMapAssociationsRemovable(long id) {
+        com.example.examplemod.zones.match.MatchConfigSavedData.get(runtimeOwner).requireMapRemovable(id);
+        com.example.examplemod.zones.match.lobby.LobbySavedData.get(runtimeOwner).requireMapRemovable(id);
     }
 
     private void requireWritable(long expectedRevision) {
