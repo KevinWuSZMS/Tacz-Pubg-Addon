@@ -37,7 +37,8 @@ public final class LeanService {
     }
 
     public static boolean eligible(Player player) {
-        return MovementService.eligible(player) && !player.isSprinting();
+        return MovementService.eligible(player) && !player.isSprinting()
+                && !com.example.examplemod.combat.CombatService.blocked(player);
     }
 
     public static void input(ServerPlayer player, int entityId, int sequence, int direction) {

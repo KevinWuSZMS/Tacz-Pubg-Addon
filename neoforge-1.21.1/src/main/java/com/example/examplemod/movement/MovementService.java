@@ -6,6 +6,7 @@ import com.example.examplemod.zones.match.flight.MatchFlightService;
 import com.example.examplemod.zones.match.flight.ParachuteItem;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.Pose;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
@@ -38,9 +39,10 @@ public final class MovementService {
     }
 
     public static boolean eligible(Player player) {
+        boolean rescue=CombatService.rescuing(player);
         if (!player.isAlive() || player.isSpectator() || player.getAbilities().flying || player.isPassenger()
-                || player.isSleeping() || player.isSwimming() || player.isInWater() || player.isInLava()
-                || player.isFallFlying() || player.isAutoSpinAttack() || CombatService.blocked(player)) return false;
+                || player.isSleeping() || (!rescue&&(player.isSwimming() || player.isInWater())) || player.isUnderWater() || player.isInLava()
+                || player.isFallFlying() || player.isAutoSpinAttack() || CombatService.downed(player)) return false;
         if (player instanceof ServerPlayer server && MatchFlightService.airborne(server.server, player.getUUID())) return false;
         return !ParachuteItem.isEquipped(player) || player.onGround();
     }
@@ -59,8 +61,18 @@ public final class MovementService {
     }
 
     public static void input(ServerPlayer player, Mode mode, boolean active) {
+        // Stance input ends rescue before the new stance is authorized and applied.
+        if (CombatService.rescuing(player) && (!active || mode != Mode.CROUCH))
+            CombatService.rescue(player, player.getUUID(), true);
         // Force a metadata acknowledgement even when rejection leaves the server's old value unchanged.
         update(player, MovementModes.authorize(mode, active, eligible(player)), true);
+    }
+
+    /** Rescue uses the same replicated ground crouch as the match controls. */
+    public static void beginRescue(ServerPlayer player) {
+        update(player, MovementModes.encode(Mode.CROUCH, true), true);
+        player.setSprinting(false);
+        player.setPose(Pose.CROUCHING);
     }
 
     public static void clear(Player player) { update(player, (byte) 0, false); }

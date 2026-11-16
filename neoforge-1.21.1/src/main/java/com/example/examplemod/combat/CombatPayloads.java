@@ -80,18 +80,20 @@ public final class CombatPayloads {
     }
     private static volatile Snapshot latest = Snapshot.EMPTY;
     private static Consumer<Snapshot> snapshots = ignored -> {};
+    private static Consumer<Rescue> rescueUpdates = ignored -> {};
     private static Consumer<Event> events = ignored -> {};
     private static BiPredicate<UUID,Connection> clientGate = (session,connection) -> false;
     public static Snapshot latest() { return latest; }
-    public static void clearClient() { latest = Snapshot.EMPTY; }
+    public static void clearClient() { latest = Snapshot.EMPTY; rescueUpdates.accept(Rescue.NONE); }
     public static boolean clientDowned(UUID id) { return latest.players.stream().anyMatch(p -> p.id.equals(id) && p.downed); }
     public static void setClientHandlers(Consumer<Snapshot> snapshot, Consumer<Event> event) { snapshots = snapshot; events = event; }
+    public static void setClientRescueHandler(Consumer<Rescue> handler) { rescueUpdates = handler; }
     public static void setClientSessionGate(BiPredicate<UUID,Connection> gate) { clientGate=gate; }
     public static void register(RegisterPayloadHandlersEvent event) {
         var registrar = event.registrar("1-combat");
         registrar.playToClient(Snapshot.TYPE, Snapshot.CODEC, (p,c) -> {
             Connection connection=c.connection();
-            c.enqueueWork(() -> {if(clientGate.test(p.session,connection)&&(!latest.session.equals(p.session)||p.sequence>=latest.sequence)){latest=p;snapshots.accept(p);}});
+            c.enqueueWork(() -> {if(clientGate.test(p.session,connection)&&(!latest.session.equals(p.session)||p.sequence>=latest.sequence)){latest=p;rescueUpdates.accept(p.rescue);snapshots.accept(p);}});
         });
         registrar.playToClient(EventMessage.TYPE, EventMessage.CODEC, (p,c) -> {
             Connection connection=c.connection();

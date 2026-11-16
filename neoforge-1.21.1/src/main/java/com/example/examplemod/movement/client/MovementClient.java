@@ -1,6 +1,7 @@
 package com.example.examplemod.movement.client;
 
-import com.example.examplemod.combat.client.CombatInputClient;
+import com.example.examplemod.combat.CombatService;
+import com.example.examplemod.combat.CombatPayloads;
 import com.example.examplemod.keybindings.BindingInput;
 import com.example.examplemod.keybindings.BindingProfile;
 import com.example.examplemod.keybindings.BindingProfiles;
@@ -36,7 +37,7 @@ public final class MovementClient {
     private static final MovementState STATE = new MovementState();
     private static final EnumMap<Action, KeyMapping> KEYS = new EnumMap<>(Action.class);
     private static Mode sentMode = Mode.STAND;
-    private static boolean sentActive, clearNativeCrawl, pendingStandFrame, wasFlying;
+    private static boolean sentActive, clearNativeCrawl, pendingStandFrame, wasFlying, wasRescuing;
     private static Object playerIdentity;
     private static BindingProfile profile;
     static {
@@ -49,6 +50,7 @@ public final class MovementClient {
                 InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, "key.categories.tacz_pubg"));
     }
     public static void register(IEventBus bus) {
+        CombatPayloads.setClientRescueHandler(MovementClient::acceptRescueStance);
         bus.addListener((RegisterKeyMappingsEvent event) -> KEYS.values().forEach(event::register));
         NeoForge.EVENT_BUS.addListener(EventPriority.HIGHEST, MovementClient::key);
         NeoForge.EVENT_BUS.addListener(EventPriority.HIGHEST, MovementClient::mouse);
@@ -66,6 +68,7 @@ public final class MovementClient {
             change(entry.getKey(), event.getAction());
     }
     private static void change(Action action, int event) {
+        adoptRescueStance();
         if (event == GLFW.GLFW_RELEASE) {
             STATE.release(action); sync();
             var player = Minecraft.getInstance().player;
@@ -92,11 +95,12 @@ public final class MovementClient {
     private static void tick() {
         var mc = Minecraft.getInstance();
         if (mc.player != playerIdentity) {
-            STATE.reset(); sentMode = Mode.STAND; sentActive = false; clearNativeCrawl = false; pendingStandFrame = false;
+            STATE.reset(); sentMode = Mode.STAND; sentActive = false; clearNativeCrawl = false; pendingStandFrame = false; wasRescuing = false;
             playerIdentity = mc.player;
         }
         BindingProfile current = BindingProfiles.get().activeProfile();
         if (profile != current) { reset(true); profile = current; }
+        adoptRescueStance();
         for (var entry : KEYS.entrySet()) {
             while (entry.getValue().consumeClick()) { }
             if (!BindingInput.physicallyHeld(entry.getValue())) STATE.release(entry.getKey());
@@ -126,9 +130,24 @@ public final class MovementClient {
     }
     public static boolean groundContext() {
         var mc = Minecraft.getInstance(); var p = mc.player;
+        boolean rescue = p != null && CombatService.rescuing(p);
         return p != null && p.isAlive() && !p.isSpectator() && !p.getAbilities().flying && !p.isPassenger()
-                && !p.isSwimming() && !p.isInWater() && !p.isInLava() && !p.isFallFlying() && !p.isSleeping() && !p.isAutoSpinAttack()
-                && !(ParachuteItem.isEquipped(p) && !p.onGround()) && !CombatInputClient.blocked();
+                && (rescue || !p.isSwimming() && !p.isInWater()) && !p.isUnderWater() && !p.isInLava() && !p.isFallFlying() && !p.isSleeping() && !p.isAutoSpinAttack()
+                && !(ParachuteItem.isEquipped(p) && !p.onGround()) && !CombatService.downed(p);
+    }
+    private static void adoptRescueStance() {
+        acceptRescueStance(CombatPayloads.latest().rescue());
+    }
+    private static void acceptRescueStance(CombatPayloads.Rescue state) {
+        var player = Minecraft.getInstance().player;
+        boolean rescue = player != null && state.active() && state.rescuer().equals(player.getUUID());
+        if (rescue && !wasRescuing) {
+            STATE.adoptRescueCrouch();
+            clearNativeCrawl = true; pendingStandFrame = false;
+            MovementService.predict(player, Mode.CROUCH, true);
+            player.setSprinting(false); player.setPose(Pose.CROUCHING);
+        }
+        wasRescuing = rescue;
     }
     public static boolean ownsGround() {
         return groundContext() && (BindingProfiles.get().activeProfile() == BindingProfile.MATCH
@@ -208,5 +227,6 @@ public final class MovementClient {
             if (send && sentActive && mc.getConnection() != null) PacketDistributor.sendToServer(new MovementPayloads.Input(Mode.STAND, false));
         }
         sentMode = Mode.STAND; sentActive = false;
+        if (mc.player == null) wasRescuing = false;
     }
 }

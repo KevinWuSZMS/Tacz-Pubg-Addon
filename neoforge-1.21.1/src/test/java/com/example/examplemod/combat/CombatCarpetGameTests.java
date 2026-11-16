@@ -2,6 +2,8 @@ package com.example.examplemod.combat;
 
 import carpet.patches.EntityPlayerMPFake;
 import carpet.patches.NetHandlerPlayServerFake;
+import com.example.examplemod.movement.MovementService;
+import com.example.examplemod.movement.MovementState.Mode;
 import com.example.examplemod.pubgsettings.PubgSettingsService;
 import com.example.examplemod.zones.MapZoneModel;
 import com.example.examplemod.zones.match.MatchConfigModel;
@@ -103,6 +105,45 @@ public final class CombatCarpetGameTests {
         });
     }
 
+    @GameTest(template = "empty", templateNamespace = "combat_dbno", batch = "combat_dbno", timeoutTicks = 600)
+    public static void rescueUsesMatchCrouchAndChangingStanceCancelsIt(GameTestHelper helper) throws Exception {
+        Fixture f = new Fixture(helper);
+        f.later(65, () -> {
+            f.knock(1);
+            f.later(3, () -> {
+                BlockPos ceiling = f.ally.blockPosition().above();
+                var previous = helper.getLevel().getBlockState(ceiling);
+                try {
+                    helper.getLevel().setBlockAndUpdate(ceiling, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState());
+                    MovementService.input(f.ally, Mode.PRONE, true);
+                    f.ally.setPose(Pose.SWIMMING); f.faceVictim();
+                    CombatService.rescue(f.ally, f.victim.getUUID(), false);
+                    helper.assertTrue(!CombatService.rescuing(f.ally) && f.ally.getPose() == Pose.SWIMMING,
+                            "Rescue expanded a prone rescuer into a low ceiling");
+                } finally { helper.getLevel().setBlockAndUpdate(ceiling, previous); }
+                f.beginRescue();
+                f.later(3, () -> {
+                    f.assertRescueCrouch();
+                    MovementService.input(f.ally, Mode.CROUCH, true);
+                    f.later(3, () -> {
+                        f.assertRescueCrouch();
+                        f.checkRescueStanceChanges(List.of(Mode.STAND, Mode.PRONE, Mode.SPRINT), 0, () ->
+                                f.later((int) f.setting("rescue.ticks") + 2, () -> {
+                                    helper.assertTrue(!CombatService.rescuing(f.ally) && !CombatService.downed(f.victim),
+                                            "Rescue could not complete after cancelling and restarting for stance changes");
+                                    helper.assertTrue(MovementService.mode(f.ally) == Mode.CROUCH && f.ally.getPose() == Pose.CROUCHING,
+                                            "Completing rescue should leave the rescuer in the match crouch stance");
+                                    helper.assertTrue(Math.abs(f.victim.getHealth() - f.victim.getMaxHealth()
+                                            * f.setting("rescue.health_percent") / 100) < .001,
+                                            "Rescue following stance cancellation restored the wrong health");
+                                    f.close(); helper.succeed();
+                                }));
+                    });
+                });
+            });
+        });
+    }
+
     @FunctionalInterface private interface CheckedAction { void run() throws Exception; }
 
     private static final class Fixture implements AutoCloseable {
@@ -179,6 +220,36 @@ public final class CombatCarpetGameTests {
         CaptureConnection capture(ServerPlayer player) { return (CaptureConnection) player.connection; }
         CombatPayloads.Snapshot snapshot() { CombatService.push(victim); return capture(victim).snapshot; }
         void faceVictim() { ally.lookAt(EntityAnchorArgument.Anchor.EYES, victim.getBoundingBox().getCenter()); }
+
+        void beginRescue() {
+            faceVictim();
+            CombatService.rescue(ally, victim.getUUID(), false);
+            assertRescueCrouch();
+        }
+
+        void assertRescueCrouch() {
+            helper.assertTrue(CombatService.rescuing(ally) && MovementService.mode(ally) == Mode.CROUCH
+                            && ally.getPose() == Pose.CROUCHING,
+                    "Rescue must actively use the synchronized match crouch stance: rescuing="
+                            + CombatService.rescuing(ally) + ", mode=" + MovementService.mode(ally) + ", pose=" + ally.getPose());
+        }
+
+        void checkRescueStanceChanges(List<Mode> modes, int index, CheckedAction done) throws Exception {
+            if (index == modes.size()) { done.run(); return; }
+            Mode next = modes.get(index);
+            MovementService.input(ally, next, true);
+            helper.assertTrue(!CombatService.rescuing(ally), "Changing stance to " + next + " did not immediately cancel rescue");
+            helper.assertTrue(MovementService.mode(ally) == next, "Cancelling rescue blocked the requested stance " + next);
+            later(2, () -> {
+                helper.assertTrue(!CombatService.rescuing(ally) && MovementService.mode(ally) == next,
+                        "Rescue reasserted its crouch stance after a deliberate change to " + next);
+                beginRescue();
+                later(2, () -> {
+                    assertRescueCrouch();
+                    checkRescueStanceChanges(modes, index + 1, done);
+                });
+            });
+        }
 
         void knock(int count) {
             victim.invulnerableTime = 0;

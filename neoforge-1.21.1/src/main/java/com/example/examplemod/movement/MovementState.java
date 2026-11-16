@@ -15,6 +15,9 @@ public final class MovementState {
     public boolean held(Action action) { return held.contains(action); }
     public boolean anyHeld() { return !held.isEmpty(); }
 
+    /** Keep existing key latches: an old held key must not undo the server's rescue crouch. */
+    public void adoptRescueCrouch() { mode = Mode.CROUCH; consumeJump = false; }
+
     public void press(Action action) { press(action, false); }
     public void press(Action action, boolean externallyLowered) {
         if (!held.add(action)) return;

@@ -1,6 +1,8 @@
 package com.example.examplemod.combat;
 
 import com.example.examplemod.pubgsettings.PubgSettingsService;
+import com.example.examplemod.movement.MovementService;
+import com.example.examplemod.movement.MovementState.Mode;
 import com.example.examplemod.throwables.PubgThrowableEntity;
 import com.example.examplemod.throwables.ThrowableKind;
 import com.example.examplemod.throwables.ThrowableService;
@@ -115,6 +117,13 @@ public final class CombatService {
     }
     public static boolean downed(ServerPlayer p) { Game g=game(p,false);return g!=null && g.players.get(p.getUUID())!=null && g.players.get(p.getUUID()).down!=null; }
     public static boolean rescuing(ServerPlayer p) { Game g=game(p,false);return g!=null && g.rescues.containsKey(p.getUUID()); }
+    public static boolean downed(net.minecraft.world.entity.player.Player p) {
+        return p instanceof ServerPlayer server?downed(server):p.level().isClientSide&&CombatPayloads.clientDowned(p.getUUID());
+    }
+    public static boolean rescuing(net.minecraft.world.entity.player.Player p) {
+        var rescue=CombatPayloads.latest().rescue();
+        return p instanceof ServerPlayer server?rescuing(server):p.level().isClientSide&&rescue.active()&&rescue.rescuer().equals(p.getUUID());
+    }
     public static boolean actionBlocked(ServerPlayer p) { return downed(p)||rescuing(p); }
     public static boolean blocked(net.minecraft.world.entity.LivingEntity entity) {
         if(entity instanceof ServerPlayer p)return actionBlocked(p);
@@ -272,13 +281,19 @@ public final class CombatService {
         ServerPlayer victim=rescuer.server.getPlayerList().getPlayer(target);
         if(victim==null||rescuer.isUsingItem()||rescuer.containerMenu!=rescuer.inventoryMenu||g.rescues.values().stream().anyMatch(r->r.target.equals(target)))return;
         var use=new Reviving(rescuer,victim,g.engine.combatTicks(),(int)number(rescuer.server,"rescue.ticks"));
-        if(!validRescue(rescuer.server,g,use))return;
-        g.rescues.put(rescuer.getUUID(),use);rescuer.stopUsingItem();ThrowableService.cancel(rescuer);MatchBotService.suspend(rescuer);pushAll(g,rescuer.server);
+        if(!validRescue(rescuer.server,g,use,false))return;
+        g.rescues.put(rescuer.getUUID(),use);rescuer.stopUsingItem();ThrowableService.cancel(rescuer);MatchBotService.suspend(rescuer);
+        MovementService.beginRescue(rescuer);pushAll(g,rescuer.server);
     }
     private static boolean validRescue(MinecraftServer server,Game g,Reviving r) {
+        return validRescue(server,g,r,true);
+    }
+    private static boolean validRescue(MinecraftServer server,Game g,Reviving r,boolean started) {
         ServerPlayer a=server.getPlayerList().getPlayer(r.rescuer),b=server.getPlayerList().getPlayer(r.target);
         if(a==null||b==null||!standing(server,g,r.rescuer)||!g.engine.alive(r.target)||!b.isAlive()||g.players.get(r.target).eliminated||g.players.get(r.target).down==null
                 ||a.level()!=b.level()||a.getInventory().selected!=r.slot||a.isUsingItem()||a.isSprinting()||a.isPassenger()||a.getAbilities().flying||a.containerMenu!=a.inventoryMenu)return false;
+        if(started&&(MovementService.mode(a)!=Mode.CROUCH||a.getPose()!=Pose.CROUCHING))return false;
+        if(!started&&!a.level().noCollision(a,a.getDimensions(Pose.CROUCHING).makeBoundingBox(a.position()).deflate(1.0E-7)))return false;
         double tolerance=number(server,"rescue.move_tolerance");
         Vec3 eye=a.getEyePosition(),aim=b.getBoundingBox().getCenter();
         boolean visible=a.level().clip(new ClipContext(eye,aim,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,a)).getType()==HitResult.Type.MISS;
