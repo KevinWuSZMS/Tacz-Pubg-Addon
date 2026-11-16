@@ -431,6 +431,7 @@ tasks.named('check').configure { dependsOn droppedLootTransitionChecks }
         leanShotDispatchChecks: 'com.example.examplemod.lean.client.LeanShotDispatchChecks',
         leanTrajectoryChecks: 'com.example.examplemod.lean.LeanTrajectoryChecks',
         leanRenderChecks: 'com.example.examplemod.lean.client.LeanRenderChecks',
+        leanViewTransitionChecks: 'com.example.examplemod.lean.client.LeanViewTransitionChecks',
         leanAbiChecks: 'com.example.examplemod.lean.LeanAbiChecks'
 ].each { checkName, checkClass ->
     def logicalCheck = tasks.register(checkName, JavaExec) {

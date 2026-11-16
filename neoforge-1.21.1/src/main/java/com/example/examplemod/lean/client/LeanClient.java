@@ -48,6 +48,7 @@ public final class LeanClient {
         });
         NeoForge.EVENT_BUS.addListener(EventPriority.NORMAL, (ClientTickEvent.Pre event) -> tick());
         NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut event) -> {
+            LeanCameraView.clear();
             INPUT.reset(); identity = null; profile = null; sequence = 0; sentDirection = Integer.MIN_VALUE;
         });
     }

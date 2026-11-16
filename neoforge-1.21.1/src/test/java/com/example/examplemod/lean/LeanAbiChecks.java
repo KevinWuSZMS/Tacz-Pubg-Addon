@@ -25,7 +25,8 @@ public final class LeanAbiChecks {
         MethodNode pick = method(MC + "client/renderer/GameRenderer", "pick", "(Lnet/minecraft/world/entity/Entity;DDF)Lnet/minecraft/world/phys/HitResult;");
         calls(pick, MC + "world/entity/Entity", "getEyePosition", "(F)Lnet/minecraft/world/phys/Vec3;", 1);
         calls(pick, MC + "world/entity/Entity", "pick", "(DFZ)Lnet/minecraft/world/phys/HitResult;", 1);
-        method(MC + "client/renderer/GameRenderer", "renderLevel", "(Lnet/minecraft/client/DeltaTracker;)V");
+        calls(pick, MC + "world/entity/Entity", "getViewVector", "(F)Lnet/minecraft/world/phys/Vec3;", 1);
+        cameraViewFrame(camera);
         method(MC + "world/entity/player/Player", "defineSynchedData", "(Lnet/minecraft/network/syncher/SynchedEntityData$Builder;)V");
         String shootArgs = "(Lcom/tacz/guns/entity/shooter/ShooterDataHolder;Lnet/minecraft/world/item/ItemStack;Ljava/util/function/Supplier;Ljava/util/function/Supplier;Lnet/minecraft/world/entity/LivingEntity;)V";
         calls(method(TACZ + "entity/shooter/LivingEntityShoot", "shoot", "(Ljava/util/function/Supplier;Ljava/util/function/Supplier;JFZ)Lcom/tacz/guns/api/entity/ShootResult;"),
@@ -66,6 +67,35 @@ public final class LeanAbiChecks {
         calls(method(MC + "client/renderer/entity/LivingEntityRenderer", "render", "(Lnet/minecraft/world/entity/LivingEntity;FFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V"),
                 MC + "client/model/EntityModel", "setupAnim", "(Lnet/minecraft/world/entity/Entity;FFFFF)V", 1);
         System.out.println("LeanAbiChecks: " + checks + " actual MC/TaCZ bytecode checks passed");
+    }
+    private static void cameraViewFrame(MethodNode setup) throws Exception {
+        String camera = MC + "client/Camera";
+        ClassNode type = load(camera);
+        for (String name : new String[]{"eyeHeight", "eyeHeightOld"}) {
+            check(type.fields.stream().filter(field -> field.name.equals(name) && field.desc.equals("F")
+                    && (field.access & Opcodes.ACC_STATIC) == 0).count() == 1,
+                    "native camera exposes one instance float for shadowed " + name);
+        }
+        int eyeHeightAt = fieldIndex(setup, Opcodes.GETFIELD, camera, "eyeHeight", "F");
+        int eyeHeightOldAt = fieldIndex(setup, Opcodes.GETFIELD, camera, "eyeHeightOld", "F");
+        int positionAt = callIndex(setup, camera, "setPosition", "(DDD)V");
+        int zoomAt = callIndex(setup, camera, "getMaxZoom", "(F)F");
+        calls(setup, camera, "move", "(FFF)V", 2);
+        int firstMoveAt = Integer.MAX_VALUE;
+        for (var instruction : setup.instructions) {
+            if (instruction instanceof MethodInsnNode call && call.owner.equals(camera)
+                    && call.name.equals("move") && call.desc.equals("(FFF)V"))
+                firstMoveAt = Math.min(firstMoveAt, setup.instructions.indexOf(instruction));
+        }
+        check(eyeHeightAt < positionAt && eyeHeightOldAt < positionAt,
+                "native setup reads both smoothed eye heights before positioning the camera");
+        check(positionAt < zoomAt && zoomAt < firstMoveAt,
+                "shared lean eye is installed before native third-person collision and camera movement");
+        String renderer = MC + "client/renderer/GameRenderer";
+        MethodNode render = method(renderer, "renderLevel", "(Lnet/minecraft/client/DeltaTracker;)V");
+        int pickAt = callIndex(render, renderer, "pick", "(F)V");
+        int setupAt = callIndex(render, camera, "setup", "(Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/world/entity/Entity;ZZF)V");
+        check(pickAt < setupAt, "world frame picks before camera setup, requiring a precomputed shared eye");
     }
     private static void shotScheduling(MethodNode round) throws Exception {
         String owner = TACZ + "client/gameplay/LocalPlayerShoot";
