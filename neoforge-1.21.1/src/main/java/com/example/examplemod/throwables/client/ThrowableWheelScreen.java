@@ -69,12 +69,7 @@ final class ThrowableWheelScreen extends Screen {
     @Override public void tick() {
         if (!canChoose()) { onClose(); return; }
         // Opening a Screen clears KeyMapping.isDown(), so inspect the physical trigger instead.
-        var key = trigger.getKey();
-        long window = minecraft.getWindow().getWindow();
-        if (key.getType() == InputConstants.Type.KEYSYM && key.getValue() != GLFW.GLFW_KEY_UNKNOWN
-                && GLFW.glfwGetKey(window, key.getValue()) == GLFW.GLFW_RELEASE
-                || key.getType() == InputConstants.Type.MOUSE
-                && GLFW.glfwGetMouseButton(window, key.getValue()) == GLFW.GLFW_RELEASE) choose();
+        if (!com.example.examplemod.keybindings.BindingInput.physicallyHeld(trigger)) choose();
     }
 
     @Override public void render(GuiGraphics graphics, int mouseX, int mouseY, float partial) {
@@ -119,12 +114,12 @@ final class ThrowableWheelScreen extends Screen {
     }
 
     @Override public boolean mouseReleased(double x, double y, int button) {
-        if (trigger.matchesMouse(button)) choose();
+        if (trigger.matchesMouse(button) && !com.example.examplemod.keybindings.BindingInput.physicallyHeld(trigger)) choose();
         return true;
     }
 
     @Override public boolean keyReleased(int key, int scan, int modifiers) {
-        if (trigger.matches(key, scan)) { choose(); return true; }
+        if (trigger.matches(key, scan) && !com.example.examplemod.keybindings.BindingInput.physicallyHeld(trigger)) { choose(); return true; }
         return super.keyReleased(key, scan, modifiers);
     }
 

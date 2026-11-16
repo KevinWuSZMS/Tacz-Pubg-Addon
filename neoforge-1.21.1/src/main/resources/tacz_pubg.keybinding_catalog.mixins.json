@@ -1,0 +1,8 @@
+{
+  "required": true,
+  "minVersion": "0.8.5",
+  "package": "com.example.examplemod.keybindings.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": ["KeyMappingCatalogMixin"],
+  "injectors": {"defaultRequire": 1}
+}

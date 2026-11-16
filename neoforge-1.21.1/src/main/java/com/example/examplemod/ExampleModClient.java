@@ -22,6 +22,8 @@ import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 @EventBusSubscriber(modid = ExampleMod.MODID, value = Dist.CLIENT)
 public class ExampleModClient {
     public ExampleModClient(ModContainer container, IEventBus modEventBus) {
+        com.example.examplemod.keybindings.BindingInput.register();
+        com.example.examplemod.keybindings.client.BindingUiClient.register();
         SpawnAreaClient.register();
         SpawnRegionConfigClient.register();
         MapZoneConfigClient.register();
@@ -33,6 +35,7 @@ public class ExampleModClient {
         com.example.examplemod.combat.client.CombatInputClient.register(modEventBus);
         com.example.examplemod.zones.match.client.MatchSpectatorClient.register(modEventBus);
         com.example.examplemod.zones.match.flight.client.FlightClient.register(modEventBus);
+        com.example.examplemod.movement.client.MovementClient.register(modEventBus);
         com.example.examplemod.zones.client.MapOverlayClient.register();
         com.example.examplemod.zones.client.MapOverlayHud.register(modEventBus);
         com.example.examplemod.zones.client.visual.BlueZoneVisuals.register(

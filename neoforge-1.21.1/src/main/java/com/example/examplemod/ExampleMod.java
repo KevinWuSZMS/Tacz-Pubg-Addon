@@ -83,6 +83,7 @@ public class ExampleMod {
 
     public ExampleMod(IEventBus modEventBus, ModContainer modContainer) {
         com.example.examplemod.combat.CombatService.register(NeoForge.EVENT_BUS);
+        com.example.examplemod.movement.MovementService.register();
         com.example.examplemod.pubgsettings.PubgSettingsService.register(NeoForge.EVENT_BUS);
         com.example.examplemod.operatorpermissions.OperatorPermissionsService.register(NeoForge.EVENT_BUS);
         com.example.examplemod.vitals.PubgBoostItems.register();
@@ -108,6 +109,7 @@ public class ExampleMod {
         modEventBus.addListener(com.example.examplemod.zones.match.MatchConfigPayloads::register);
         modEventBus.addListener(com.example.examplemod.vitals.MatchVitalsPayloads::register);
         modEventBus.addListener(com.example.examplemod.combat.CombatPayloads::register);
+        modEventBus.addListener(com.example.examplemod.movement.MovementPayloads::register);
         modEventBus.addListener(com.example.examplemod.pubgsettings.PubgSettingsPayloads::register);
         modEventBus.addListener(com.example.examplemod.zones.match.MatchSpectatorPayloads::register);
         modEventBus.addListener(MapOverlayPayloads::register);

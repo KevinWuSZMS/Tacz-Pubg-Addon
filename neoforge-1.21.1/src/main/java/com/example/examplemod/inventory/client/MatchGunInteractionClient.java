@@ -66,7 +66,7 @@ public final class MatchGunInteractionClient {
 
     public static void suppressSharedOffhandClick() {
         var swap = Minecraft.getInstance().options.keySwapOffhand;
-        if (swap.getKey().equals(GroundLootClient.pickupKey().getKey())) {
+        if (com.example.examplemod.keybindings.BindingInput.overlaps(swap, GroundLootClient.pickupKey())) {
             while (swap.consumeClick()) {}
         }
     }

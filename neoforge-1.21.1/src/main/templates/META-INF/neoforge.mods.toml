@@ -169,3 +169,18 @@ config="tacz_pubg.combat.mixins.json"
 
 [[mixins]]
 config="tacz_pubg.blue_zone_voxy.mixins.json"
+
+[[mixins]]
+config="tacz_pubg.keybinding_catalog.mixins.json"
+
+[[mixins]]
+config="tacz_pubg.keybinding_input.mixins.json"
+
+[[mixins]]
+config="tacz_pubg.keybinding_ui.mixins.json"
+
+[[mixins]]
+config="tacz_pubg.movement_client.mixins.json"
+
+[[mixins]]
+config="tacz_pubg.movement_state.mixins.json"

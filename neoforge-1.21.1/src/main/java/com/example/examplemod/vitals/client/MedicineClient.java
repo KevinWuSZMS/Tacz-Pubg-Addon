@@ -104,7 +104,7 @@ public final class MedicineClient {
     }
     private static void suppressOffhandSwap() {
         var swap = Minecraft.getInstance().options.keySwapOffhand;
-        if (swap.getKey().equals(GroundLootClient.pickupKey().getKey())) while (swap.consumeClick()) {}
+        if (com.example.examplemod.keybindings.BindingInput.overlaps(swap, GroundLootClient.pickupKey())) while (swap.consumeClick()) {}
     }
     /** A single interaction press keeps only its authorized medicine session using until completion/cancel. */
     public static boolean useKeyDown(KeyMapping mapping) {

@@ -106,7 +106,7 @@ public final class GroundLootClient {
         if (selected == null) return false;
         // KeyboardHandler has already queued vanilla's F click before InputEvent.Key.
         // Consume that shared binding only for a valid empty-hand loot pickup.
-        if (mc.options.keySwapOffhand.getKey().equals(PICKUP.getKey())) {
+        if (com.example.examplemod.keybindings.BindingInput.overlaps(mc.options.keySwapOffhand, PICKUP)) {
             while (mc.options.keySwapOffhand.consumeClick()) {}
         }
         PacketDistributor.sendToServer(new GroundLootPayloads.Pickup(selected.getId()));

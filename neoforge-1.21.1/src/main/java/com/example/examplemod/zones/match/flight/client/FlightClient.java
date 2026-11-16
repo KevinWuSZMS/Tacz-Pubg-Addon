@@ -108,7 +108,7 @@ public final class FlightClient {
     }
     /** Preserve the flight action when another match input captures the same physical binding. */
     public static boolean trySharedAction(KeyMapping binding) {
-        if (current.stage() <= 0 || !JUMP.same(binding)) return false;
+        if (current.stage() <= 0 || !com.example.examplemod.keybindings.BindingInput.overlaps(JUMP, binding)) return false;
         while (JUMP.consumeClick()) {}
         performJumpAction();
         return true;
@@ -117,7 +117,7 @@ public final class FlightClient {
         var mc = Minecraft.getInstance();
         if (mc.screen != null || mc.isPaused()) return;
         // F is also vanilla's swap-offhand key. A flight action must not swap a gun/item.
-        if (current.stage() > 0 && JUMP.same(mc.options.keySwapOffhand))
+        if (current.stage() > 0 && com.example.examplemod.keybindings.BindingInput.overlaps(JUMP, mc.options.keySwapOffhand))
             while (mc.options.keySwapOffhand.consumeClick()) {}
         if (current.stage() == 1 && current.jumpWait() == 0)
             PacketDistributor.sendToServer(new FlightPayloads.Jump(current.session()));

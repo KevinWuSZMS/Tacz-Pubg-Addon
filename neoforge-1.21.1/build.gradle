@@ -420,7 +420,11 @@ tasks.named('check').configure { dependsOn droppedLootTransitionChecks }
         botAbiChecks: 'com.example.examplemod.zones.match.bot.BotAbiChecks',
         pubgPlayerCommandChecks: 'com.example.examplemod.zones.match.bot.PubgPlayerCommandChecks',
         nativeMapEditorChecks: 'com.example.examplemod.zones.client.xaero.editor.NativeMapEditorChecks',
-        localizationChecks: 'com.example.examplemod.localization.LocalizationChecks'
+        localizationChecks: 'com.example.examplemod.localization.LocalizationChecks',
+        bindingModelChecks: 'com.example.examplemod.keybindings.InputBindingChecks',
+        bindingInputChecks: 'com.example.examplemod.keybindings.BindingInputChecks',
+        movementStateChecks: 'com.example.examplemod.movement.MovementStateChecks',
+        movementWireChecks: 'com.example.examplemod.movement.MovementWireChecks'
 ].each { checkName, checkClass ->
     def logicalCheck = tasks.register(checkName, JavaExec) {
         group = 'verification'
