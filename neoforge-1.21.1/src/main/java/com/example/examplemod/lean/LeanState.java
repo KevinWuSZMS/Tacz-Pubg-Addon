@@ -10,6 +10,7 @@ public final class LeanState {
     boolean predicted;
     long renderNanos;
     double renderFraction = Double.NaN;
+    LeanGeometry.Pose renderPose;
     long inputNanos;
     int wireSequence = Integer.MIN_VALUE, wireTarget;
     float wireFraction = Float.NaN;

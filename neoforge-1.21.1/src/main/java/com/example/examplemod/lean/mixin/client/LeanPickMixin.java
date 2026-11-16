@@ -19,7 +19,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 abstract class LeanPickMixin {
     @Inject(method = "renderLevel", at = @At("HEAD"))
     private void taczPubg$beginLeanFrame(DeltaTracker tracker, CallbackInfo ci) {
-        if (Minecraft.getInstance().getCameraEntity() instanceof Player player) LeanService.beginRender(player);
+        if (Minecraft.getInstance().getCameraEntity() instanceof Player player)
+            LeanService.beginRender(player, tracker.getGameTimeDeltaPartialTick(true));
     }
     @Inject(method = "renderLevel", at = @At("RETURN"))
     private void taczPubg$endLeanFrame(DeltaTracker tracker, CallbackInfo ci) {

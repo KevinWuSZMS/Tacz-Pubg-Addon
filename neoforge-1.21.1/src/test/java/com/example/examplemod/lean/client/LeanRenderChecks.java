@@ -1,4 +1,6 @@
 package com.example.examplemod.lean.client;
+import com.example.examplemod.lean.LeanGeometry;
+import net.minecraft.world.phys.Vec3;
 import org.joml.*;
 import java.util.Random;
 
@@ -6,7 +8,9 @@ public final class LeanRenderChecks {
     static int checks;
     static void close(Vector3f actual, Vector3f expected, String label) {
         checks++;
-        if (actual.distance(expected) > 0.001f) throw new AssertionError(label + ": " + actual + " != " + expected);
+        if (!Float.isFinite(actual.x) || !Float.isFinite(actual.y) || !Float.isFinite(actual.z)
+                || !Float.isFinite(expected.x) || !Float.isFinite(expected.y) || !Float.isFinite(expected.z)
+                || actual.distance(expected) > 0.001f) throw new AssertionError(label + ": " + actual + " != " + expected);
     }
     public static void main(String[] args) {
         Random random = new Random(824125);
@@ -63,7 +67,49 @@ public final class LeanRenderChecks {
                 close(rebuilt.transform(new Vector3f(.3f,.7f,-.4f)), combined.transform(new Vector3f(.3f,.7f,-.4f)), "ModelPart Euler roundtrip");
             }
         }
+        checkLeanedWorldAim();
         LeanShoulderChecks.run();
         System.out.println("PASS " + checks + " projection, aperture, and upper-body invariants");
     }
+
+    private static void checkLeanedWorldAim() {
+        for (int stance = 0; stance < 3; stance++) {
+            double scale = .75 + stance * .3;
+            double eyeHeight = (stance == 0 ? 1.62 : stance == 1 ? 1.27 : .4) * scale;
+            for (int direction = 0; direction < 3; direction++) {
+                double yaw = direction * 1.13, pitch = (direction - 1) * .65;
+                var pose = new LeanGeometry.Pose(yaw, yaw - .43, eyeHeight, scale, stance == 2,
+                        stance == 2 ? -java.lang.Math.PI / 4 : pitch);
+                Vec3 aim = new Vec3(-java.lang.Math.sin(yaw) * java.lang.Math.cos(pitch),
+                        -java.lang.Math.sin(pitch), java.lang.Math.cos(yaw) * java.lang.Math.cos(pitch));
+                // Minecraft renders near the camera origin; subtract large world coordinates before using float matrices.
+                Vec3 renderOrigin = new Vec3(1_000_000.25, 78 + eyeHeight, -999_999.875);
+                for (double fraction : new double[]{-1, -.5, 0, .5, 1}) {
+                    Vec3 worldEye = renderOrigin.add(LeanGeometry.offset(pose, fraction));
+                    Vector3f eye = vector(worldEye.subtract(renderOrigin));
+                    Matrix4f view = new Matrix4f().lookAt(eye, new Vector3f(eye).add(vector(aim)), new Vector3f(0, 1, 0));
+                    close(view.transformDirection(vector(aim)), new Vector3f(0, 0, -1), "stance eye move preserves the original aim direction");
+                    Vector3f worldUp = view.transformDirection(new Vector3f(0, 1, 0));
+                    close(new Vector3f(worldUp.x, 0, 0), new Vector3f(), "leaned camera keeps world up free of roll");
+                    for (float aspect : new float[]{1, 16f / 9, 21f / 9, 9f / 16}) {
+                        for (float fov : new float[]{5, 15, 30, 60, 110}) {
+                            Matrix4f projection = new Matrix4f().perspective((float) java.lang.Math.toRadians(fov), aspect, .05f, 1024);
+                            Matrix4f pv = new Matrix4f(projection).mul(view);
+                            Matrix4f screen = LeanRenderMath.screenRoll((float) (-LeanGeometry.ROLL_RADIANS * fraction), aspect, 0, 0);
+                            Matrix4f leanedPv = new Matrix4f(pv).mul(LeanRenderMath.modelTransform(projection, view, screen));
+                            for (double distance : new double[]{2, 30, 250}) {
+                                Vector3f point = vector(worldEye.add(aim.scale(distance)).subtract(renderOrigin));
+                                Vector3f projected = pv.transformProject(new Vector3f(point));
+                                Vector3f center = new Vector3f(0, 0, projected.z);
+                                close(projected, center, "actual stance eye projects its aim ray to the viewport center");
+                                close(leanedPv.transformProject(point), center, "scope roll preserves the new eye's projected aim center at every FOV");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private static Vector3f vector(Vec3 value) { return new Vector3f((float) value.x, (float) value.y, (float) value.z); }
 }

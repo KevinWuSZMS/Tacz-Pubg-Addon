@@ -8,9 +8,11 @@ public final class LeanGeometryChecks {
     private static int checks;
     private LeanGeometryChecks() { }
     public static void main(String[] args) {
-        close(LeanGeometry.offset(0, 1), new Vec3(-.35, -.10, 0), "E at south-facing yaw moves screen-right");
-        close(LeanGeometry.offset(0, -1), new Vec3(.35, -.10, 0), "Q mirrors horizontal displacement");
-        close(LeanGeometry.offset(Math.PI / 2, 1), new Vec3(0, -.10, -.35), "right follows yaw at west-facing heading");
+        double angle = LeanGeometry.ROLL_RADIANS, lever = 1.62 - .7040625;
+        double side = lever * Math.sin(angle), drop = lever * (1 - Math.cos(angle)) + Math.hypot(.234375, .1171875) * Math.sin(angle);
+        close(LeanGeometry.offset(0, 1), new Vec3(-side, -drop, 0), "E rotates the eye around the seated waist");
+        close(LeanGeometry.offset(0, -1), new Vec3(side, -drop, 0), "Q mirrors horizontal displacement");
+        close(LeanGeometry.offset(Math.PI / 2, 1), new Vec3(0, -drop, -side), "right follows yaw at west-facing heading");
         close(LeanGeometry.offset(0, 5), LeanGeometry.offset(0, 1), "fraction bounded to authored displacement");
         close(LeanGeometry.offset(0, Double.NaN), Vec3.ZERO, "non-finite input has no displacement");
         var standing = LeanGeometry.frame(Vec3.ZERO, 0, 0, 1.62, 1, false, 1);
@@ -23,7 +25,8 @@ public final class LeanGeometryChecks {
         var prone = LeanGeometry.frame(Vec3.ZERO, 0, 0, .4, 1, true, 1);
         var proneHead = prone.boxes().stream().filter(LeanGeometry.Box::head).findFirst().orElseThrow();
         double raisedHead = .234375 * Math.sqrt(.5);
-        close(proneHead.center(), new Vec3(-.35, .2 + raisedHead, .4071875 + raisedHead), "prone head includes vanilla's raised 45 degree neck pose");
+        close(proneHead.center(), new Vec3(-raisedHead * Math.sin(angle), .3 + raisedHead * Math.cos(angle), .4071875 + raisedHead),
+                "prone head rotates with the waist while preserving the native raised neck pose");
         var lookDown = LeanGeometry.frame(Vec3.ZERO, 0, 0, 1.62, 1, false, 0, Math.PI / 2).boxes().get(1);
         close(lookDown.center(), new Vec3(0, 1.4071875, .234375), "looking down rotates the head around its neck");
         var lookUp = LeanGeometry.frame(Vec3.ZERO, Math.PI / 2, 0, 1.62, 1, false, 0, -Math.PI / 2).boxes().get(1);
@@ -42,6 +45,7 @@ public final class LeanGeometryChecks {
         check(leftLimit >= -.400 && leftLimit < -.399, "left contact refines with the same signed-distance rule");
         check(LeanGeometry.clampPath(.37, (from, to) -> true) == .37, "clear sweep preserves exact requested progress");
         checkConnectedArms();
+        checkWaistAndEyeSweeps();
         Random random = new Random(751911);
         for (int index = 0; index < 200; index++) {
             double yaw = random.nextDouble() * 2 * Math.PI, bodyYaw = random.nextDouble() * 2 * Math.PI;
@@ -61,6 +65,36 @@ public final class LeanGeometryChecks {
             }
         }
         System.out.println("Lean geometry checks passed: " + checks + "; no world or game launched.");
+    }
+    private static void checkWaistAndEyeSweeps() {
+        for (int stance = 0; stance < 3; stance++) for (double yaw : new double[]{0, .7, 1.57, 2.7}) {
+            double scale = 1.3;
+            var pose = new LeanGeometry.Pose(yaw, -.33, (stance == 0 ? 1.62 : stance == 1 ? 1.27 : .4) * scale,
+                    scale, stance == 2, stance == 2 ? -Math.PI / 4 : .2);
+            Vec3 feet = new Vec3(142, 65, -73), eye = feet.add(0, pose.eyeHeight(), 0);
+            close(LeanGeometry.offset(pose, 0), Vec3.ZERO, "neutral eye is exactly the vanilla eye in every stance");
+            for (double target : new double[]{-1, -.4, .4, 1}) {
+                var first = LeanGeometry.frame(feet, pose, 0);
+                var last = LeanGeometry.frame(feet, pose, target);
+                var eyeSweep = LeanGeometry.sweptEyeBounds(first, last, eye, .08 * scale);
+                for (int step = 0; step <= 48; step++) {
+                    double f = target * step / 48;
+                    var middle = LeanGeometry.frame(feet, pose, f);
+                    Vec3 expectedEye = eye.add(LeanGeometry.offset(pose, f));
+                    close(middle.rig().point(eye), expectedEye, "world rig and shot/camera eye offset agree");
+                    check(eyeSweep.inflate(1e-10).contains(expectedEye), "query envelope includes the complete eye arc");
+                    for (int index = 1; index < middle.boxes().size(); index++) {
+                        var box = middle.boxes().get(index);
+                        var sweep = LeanGeometry.sweptBounds(first, last, index).inflate(1e-10);
+                        for (int x : new int[]{-1, 1}) for (int y : new int[]{-1, 1}) for (int z : new int[]{-1, 1}) {
+                            Vec3 point = box.center().add(box.right().scale(x * box.half().x))
+                                    .add(box.up().scale(y * box.half().y)).add(box.forward().scale(z * box.half().z));
+                            check(sweep.contains(point), "sweep includes each upper-body corner about the waist");
+                        }
+                    }
+                }
+            }
+        }
     }
     private static void checkConnectedArms() {
         for (int stance = 0; stance < 3; stance++) {

@@ -13,7 +13,13 @@ public final class LeanTrajectoryChecks {
         Random random = new Random(2026111601L);
         for (int trial = 0; trial < 256; trial++) {
             double yaw = random.nextDouble() * Math.PI * 2;
-            Vec3 offset = LeanGeometry.offset(yaw, random.nextDouble() * 2 - 1);
+            int stance = trial % 3;
+            double scale = .6 + random.nextDouble() * 1.2;
+            double eyeHeight = (stance == 0 ? 1.62 : stance == 1 ? 1.27 : .4) * scale;
+            double headPitch = stance == 2 ? -Math.PI / 4 : (random.nextDouble() - .5) * Math.PI;
+            var pose = new LeanGeometry.Pose(yaw, random.nextDouble() * Math.PI * 2,
+                    eyeHeight, scale, stance == 2, headPitch);
+            Vec3 offset = LeanGeometry.offset(pose, random.nextDouble() * 2 - 1);
             Vec3 base = new Vec3(random.nextDouble() * 2000, 70 + random.nextDouble() * 50, random.nextDouble() * 2000);
             Vec3 velocity = new Vec3((random.nextDouble() - .5) * 60,
                     (random.nextDouble() - .5) * 20, (random.nextDouble() - .5) * 60);
@@ -28,7 +34,7 @@ public final class LeanTrajectoryChecks {
             near(noDrag.vz(), velocity.z, "gravity does not bend Z with the tilted gun");
             near(noDrag.vy(), velocity.y - gravity, "gravity remains world-down");
         }
-        System.out.println("LeanTrajectoryChecks: " + checks + " checks across 32768 flight steps passed");
+        System.out.println("LeanTrajectoryChecks: " + checks + " checks across 32768 flight steps and three stance eye rigs passed");
     }
 
     private static void experimentFlight(Vec3 base, Vec3 offset, Vec3 launch, double gravity, double drag) {
@@ -72,7 +78,8 @@ public final class LeanTrajectoryChecks {
         near(a.x, b.x, message); near(a.y, b.y, message); near(a.z, b.z, message);
     }
     private static void near(double actual, double expected, String message) {
-        if (Math.abs(actual - expected) > 1e-8) throw new AssertionError(message + ": " + actual + " != " + expected);
+        if (!Double.isFinite(actual) || !Double.isFinite(expected) || Math.abs(actual - expected) > 1e-8)
+            throw new AssertionError(message + ": " + actual + " != " + expected);
         checks++;
     }
 }

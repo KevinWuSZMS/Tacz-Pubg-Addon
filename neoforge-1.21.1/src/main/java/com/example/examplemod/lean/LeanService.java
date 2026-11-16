@@ -57,7 +57,7 @@ public final class LeanService {
     public static void predict(Player player, int sequence, int direction) {
         LeanState state = state(player);
         state.predicted = true;
-        state.renderNanos = 0;
+        clearRender(state);
         state.sequence = sequence;
         long now = System.nanoTime();
         state.inputNanos = now;
@@ -65,13 +65,36 @@ public final class LeanService {
         else state.motion.correct(LeanGeometry.clamp(player, state.motion.sample(now)), direction, now);
     }
 
-    /** One sampling time for pick, camera and hand/model rendering during a world frame. */
-    public static void beginRender(Player player) {
-        state(player).renderNanos = System.nanoTime(); state(player).renderFraction = Double.NaN;
+    /** One sampling time and body pose for pick, camera and hand/model rendering during a world frame. */
+    public static void beginRender(Player player, float partialTick) {
+        LeanState state = state(player);
+        state.renderNanos = System.nanoTime();
+        state.renderFraction = Double.NaN;
+        state.renderPose = LeanGeometry.renderSnapshot(player, partialTick);
     }
-    public static void endRender(Player player) { state(player).renderNanos = 0; }
+    public static void endRender(Player player) { clearRender(state(player)); }
+
+    public static LeanGeometry.Pose pose(Player player) {
+        LeanState state = state(player);
+        return state.renderNanos != 0 && state.renderPose != null ? state.renderPose : LeanGeometry.snapshot(player);
+    }
+
+    public static LeanGeometry.Pose renderPose(Player player, float partialTick) {
+        LeanState state = state(player);
+        return state.renderNanos != 0 && state.renderPose != null ? state.renderPose : LeanGeometry.renderSnapshot(player, partialTick);
+    }
+
+    private static void clearRender(LeanState state) {
+        state.renderNanos = 0;
+        state.renderFraction = Double.NaN;
+        state.renderPose = null;
+    }
 
     public static double fraction(Player player, float partialTick) {
+        return fraction(player, player.level().isClientSide ? renderPose(player, partialTick) : pose(player));
+    }
+
+    private static double fraction(Player player, LeanGeometry.Pose pose) {
         if (!eligible(player)) return 0;
         LeanState state = state(player);
         if (state.renderNanos != 0 && Double.isFinite(state.renderFraction)) return state.renderFraction;
@@ -83,13 +106,14 @@ public final class LeanService {
             double limit = data(player).taczPubg$leanLimit();
             value = LeanMotion.limited(value, state.motion.target(), limit);
         }
-        double result = player.level().isClientSide && !state.predicted ? value : LeanGeometry.clamp(player, value);
+        double result = player.level().isClientSide && !state.predicted ? value : LeanGeometry.clamp(player, pose, value);
         if (state.renderNanos != 0) state.renderFraction = result;
         return result;
     }
 
     public static Vec3 offset(Player player, float partialTick) {
-        return LeanGeometry.offset(player, fraction(player, partialTick));
+        LeanGeometry.Pose pose = player.level().isClientSide ? renderPose(player, partialTick) : pose(player);
+        return LeanGeometry.offset(pose, fraction(player, pose));
     }
 
     public static int inputSequence(Player player) { return state(player).sequence; }
@@ -98,7 +122,8 @@ public final class LeanService {
     }
     public static Vec3 offsetForFraction(Player player, float yaw, double fraction) {
         if (!eligible(player)) return Vec3.ZERO;
-        return LeanGeometry.offset(Math.toRadians(yaw), LeanGeometry.clamp(player, fraction, yaw)).scale(player.getScale());
+        LeanGeometry.Pose pose = LeanGeometry.snapshot(player, yaw);
+        return LeanGeometry.offset(pose, LeanGeometry.clamp(player, pose, fraction));
     }
     public static boolean knownSequence(Player player, int sequence) {
         return state(player).inputs.stream().anyMatch(frame -> frame.sequence() == sequence);
@@ -145,14 +170,15 @@ public final class LeanService {
     private static void publish(Player player) {
         LeanState state = state(player);
         int target = state.motion.target();
-        float fraction = (float) LeanGeometry.clamp(player, state.motion.sample(System.nanoTime()));
-        float limit = (float) Math.abs(LeanGeometry.clamp(player, target));
+        LeanGeometry.Pose pose = LeanGeometry.snapshot(player);
+        float fraction = (float) LeanGeometry.clamp(player, pose, state.motion.sample(System.nanoTime()));
+        float limit = (float) Math.abs(LeanGeometry.clamp(player, pose, target));
         data(player).taczPubg$leanMetadata(state.sequence, target, fraction, limit);
     }
 
     public static void clear(Player player) {
         LeanState state = state(player);
-        state.motion.reset(System.nanoTime()); state.renderNanos = 0; state.inputs.clear();
+        state.motion.reset(System.nanoTime()); clearRender(state); state.inputs.clear();
         if (!player.level().isClientSide) data(player).taczPubg$leanMetadata(state.sequence, 0, 0, 1);
     }
 

@@ -10,15 +10,12 @@ import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 /** Upper-body lean in world space, including vanilla crouch/prone root transforms. */
 public final class LeanPlayerRender {
-    private static final float MAX_ROLL = (float) LeanGeometry.ROLL_RADIANS;
-
     private LeanPlayerRender() {}
 
     public static final class Frame {
@@ -32,41 +29,31 @@ public final class LeanPlayerRender {
         public void apply(Player player, PlayerModel<?> model, PoseStack pose, float partialTick) {
             float fraction = (float) LeanService.fraction(player, partialTick);
             if (Math.abs(fraction) < 0.00001f) return;
-            // Removing the entry matrix leaves the actual body-yaw, scale and prone
-            // transforms. Converting through its inverse also handles looking sideways.
-            Matrix4f inverseBody = new Matrix4f(base).invert().mul(pose.last().pose()).invert();
-            Vec3 offset = LeanGeometry.offset(player, fraction);
-            Vector3f delta = inverseBody.transformDirection(
-                    new Vector3f((float) offset.x, (float) offset.y, (float) offset.z)).mul(16);
-            float yaw = (float) Math.toRadians(player.getYRot());
-            Vector3f forward = inverseBody.transformDirection(
-                    new Vector3f(-(float) Math.sin(yaw), 0, (float) Math.cos(yaw))).normalize();
-            Quaternionf roll = new Quaternionf().rotationAxis(MAX_ROLL * fraction, forward);
-            transform(model.head, new Vector3f(0, -4, 0), delta, 1, roll);
-            transformTorso(model.body, model.rightArm, model.leftArm, delta, roll);
+            // The dispatcher applies crouch's render offset before our entry matrix.
+            // Restore it here so model vertices, legal eyes and hit geometry use feet
+            // as the same world-space origin. ModelPart coordinates are pixels.
+            Matrix4f modelToWorld = new Matrix4f().translation(0, player.isCrouching() ? -.125f * player.getScale() : 0, 0)
+                    .mul(new Matrix4f(base).invert().mul(pose.last().pose())).scale(1f / 16);
+            transformUpperBody(model.head, model.body, model.rightArm, model.leftArm,
+                    modelToWorld, LeanGeometry.rig(LeanService.renderPose(player, partialTick), fraction));
             copy(model.hat, model.head);
             copy(model.jacket, model.body);
             copy(model.rightSleeve, model.rightArm);
             copy(model.leftSleeve, model.leftArm);
         }
 
-        /** A shared parent transform preserves the animated shoulder attachments, including slim arms. */
-        void transformTorso(ModelPart body, ModelPart rightArm, ModelPart leftArm, Vector3f delta, Quaternionf roll) {
-            Vector3f pivot = center(body, new Vector3f(0, 6, 0));
-            Vector3f translation = new Vector3f(delta).mul(.5f);
+        /** One waist transform preserves the native neck and shoulder joints, including slim arms. */
+        void transformUpperBody(ModelPart head, ModelPart body, ModelPart rightArm, ModelPart leftArm,
+                Matrix4f modelToWorld, LeanGeometry.Rig rig) {
+            Matrix4f inverse = new Matrix4f(modelToWorld).invert();
+            Vector3f pivot = inverse.transformPosition(rig.pivot().toVector3f());
+            Vector3f translation = inverse.transformDirection(rig.seat().toVector3f());
+            Vector3f axis = inverse.transformDirection(rig.axis().toVector3f()).normalize();
+            Quaternionf roll = new Quaternionf().rotationAxis((float) rig.angle(), axis);
+            transformAround(head, pivot, translation, roll);
             transformAround(body, pivot, translation, roll);
             transformAround(rightArm, pivot, translation, roll);
             transformAround(leftArm, pivot, translation, roll);
-        }
-
-        private static Vector3f center(ModelPart part, Vector3f local) {
-            local.mul(part.xScale, part.yScale, part.zScale);
-            return new Quaternionf().rotationZYX(part.zRot, part.yRot, part.xRot).transform(local)
-                    .add(part.x, part.y, part.z);
-        }
-
-        private void transform(ModelPart part, Vector3f center, Vector3f delta, float weight, Quaternionf roll) {
-            transformAround(part, center(part, center), new Vector3f(delta).mul(weight), roll);
         }
 
         private void transformAround(ModelPart part, Vector3f pivot, Vector3f translation, Quaternionf roll) {

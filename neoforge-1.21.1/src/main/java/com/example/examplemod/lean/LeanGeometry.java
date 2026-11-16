@@ -3,27 +3,130 @@ package com.example.examplemod.lean;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import net.minecraft.world.entity.Pose;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /** Shared world-space lean rig. Its boxes are combat geometry, never the player's movement AABB. */
 public final class LeanGeometry {
-    public static final double SIDE_DISTANCE = .35;
-    public static final double HEAD_DROP = .10;
     public static final double ROLL_RADIANS = Math.toRadians(22);
+    private static final double MODEL_UNIT = .9375 / 16;
+    private static final double WAIST_HALF_WIDTH = 4 * MODEL_UNIT;
+    private static final double WAIST_HALF_DEPTH = 2 * MODEL_UNIT;
+    private static final double HALF_CHEST_HEIGHT = 6 * MODEL_UNIT;
+    private static final int SWEEP_STEPS = 24;
     private static final double EPSILON = 1.0e-7;
     private LeanGeometry() { }
 
-    /** Positive fraction is screen-right: at yaw zero that is world -X. */
-    public static Vec3 offset(double yawRadians, double fraction) {
-        double value = bounded(fraction);
-        return new Vec3(-Math.cos(yawRadians) * SIDE_DISTANCE * value,
-                -HEAD_DROP * Math.abs(value), -Math.sin(yawRadians) * SIDE_DISTANCE * value);
+    /** View/body angles are radians; eye height already includes entity scale. */
+    public record Pose(double viewYaw, double bodyYaw, double eyeHeight, double scale, boolean prone, double headPitch) { }
+
+    /** A single rigid upper-body transform; points and pivot are relative to the player's feet. */
+    public record Rig(Vec3 pivot, Vec3 axis, Vec3 seat, double angle) {
+        public Vec3 point(Vec3 value) {
+            if (angle == 0 && seat.lengthSqr() == 0) return value;
+            return pivot.add(direction(value.subtract(pivot))).add(seat);
+        }
+        public Vec3 direction(Vec3 value) { return angle == 0 ? value : rotate(value, axis, angle); }
+        public Vec3 offset(Vec3 value) { return point(value).subtract(value); }
+        private Rig at(Vec3 feet) { return new Rig(pivot.add(feet), axis, seat, angle); }
     }
-    public static Vec3 offset(Player player, double fraction) {
-        return offset(Math.toRadians(player.getYRot()), fraction).scale(player.getScale());
+
+    public static Pose snapshot(Player player) { return snapshot(player, player.getYRot()); }
+    public static Pose snapshot(Player player, float viewYaw) {
+        boolean prone = player.getPose() == net.minecraft.world.entity.Pose.SWIMMING;
+        return new Pose(Math.toRadians(viewYaw), Math.toRadians(player.yBodyRot), player.getEyeHeight(),
+                player.getScale(), prone, prone ? -Math.PI / 4 : Math.toRadians(player.getXRot()));
+    }
+
+    /** Sample the same rig at the native renderer's interpolation time. Server snapshots stay tick-based. */
+    public static Pose renderSnapshot(Player player, float partialTick) {
+        boolean prone = player.getPose() == net.minecraft.world.entity.Pose.SWIMMING;
+        return new Pose(Math.toRadians(player.getViewYRot(partialTick)),
+                Math.toRadians(Mth.rotLerp(partialTick, player.yBodyRotO, player.yBodyRot)), player.getEyeHeight(),
+                player.getScale(), prone,
+                prone ? -Math.PI / 4 : Math.toRadians(player.getViewXRot(partialTick)));
+    }
+
+    /** The old two-argument entry point now describes the ordinary standing rig. */
+    public static Vec3 offset(double yawRadians, double fraction) {
+        return offset(new Pose(yawRadians, yawRadians, 1.62, 1, false, 0), fraction);
+    }
+    public static Vec3 offset(Player player, double fraction) { return offset(snapshot(player), fraction); }
+    public static Vec3 offset(Pose pose, double fraction) {
+        return rig(pose, fraction).offset(new Vec3(0, pose.eyeHeight(), 0));
+    }
+
+    private record NativeTorso(Vec3 neck, Vec3 chest, Vec3 spine, Vec3 depth, Vec3 right, Vec3 forward) { }
+    private static NativeTorso torso(Pose pose) {
+        double scale = pose.scale();
+        Vec3 forward = forward(pose.bodyYaw()), right = right(pose.bodyYaw());
+        if (pose.prone()) {
+            return new NativeTorso(forward.scale(.4071875 * scale).add(0, .30 * scale, 0),
+                    forward.scale(.055625 * scale).add(0, .30 * scale, 0), forward, new Vec3(0, 1, 0), right, forward);
+        }
+        boolean crouching = pose.eyeHeight() < 1.5 * scale;
+        Vec3 spine = new Vec3(0, 1, 0), depth = forward;
+        double neckY = 1.4071875, chestY = 1.055625, chestForward = 0;
+        if (crouching) {
+            spine = rotate(spine, right, -.5);
+            depth = rotate(depth, right, -.5);
+            neckY = 1.4071875 - .125 - 4.2 * MODEL_UNIT;
+            chestY = 1.4071875 - .125 - (3.2 + 6 * Math.cos(.5)) * MODEL_UNIT;
+            chestForward = -6 * Math.sin(.5) * MODEL_UNIT;
+        }
+        return new NativeTorso(new Vec3(0, neckY * scale, 0),
+                forward.scale(chestForward * scale).add(0, chestY * scale, 0), spine, depth, right, forward);
+    }
+
+    public static Rig rig(Pose pose, double fraction) {
+        NativeTorso torso = torso(pose);
+        double angle = ROLL_RADIANS * bounded(fraction), scale = pose.scale();
+        Vec3 pivot = torso.chest().subtract(torso.spine().scale(HALF_CHEST_HEIGHT * scale));
+        Vec3 axis = forward(pose.viewYaw());
+        if (angle == 0) return new Rig(pivot, axis, Vec3.ZERO, 0);
+        if (crouching(pose)) {
+            // Crouched thighs have a horizontal top plane, distinct from the pitched chest bottom.
+            // Each waist depth edge is enclosed by its complete native body-yaw circle.
+            double legTopY = (1.4071875 - .125 - 12.2 * MODEL_UNIT) * scale;
+            double distance = 0;
+            for (int depth : new int[]{-2, 2}) {
+                WaistCircle circle = crouchWaistCircle(pose, depth);
+                double highestY = pivot.y + rotate(circle.center().subtract(pivot), axis, angle).y
+                        + circle.radius() * Math.abs(Math.sin(angle));
+                distance = Math.max(distance, highestY - legTopY);
+            }
+            return new Rig(pivot, axis, new Vec3(0, -distance, 0), angle);
+        }
+        // The waist's circumscribed disk also covers native attack-animation twists about the spine.
+        // Its support against the rotated leg-facing normal seats every such corner on the leg side.
+        // The whole upper body receives this translation, retaining the native neck and shoulders.
+        Vec3 intoLegs = torso.spine().scale(-1);
+        double normalRight = intoLegs.dot(rotate(torso.right(), axis, angle));
+        double normalDepth = intoLegs.dot(rotate(torso.depth(), axis, angle));
+        double distance = Math.hypot(WAIST_HALF_WIDTH, WAIST_HALF_DEPTH) * scale
+                * Math.hypot(normalRight, normalDepth);
+        return new Rig(pivot, axis, intoLegs.scale(distance), angle);
+    }
+
+    private static boolean crouching(Pose pose) { return !pose.prone() && pose.eyeHeight() < 1.5 * pose.scale(); }
+    private record WaistCircle(Vec3 center, double radius) { }
+    private static WaistCircle crouchWaistCircle(Pose pose, int depth) {
+        double unit = MODEL_UNIT * pose.scale();
+        double bodyOriginY = (1.4071875 - .125 - 3.2 * MODEL_UNIT) * pose.scale();
+        double circleY = bodyOriginY - (12 * Math.cos(.5) - depth * Math.sin(.5)) * unit;
+        double radius = Math.hypot(4, 12 * Math.sin(.5) + depth * Math.cos(.5)) * unit;
+        return new WaistCircle(new Vec3(0, circleY, 0), radius);
+    }
+    private static double seatRadius(Pose pose, Vec3 pivot) {
+        if (!crouching(pose)) return Math.hypot(WAIST_HALF_WIDTH, WAIST_HALF_DEPTH) * pose.scale();
+        double bound = 0;
+        for (int depth : new int[]{-2, 2}) {
+            WaistCircle circle = crouchWaistCircle(pose, depth);
+            bound = Math.max(bound, circle.center().distanceTo(pivot) + circle.radius());
+        }
+        return bound;
     }
     public static double bounded(double fraction) { return Double.isFinite(fraction) ? Math.clamp(fraction, -1, 1) : 0; }
 
@@ -54,7 +157,7 @@ public final class LeanGeometry {
         }
     }
     public record Hit(Vec3 point, boolean head) { }
-    public record Frame(List<Box> boxes, AABB bounds, double fraction) {
+    public record Frame(List<Box> boxes, AABB bounds, double fraction, Rig rig, double seatRadius) {
         public Frame { boxes = List.copyOf(boxes); }
         public Optional<Hit> intersect(Vec3 start, Vec3 end) {
             Hit closest = null; double distance = Double.POSITIVE_INFINITY;
@@ -70,12 +173,9 @@ public final class LeanGeometry {
         }
     }
 
-    public static Frame frame(Player player, double fraction) { return frame(player, fraction, player.getYRot()); }
+    public static Frame frame(Player player, double fraction) { return frame(player.position(), snapshot(player), fraction); }
     public static Frame frame(Player player, double fraction, float viewYaw) {
-        boolean prone = player.getPose() == Pose.SWIMMING;
-        return frame(player.position(), Math.toRadians(viewYaw), Math.toRadians(player.yBodyRot),
-                player.getEyeHeight(), player.getScale(), prone, fraction,
-                prone ? -Math.PI / 4 : Math.toRadians(player.getXRot()));
+        return frame(player.position(), snapshot(player, viewYaw), fraction);
     }
     /** Pure rig shared with offline checks. Body yaw locates shoulders; view yaw controls the lean direction. */
     public static Frame frame(Vec3 feet, double viewYaw, double bodyYaw, double eyeHeight,
@@ -84,53 +184,49 @@ public final class LeanGeometry {
     }
     public static Frame frame(Vec3 feet, double viewYaw, double bodyYaw, double eyeHeight,
             double scale, boolean prone, double fraction, double headPitch) {
-        double value = bounded(fraction), angle = ROLL_RADIANS * value;
-        Vec3 delta = offset(viewYaw, value).scale(scale), forward = forward(bodyYaw), right = right(bodyYaw);
-        Vec3 rollAxis = forward(viewYaw), tiltedRight = rotate(right, rollAxis, angle);
-        Vec3 tiltedUp = rotate(new Vec3(0, 1, 0), rollAxis, angle), tiltedForward = rotate(forward, rollAxis, angle);
+        return frame(feet, new Pose(viewYaw, bodyYaw, eyeHeight, scale, prone, headPitch), fraction);
+    }
+
+    public static Frame frame(Vec3 feet, Pose pose, double fraction) {
+        double value = bounded(fraction), scale = pose.scale();
+        NativeTorso torso = torso(pose);
+        Rig rig = rig(pose, value).at(feet);
+        Vec3 forward = torso.forward(), right = torso.right();
         var boxes = new ArrayList<Box>();
-        Vec3 neckCenter, chestCenter;
-        if (prone) {
-            neckCenter = feet.add(forward.scale(.4071875 * scale)).add(0, .30 * scale, 0);
-            chestCenter = feet.add(forward.scale(.055625 * scale)).add(0, .30 * scale, 0);
+        Vec3 neckCenter = feet.add(torso.neck()), chestCenter = feet.add(torso.chest());
+        if (pose.prone()) {
             boxes.add(new Box(feet.add(forward.scale(-.6475 * scale)).add(0, .30 * scale, 0), right,
                     new Vec3(0, 1, 0), forward, new Vec3(.234375, .1171875, .3515625).scale(scale), false));
         } else {
-            boolean crouching = eyeHeight < 1.5 * scale;
-            neckCenter = feet.add(0, (crouching ? 1.03609375 : 1.4071875) * scale, 0);
-            chestCenter = feet.add(0, (crouching ? .786165 : 1.055625) * scale, 0)
-                    .add(forward.scale(crouching ? -.16855 * scale : 0));
             double legHeight = Math.max(.25 * scale, chestCenter.y - feet.y - .25 * scale);
             boxes.add(new Box(feet.add(0, legHeight / 2, 0), right, new Vec3(0, 1, 0), forward,
                     new Vec3(.30 * scale, legHeight / 2, .20 * scale), false));
         }
         // Native head rotates about the neck before lean. In full prone vanilla raises it by 45 degrees.
-        double headYaw = viewYaw - bodyYaw, sh = Math.sin(headYaw), ch = Math.cos(headYaw);
-        double sp = Math.sin(headPitch), cp = Math.cos(headPitch);
-        Vec3 basisX = right.scale(-1), basisY = prone ? forward.scale(-1) : new Vec3(0, -1, 0);
-        Vec3 basisZ = prone ? new Vec3(0, 1, 0) : forward.scale(-1);
+        double headYaw = pose.viewYaw() - pose.bodyYaw(), sh = Math.sin(headYaw), ch = Math.cos(headYaw);
+        double sp = Math.sin(pose.headPitch()), cp = Math.cos(pose.headPitch());
+        Vec3 basisX = right.scale(-1), basisY = pose.prone() ? forward.scale(-1) : new Vec3(0, -1, 0);
+        Vec3 basisZ = pose.prone() ? new Vec3(0, 1, 0) : forward.scale(-1);
         Vec3 nativeHeadX = basisX.scale(ch).add(basisZ.scale(-sh));
         Vec3 nativeHeadY = basisX.scale(sh * sp).add(basisY.scale(cp)).add(basisZ.scale(ch * sp));
         Vec3 nativeHeadZ = basisX.scale(sh * cp).add(basisY.scale(-sp)).add(basisZ.scale(ch * cp));
         Vec3 headCenter = neckCenter.subtract(nativeHeadY.scale(.234375 * scale));
-        boxes.add(new Box(headCenter.add(delta), rotate(nativeHeadX, rollAxis, angle),
-                rotate(nativeHeadY, rollAxis, angle), rotate(nativeHeadZ, rollAxis, angle),
+        boxes.add(new Box(rig.point(headCenter), rig.direction(nativeHeadX),
+                rig.direction(nativeHeadY), rig.direction(nativeHeadZ),
                 new Vec3(.234375, .234375, .234375).scale(scale), true));
-        Vec3 bodyHalf = (prone ? new Vec3(.234375, .1171875, .3515625) : new Vec3(.25, .375, .16)).scale(scale);
-        Vec3 armHalf = (prone ? new Vec3(.1171875, .1171875, .3515625) : new Vec3(.125, .375, .125)).scale(scale);
-        Vec3 chestUp = tiltedUp, chestForward = tiltedForward;
-        if (!prone && eyeHeight < 1.5 * scale) {
-            chestUp = rotate(rotate(new Vec3(0, 1, 0), right, -.5), rollAxis, angle);
-            chestForward = rotate(rotate(forward, right, -.5), rollAxis, angle);
-        }
-        boxes.add(new Box(chestCenter.add(delta.scale(.5)), tiltedRight, chestUp, chestForward, bodyHalf, false));
+        Vec3 bodyHalf = (pose.prone() ? new Vec3(.234375, .1171875, .3515625) : new Vec3(.25, .375, .16)).scale(scale);
+        Vec3 armHalf = (pose.prone() ? new Vec3(.1171875, .1171875, .3515625) : new Vec3(.125, .375, .125)).scale(scale);
+        Vec3 chestUp = pose.prone() ? torso.depth() : torso.spine();
+        Vec3 chestForward = pose.prone() ? torso.spine() : torso.depth();
+        boxes.add(new Box(rig.point(chestCenter), rig.direction(right), rig.direction(chestUp),
+                rig.direction(chestForward), bodyHalf, false));
         for (int side : new int[]{-1, 1}) {
-            boxes.add(new Box(chestCenter.add(tiltedRight.scale(side * .3515625 * scale)).add(delta.scale(.5)),
-                    tiltedRight, tiltedUp, tiltedForward, armHalf, false));
+            boxes.add(new Box(rig.point(chestCenter.add(right.scale(side * .3515625 * scale))),
+                    rig.direction(right), rig.direction(new Vec3(0, 1, 0)), rig.direction(forward), armHalf, false));
         }
         AABB bounds = boxes.getFirst().bounds();
         for (int index = 1; index < boxes.size(); index++) bounds = bounds.minmax(boxes.get(index).bounds());
-        return new Frame(boxes, bounds, value);
+        return new Frame(boxes, bounds, value, rig, seatRadius(pose, rig.pivot().subtract(feet)));
     }
     private static Vec3 right(double yaw) { return new Vec3(-Math.cos(yaw), 0, -Math.sin(yaw)); }
     private static Vec3 forward(double yaw) { return new Vec3(-Math.sin(yaw), 0, Math.cos(yaw)); }
@@ -139,30 +235,35 @@ public final class LeanGeometry {
         return value.scale(cos).add(axis.cross(value).scale(sin)).add(axis.scale(axis.dot(value) * (1 - cos)));
     }
 
-    public static double clamp(Player player, double proposedFraction) { return clamp(player, proposedFraction, player.getYRot()); }
+    public static double clamp(Player player, double proposedFraction) { return clamp(player, proposedFraction, snapshot(player)); }
     public static double clamp(Player player, double proposedFraction, float yaw) {
+        return clamp(player, proposedFraction, snapshot(player, yaw));
+    }
+    public static double clamp(Player player, Pose pose, double proposedFraction) {
+        return clamp(player, proposedFraction, pose);
+    }
+    public static double clamp(Player player, double proposedFraction, Pose pose) {
         double proposed = bounded(proposedFraction);
         if (Math.abs(proposed) < EPSILON) return 0;
-        Frame neutral = frame(player, 0, yaw);
-        Frame target = frame(player, proposed, yaw);
-        Vec3 eyes = player.getEyePosition(), eyeTarget = eyes.add(offset(Math.toRadians(yaw), proposed).scale(player.getScale()));
-        AABB envelope = new AABB(eyes, eyeTarget).inflate(.08 * player.getScale());
+        Vec3 feet = player.position(), eyes = feet.add(0, pose.eyeHeight(), 0);
+        Frame neutral = frame(feet, pose, 0), target = frame(feet, pose, proposed);
+        AABB envelope = sweptEyeBounds(neutral, target, eyes, .08 * pose.scale());
         for (int index = 1; index < neutral.boxes().size(); index++) {
             envelope = envelope.minmax(sweptBounds(neutral, target, index));
         }
-        // Collect voxel collisions once, including the arms' full arc around the common chest pivot.
+        // Collect voxels once for the full hip-pivot arc, including the nonlinear seating translation.
         List<AABB> obstacles = new ArrayList<>();
         for (var shape : player.level().getBlockCollisions(player, envelope)) obstacles.addAll(shape.toAabbs());
         if (obstacles.isEmpty() && player.level().getWorldBorder().isWithinBounds(envelope)) return proposed;
-        return clampPath(proposed, (from, to) -> clearPath(player, neutral, from, to, yaw, obstacles));
+        return clampPath(proposed, (from, to) -> clearPath(player, feet, pose, neutral, from, to, obstacles));
     }
     @FunctionalInterface public interface Sweep { boolean clear(double from, double to); }
     /** Sweep in short intervals before refining first contact; clear endpoints alone cannot skip a thin obstacle. */
     public static double clampPath(double proposedFraction, Sweep sweep) {
         double proposed = bounded(proposedFraction);
         double previous = 0;
-        for (int step = 1; step <= 24; step++) {
-            double next = proposed * step / 24;
+        for (int step = 1; step <= SWEEP_STEPS; step++) {
+            double next = proposed * step / SWEEP_STEPS;
             if (!sweep.clear(previous, next)) {
                 double low = previous, high = next;
                 for (int iteration = 0; iteration < 9; iteration++) {
@@ -175,12 +276,11 @@ public final class LeanGeometry {
         }
         return proposed;
     }
-    private static boolean clearPath(Player player, Frame neutral, double previous, double next, float yaw, List<AABB> obstacles) {
-        Vec3 eyes = player.getEyePosition(), start = eyes.add(offset(Math.toRadians(yaw), previous).scale(player.getScale()));
-        Vec3 end = eyes.add(offset(Math.toRadians(yaw), next).scale(player.getScale()));
-        double radius = .08 * player.getScale();
-        if (blocked(player, new AABB(start, end).inflate(radius), null, obstacles)) return false;
-        Frame before = frame(player, previous, yaw), after = frame(player, next, yaw);
+    private static boolean clearPath(Player player, Vec3 feet, Pose pose, Frame neutral,
+            double previous, double next, List<AABB> obstacles) {
+        Frame before = frame(feet, pose, previous), after = frame(feet, pose, next);
+        Vec3 eyes = feet.add(0, pose.eyeHeight(), 0);
+        if (blocked(player, sweptEyeBounds(before, after, eyes, .08 * pose.scale()), null, obstacles)) return false;
         // A pre-existing shoulder overlap from vanilla's narrower movement box is not newly occupied space.
         for (int index = 1; index < after.boxes().size(); index++) {
             AABB swept = sweptBounds(before, after, index);
@@ -188,14 +288,25 @@ public final class LeanGeometry {
         }
         return true;
     }
-    /** Bounds a same-side lean interval; its center translation is linear and its corners follow rotation arcs. */
+    /** End boxes plus a bound on every hip-pivot corner arc and the seating function between them. */
     static AABB sweptBounds(Frame before, Frame after, int index) {
         Box startBox = before.boxes().get(index), endBox = after.boxes().get(index);
-        double radius = startBox.half().length();
-        // Head/body rotate about their own centers; each arm now also travels around the chest center.
-        if (index >= 3) radius += startBox.center().distanceTo(before.boxes().get(2).center());
-        double arcMargin = radius * (1 - Math.cos(ROLL_RADIANS * (after.fraction() - before.fraction()) / 2));
-        return startBox.bounds().minmax(endBox.bounds()).inflate(arcMargin);
+        if (index == 0) return startBox.bounds().minmax(endBox.bounds());
+        double radius = startBox.center().subtract(before.rig().seat()).distanceTo(before.rig().pivot()) + startBox.half().length();
+        return startBox.bounds().minmax(endBox.bounds()).inflate(sweepMargin(before, after, radius));
+    }
+    static AABB sweptEyeBounds(Frame before, Frame after, Vec3 neutralEye, double eyeRadius) {
+        Vec3 start = before.rig().point(neutralEye), end = after.rig().point(neutralEye);
+        double radius = neutralEye.distanceTo(before.rig().pivot());
+        return new AABB(start, end).inflate(eyeRadius + sweepMargin(before, after, radius));
+    }
+    private static double sweepMargin(Frame before, Frame after, double radius) {
+        double angle = Math.abs(after.rig().angle() - before.rig().angle());
+        // Rotation's second derivative is bounded by radius: chord error <= r * angle^2 / 8.
+        // Seat is a maximum of support functions. Its Lipschitz bound is the disk radius,
+        // or (circle-center lever + circle radius) for crouch's pitched and twisted waist.
+        // This remains valid across support changes and the max(0, requiredDrop) corner.
+        return radius * angle * angle / 8 + Math.max(before.seatRadius(), after.seatRadius()) * angle / 2;
     }
     private static boolean blocked(Player player, AABB bounds, AABB previouslyOccupied, List<AABB> obstacles) {
         if (!player.level().getWorldBorder().isWithinBounds(bounds)) return true;
