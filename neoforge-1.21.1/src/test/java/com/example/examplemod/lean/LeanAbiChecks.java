@@ -27,6 +27,7 @@ public final class LeanAbiChecks {
         calls(pick, MC + "world/entity/Entity", "pick", "(DFZ)Lnet/minecraft/world/phys/HitResult;", 1);
         calls(pick, MC + "world/entity/Entity", "getViewVector", "(F)Lnet/minecraft/world/phys/Vec3;", 1);
         cameraViewFrame(camera);
+        sharedCollisionOrigin();
         method(MC + "world/entity/player/Player", "defineSynchedData", "(Lnet/minecraft/network/syncher/SynchedEntityData$Builder;)V");
         String shootArgs = "(Lcom/tacz/guns/entity/shooter/ShooterDataHolder;Lnet/minecraft/world/item/ItemStack;Ljava/util/function/Supplier;Ljava/util/function/Supplier;Lnet/minecraft/world/entity/LivingEntity;)V";
         calls(method(TACZ + "entity/shooter/LivingEntityShoot", "shoot", "(Ljava/util/function/Supplier;Ljava/util/function/Supplier;JFZ)Lcom/tacz/guns/api/entity/ShootResult;"),
@@ -96,6 +97,23 @@ public final class LeanAbiChecks {
         int pickAt = callIndex(render, renderer, "pick", "(F)V");
         int setupAt = callIndex(render, camera, "setup", "(Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/world/entity/Entity;ZZF)V");
         check(pickAt < setupAt, "world frame picks before camera setup, requiring a precomputed shared eye");
+    }
+    private static void sharedCollisionOrigin() throws Exception {
+        String lean = "com/example/examplemod/lean/", player = "Lnet/minecraft/world/entity/player/Player;";
+        String pose = "Lcom/example/examplemod/lean/LeanGeometry$Pose;", vector = "Lnet/minecraft/world/phys/Vec3;";
+        MethodNode begin = method(lean + "LeanService", "beginRender", "(" + player + "F)V");
+        int sampleAt = callIndex(begin, MC + "world/entity/player/Player", "getPosition", "(F)" + vector);
+        int storeAt = fieldIndex(begin, Opcodes.PUTFIELD, lean + "LeanState", "renderFeet", vector);
+        check(sampleAt < storeAt, "world frame freezes the interpolated feet before display collision uses them");
+        MethodNode camera = method(lean + "client/LeanCameraView", "begin", "(" + player + "Lnet/minecraft/client/Camera;F)V");
+        calls(camera, lean + "LeanService", "renderFeet", "(" + player + "F)" + vector, 1);
+        calls(camera, MC + "world/entity/player/Player", "position", "()" + vector, 0);
+        MethodNode fraction = method(lean + "LeanService", "fraction", "(" + player + pose + vector + ")D");
+        calls(fraction, lean + "LeanGeometry", "clamp", "(" + player + vector + pose + "D)D", 1);
+        calls(fraction, lean + "LeanGeometry", "clamp", "(" + player + pose + "D)D", 1);
+        MethodNode shotOffset = method(lean + "LeanService", "offsetForFraction", "(" + player + "FD)" + vector);
+        calls(shotOffset, lean + "LeanGeometry", "clamp", "(" + player + pose + "D)D", 1);
+        calls(shotOffset, lean + "LeanGeometry", "clamp", "(" + player + vector + pose + "D)D", 0);
     }
     private static void shotScheduling(MethodNode round) throws Exception {
         String owner = TACZ + "client/gameplay/LocalPlayerShoot";

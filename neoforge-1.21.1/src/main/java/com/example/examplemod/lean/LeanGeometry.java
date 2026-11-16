@@ -246,9 +246,14 @@ public final class LeanGeometry {
         return clamp(player, proposedFraction, pose);
     }
     public static double clamp(Player player, double proposedFraction, Pose pose) {
+        return clamp(player, player.position(), pose, proposedFraction);
+    }
+
+    /** Render callers supply interpolated feet; authoritative callers keep the current tick position. */
+    public static double clamp(Player player, Vec3 feet, Pose pose, double proposedFraction) {
         double proposed = bounded(proposedFraction);
         if (Math.abs(proposed) < EPSILON) return 0;
-        Vec3 feet = player.position(), eyes = feet.add(0, pose.eyeHeight(), 0);
+        Vec3 eyes = feet.add(0, pose.eyeHeight(), 0);
         Frame neutral = frame(feet, pose, 0), target = frame(feet, pose, proposed);
         AABB envelope = sweptEyeBounds(neutral, target, eyes, EYE_RADIUS * pose.scale());
         for (int index = 1; index < neutral.boxes().size(); index++) {
@@ -260,7 +265,8 @@ public final class LeanGeometry {
         if (obstacles.isEmpty() && player.level().getWorldBorder().isWithinBounds(envelope)) return proposed;
         var settings = player.level().isClientSide ? PubgSettingsService.client() : PubgSettingsService.server(player.getServer());
         double tolerance = settings.number("lean.body_penetration_tolerance") * pose.scale();
-        LeanCollision collision = new LeanCollision(player.getBoundingBox(), neutral, tolerance, obstacles);
+        AABB movementBox = player.getBoundingBox().move(feet.subtract(player.position()));
+        LeanCollision collision = new LeanCollision(movementBox, neutral, tolerance, obstacles);
         return clampPath(proposed, (from, to) -> clearPath(feet, pose, collision, from, to, obstacles,
                 player.level().getWorldBorder()::isWithinBounds));
     }

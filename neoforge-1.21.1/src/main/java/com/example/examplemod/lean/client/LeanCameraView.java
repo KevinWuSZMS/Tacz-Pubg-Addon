@@ -28,7 +28,7 @@ public final class LeanCameraView {
     }
 
     public static void begin(Player player, Camera camera, float partialTick) {
-        Vec3 feet = player.getPosition(partialTick);
+        Vec3 feet = LeanService.renderFeet(player, partialTick);
         if (owner != player || world != player.level() || previousFeet == null
                 || previousFeet.distanceToSqr(feet) > 4 || player.tickCount < lastTick
                 || player.tickCount - lastTick > 2 || !LeanService.eligible(player)) TRANSITION.reset();
@@ -45,8 +45,8 @@ public final class LeanCameraView {
         double height = ((LeanCameraAccess) camera).taczPubg$interpolatedEyeHeight(partialTick);
         Vec3 candidate = feet.add(0, height, 0).add(offset);
         if (frameLeaning) {
-            // LeanGeometry.clamp validates at the actual feet, not the renderer's interpolated position.
-            Vec3 legalEye = player.position().add(0, pose.eyeHeight(), 0).add(LeanGeometry.offset(pose, fraction));
+            // Display collision, native interpolation and the constraint anchor share the same frame origin.
+            Vec3 legalEye = feet.add(0, pose.eyeHeight(), 0).add(LeanGeometry.offset(pose, fraction));
             candidate = constrained(player, legalEye, candidate);
         }
         frameEye = candidate;

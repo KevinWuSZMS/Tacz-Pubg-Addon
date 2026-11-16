@@ -71,6 +71,7 @@ public final class LeanService {
         state.renderNanos = System.nanoTime();
         state.renderFraction = Double.NaN;
         state.renderPose = LeanGeometry.renderSnapshot(player, partialTick);
+        state.renderFeet = player.getPosition(partialTick);
     }
     public static void endRender(Player player) { clearRender(state(player)); }
 
@@ -84,36 +85,51 @@ public final class LeanService {
         return state.renderNanos != 0 && state.renderPose != null ? state.renderPose : LeanGeometry.renderSnapshot(player, partialTick);
     }
 
+    public static Vec3 renderFeet(Player player, float partialTick) {
+        LeanState state = state(player);
+        return state.renderNanos != 0 && state.renderFeet != null ? state.renderFeet : player.getPosition(partialTick);
+    }
+
     private static void clearRender(LeanState state) {
         state.renderNanos = 0;
         state.renderFraction = Double.NaN;
         state.renderPose = null;
+        state.renderFeet = null;
     }
 
     public static double fraction(Player player, float partialTick) {
-        return fraction(player, player.level().isClientSide ? renderPose(player, partialTick) : pose(player));
+        boolean client = player.level().isClientSide;
+        return fraction(player, client ? renderPose(player, partialTick) : pose(player),
+                client ? renderFeet(player, partialTick) : player.position());
     }
 
-    private static double fraction(Player player, LeanGeometry.Pose pose) {
+    private static double fraction(Player player, LeanGeometry.Pose pose, Vec3 feet) {
         if (!eligible(player)) return 0;
         LeanState state = state(player);
         if (state.renderNanos != 0 && Double.isFinite(state.renderFraction)) return state.renderFraction;
         long now = state.renderNanos == 0 ? System.nanoTime() : state.renderNanos;
         if (player.level().isClientSide) reconcile(player, state, now);
         double value = state.motion.sample(now);
-        if ((!state.predicted || data(player).taczPubg$leanSequence() == state.sequence)
+        // A server limit describes its earlier feet/body pose, not this local rendered pose.
+        // Local prediction validates the displayed geometry here; server shot validation stays authoritative.
+        boolean localPrediction = player.level().isClientSide && state.predicted;
+        if (!localPrediction && (!state.predicted || data(player).taczPubg$leanSequence() == state.sequence)
                 && Integer.signum(state.motion.target()) == data(player).taczPubg$leanTarget()) {
             double limit = data(player).taczPubg$leanLimit();
             value = LeanMotion.limited(value, state.motion.target(), limit);
         }
-        double result = player.level().isClientSide && !state.predicted ? value : LeanGeometry.clamp(player, pose, value);
+        double result = player.level().isClientSide
+                ? state.predicted ? LeanGeometry.clamp(player, feet, pose, value) : value
+                : LeanGeometry.clamp(player, pose, value);
         if (state.renderNanos != 0) state.renderFraction = result;
         return result;
     }
 
     public static Vec3 offset(Player player, float partialTick) {
-        LeanGeometry.Pose pose = player.level().isClientSide ? renderPose(player, partialTick) : pose(player);
-        return LeanGeometry.offset(pose, fraction(player, pose));
+        boolean client = player.level().isClientSide;
+        LeanGeometry.Pose pose = client ? renderPose(player, partialTick) : pose(player);
+        return LeanGeometry.offset(pose, fraction(player, pose,
+                client ? renderFeet(player, partialTick) : player.position()));
     }
 
     public static int inputSequence(Player player) { return state(player).sequence; }

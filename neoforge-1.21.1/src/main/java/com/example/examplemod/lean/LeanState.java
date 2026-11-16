@@ -1,6 +1,7 @@
 package com.example.examplemod.lean;
 
 import java.util.ArrayDeque;
+import net.minecraft.world.phys.Vec3;
 
 /** Per-player instance state, never shared between the integrated server and local prediction. */
 public final class LeanState {
@@ -11,6 +12,7 @@ public final class LeanState {
     long renderNanos;
     double renderFraction = Double.NaN;
     LeanGeometry.Pose renderPose;
+    Vec3 renderFeet;
     long inputNanos;
     int wireSequence = Integer.MIN_VALUE, wireTarget;
     float wireFraction = Float.NaN;

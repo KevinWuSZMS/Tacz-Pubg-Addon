@@ -1,6 +1,8 @@
 package com.example.examplemod.lean;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -17,9 +19,10 @@ final class LeanCollision {
         }
     }
     private record Contact(AABB wall, Face face, double[] budget) { }
+    private record Section(double minA, double maxA, double minB, double maxB) { }
 
     LeanCollision(AABB movementBox, LeanGeometry.Frame neutral, double tolerance, List<AABB> obstacles) {
-        for (AABB wall : obstacles) {
+        for (AABB wall : mergeFaces(obstacles)) {
             Face face = face(movementBox, wall);
             double[] budget = new double[neutral.boxes().size()];
             for (int index = 1; index < budget.length; index++) {
@@ -30,6 +33,38 @@ final class LeanCollision {
             }
             contacts.add(new Contact(wall, face, budget));
         }
+    }
+
+    /** Remove internal voxel seams only when the union remains exactly a solid rectangular box. */
+    static List<AABB> mergeFaces(List<AABB> obstacles) {
+        if (obstacles.size() < 2) return obstacles;
+        List<AABB> result = obstacles;
+        int previousSize;
+        do {
+            previousSize = result.size();
+            for (int axis = 0; axis < 3; axis++) {
+                int along = axis, a = (axis + 1) % 3, b = (axis + 2) % 3;
+                var sections = new LinkedHashMap<Section, List<AABB>>();
+                for (AABB box : result) {
+                    var section = new Section(minimum(box, a), maximum(box, a), minimum(box, b), maximum(box, b));
+                    sections.computeIfAbsent(section, ignored -> new ArrayList<>()).add(box);
+                }
+                var merged = new ArrayList<AABB>(result.size());
+                for (var row : sections.values()) {
+                    row.sort(Comparator.comparingDouble(box -> minimum(box, along)));
+                    AABB current = row.getFirst();
+                    for (int index = 1; index < row.size(); index++) {
+                        AABB next = row.get(index);
+                        // Exact contact, not an epsilon: narrow gaps must remain real gaps.
+                        if (minimum(next, along) <= maximum(current, along)) current = current.minmax(next);
+                        else { merged.add(current); current = next; }
+                    }
+                    merged.add(current);
+                }
+                result = merged;
+            }
+        } while (result.size() < previousSize);
+        return result;
     }
 
     boolean blocked(LeanGeometry.Frame before, LeanGeometry.Frame after, int index, AABB swept) {
