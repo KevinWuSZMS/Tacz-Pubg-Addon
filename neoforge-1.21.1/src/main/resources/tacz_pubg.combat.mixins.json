@@ -3,7 +3,7 @@
   "minVersion": "0.8",
   "package": "com.example.examplemod.combat.mixin",
   "compatibilityLevel": "JAVA_21",
-  "mixins": ["CombatConnectionMixin", "CombatGameModeMixin", "CombatPlayerPoseMixin", "CombatJumpMixin"],
+  "mixins": ["CombatConnectionMixin", "CombatGameModeMixin", "CombatPlayerPoseMixin", "CombatJumpMixin", "CombatCarpetDeathMixin"],
   "client": ["CombatKeyboardMixin", "CombatMinecraftMixin"],
   "injectors": {"defaultRequire": 1}
 }

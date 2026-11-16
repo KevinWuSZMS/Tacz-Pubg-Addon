@@ -23,6 +23,9 @@ public final class CombatRules {
         return new Credit(killer,List.copyOf(assistants));
     }
     public static int bleedTier(int downs) { return Math.clamp(downs,1,9); }
+    public static boolean directDeath(boolean dbnoEnabled, boolean teammateCanRescue, boolean selfRescueAvailable) {
+        return !dbnoEnabled || !(teammateCanRescue || selfRescueAvailable);
+    }
     public static double pubgDamage(double healthDamage,double maximumHealth) {
         if(!Double.isFinite(healthDamage)||!Double.isFinite(maximumHealth)||healthDamage<0||maximumHealth<=0)return 0;
         return healthDamage*100/maximumHealth;

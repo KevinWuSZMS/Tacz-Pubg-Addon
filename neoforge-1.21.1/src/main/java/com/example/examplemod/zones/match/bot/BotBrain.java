@@ -43,7 +43,7 @@ import java.util.UUID;
 /** Code-only perception, native TaCZ operation and bounded loaded-terrain walking. */
 final class BotBrain {
     enum Mode { AUTO, SEEK, LOOT, ATTACK, EVADE, FOLLOW, GUARD, PATROL, MOVE, HOLD, CIRCLE }
-    private final EntityPlayerMPFake body;
+    private EntityPlayerMPFake body;
     private final MatchBotService.BotSpec spec;
     private final MapDefinition map;
     private final BotRules.Skill skill;
@@ -73,6 +73,7 @@ final class BotBrain {
         teamId = spec.teamId();
     }
     void team(String id) { teamId = id; }
+    void rebind(EntityPlayerMPFake replacement) { body = replacement; suspended = false; suspend(); }
     void mode(String selected, Vec3 point, UUID followed) {
         mode = Mode.valueOf(selected.toUpperCase(java.util.Locale.ROOT));
         orderedPoint = point == null ? body.position() : point; follow = followed;
@@ -120,6 +121,7 @@ final class BotBrain {
         MatchStatus status = MatchService.status(server, map.id());
         if (status == null || !status.sessionId().equals(session.sessionId()) || "paused".equals(status.stage())
                 || "preparing".equals(status.stage()) || !body.isAlive() || body.isRemoved()
+                || com.example.examplemod.combat.CombatService.actionBlocked(body)
                 || com.example.examplemod.zones.match.flight.MatchFlightService.airborne(server, body.getUUID())
                 || body.isSpectator() || body.isCreative() || !map.dimension().equals(body.serverLevel().dimension().location())) {
             suspend(); return;

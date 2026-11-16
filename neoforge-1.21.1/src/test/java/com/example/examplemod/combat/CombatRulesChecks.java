@@ -24,6 +24,10 @@ public final class CombatRulesChecks {
         check(CombatRules.credit(victim,"V",null,"",downer,"A",boundary,1300,1200,1).assistants().contains(mate),"Inclusive assist time and minimum damage boundaries");
         check(CombatRules.credit(victim,"V",null,"",downer,"A",boundary,1301,1200,1).assistants().isEmpty(),"Expired damage does not produce assists");
         check(CombatRules.credit(victim,"V",null,"",downer,"A",boundary,1300,1200,1.01).assistants().isEmpty(),"Below-threshold damage does not produce assists");
+        check(!CombatRules.directDeath(true,true,false),"An actionable teammate permits DBNO");
+        check(CombatRules.directDeath(true,false,false),"No rescue route means direct death");
+        check(!CombatRules.directDeath(true,false,true),"Self-rescue eligibility can independently permit DBNO");
+        check(CombatRules.directDeath(false,true,true),"Disabled DBNO always chooses direct death");
         for(int count=-2;count<20;count++)check(CombatRules.bleedTier(count)>=1&&CombatRules.bleedTier(count)<=9,"Repeated knock tier is bounded");
         near(CombatRules.pubgDamage(20,20),100,"Default Minecraft health normalizes to PUBG100");
         near(CombatRules.pubgDamage(40,40),100,"Modified max health preserves independent DBNO damage ratio");

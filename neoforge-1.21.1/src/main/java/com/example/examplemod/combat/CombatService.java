@@ -6,6 +6,7 @@ import com.example.examplemod.throwables.ThrowableKind;
 import com.example.examplemod.throwables.ThrowableService;
 import com.example.examplemod.zones.match.MatchEngine;
 import com.example.examplemod.zones.match.MatchService;
+import com.example.examplemod.zones.match.bot.MatchBotService;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.event.common.EntityHurtByGunEvent;
 import com.tacz.guns.api.event.common.GunDamageSourcePart;
@@ -52,7 +53,7 @@ public final class CombatService {
     private record Hit(UUID attacker, String weapon, boolean headshot, String cause, String gunType) {}
     private static final class Damage { double amount; long tick; Damage(double amount,long tick) { this.amount=amount;this.tick=tick; } }
     private static final class Player {
-        int kills,assists,knocks,downs; boolean eliminated;
+        int kills,assists,knocks,downs; boolean eliminated, directDeath=true;
         Down down; final Map<UUID,Damage> contributors=new HashMap<>();
     }
     private static final class Down {
@@ -165,14 +166,14 @@ public final class CombatService {
     private static void interceptDeath(LivingDeathEvent e) {
         if(!(e.getEntity() instanceof ServerPlayer p)||FINISHING.contains(p.getUUID()))return;
         Game g=game(p,true);
-        if(g==null||!g.engine.alive(p.getUUID())||g.engine.paused()||!enabled(p.server,"dbno.enabled")
+        if(g==null||!g.engine.alive(p.getUUID())||g.engine.paused()
                 ||e.getSource().is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY)
                 ||g.engine.elapsedTicks()<g.engine.settings().preparationSeconds()*20L||g.players.get(p.getUUID()).down!=null)return;
-        boolean savior=g.engine.roster().stream().anyMatch(m->!m.id().equals(p.getUUID()) && sameTeam(g,m.id(),p.getUUID()) && standing(p.server,g,m.id()));
-        if(!savior)return;
+        if(refreshDirectDeath(g,p))return;
         e.setCanceled(true);p.setHealth(1);p.setAbsorptionAmount(0);p.stopRiding();p.stopFallFlying();p.stopUsingItem();
         ThrowableService.cancel(p);
         Player state=g.players.get(p.getUUID());state.downs++;state.down=new Down(hit(e.getSource()),g.engine.combatTicks(),(float)number(p.server,"dbno.health"),p.position());
+        MatchBotService.suspend(p);
         setPose(p);cancelRescues(g,p.getUUID());
         if(state.down.hit.attacker!=null && g.players.containsKey(state.down.hit.attacker) && !sameTeam(g,state.down.hit.attacker,p.getUUID()))g.players.get(state.down.hit.attacker).knocks++;
         publish(g,p.server,"knock",state.down.hit.attacker,p.getUUID(),state.down.hit,state.down.hit.cause,null);
@@ -181,6 +182,14 @@ public final class CombatService {
     private static boolean standing(MinecraftServer server,Game g,UUID id) {
         ServerPlayer p=server.getPlayerList().getPlayer(id);Player s=g.players.get(id);
         return p!=null&&p.isAlive()&&!p.isSpectator()&&g.engine.alive(id)&&s!=null&&!s.eliminated&&s.down==null;
+    }
+    /** One policy for both lethal damage and team wipes; future self-rescue equipment joins here. */
+    private static boolean refreshDirectDeath(Game g,ServerPlayer p) {
+        boolean teammateCanRescue=g.engine.roster().stream().anyMatch(m->!m.id().equals(p.getUUID())
+                &&sameTeam(g,m.id(),p.getUUID())&&standing(p.server,g,m.id()));
+        // No self-rescue item is registered yet. Keep its policy input independent of teammates.
+        boolean selfRescueAvailable=false;
+        return g.players.get(p.getUUID()).directDeath=CombatRules.directDeath(enabled(p.server,"dbno.enabled"),teammateCanRescue,selfRescueAvailable);
     }
     private static void incoming(LivingIncomingDamageEvent e) {
         if(!(e.getEntity() instanceof ServerPlayer p)||FINISHING.contains(p.getUUID()))return;
@@ -264,7 +273,7 @@ public final class CombatService {
         if(victim==null||rescuer.isUsingItem()||rescuer.containerMenu!=rescuer.inventoryMenu||g.rescues.values().stream().anyMatch(r->r.target.equals(target)))return;
         var use=new Reviving(rescuer,victim,g.engine.combatTicks(),(int)number(rescuer.server,"rescue.ticks"));
         if(!validRescue(rescuer.server,g,use))return;
-        g.rescues.put(rescuer.getUUID(),use);rescuer.stopUsingItem();ThrowableService.cancel(rescuer);pushAll(g,rescuer.server);
+        g.rescues.put(rescuer.getUUID(),use);rescuer.stopUsingItem();ThrowableService.cancel(rescuer);MatchBotService.suspend(rescuer);pushAll(g,rescuer.server);
     }
     private static boolean validRescue(MinecraftServer server,Game g,Reviving r) {
         ServerPlayer a=server.getPlayerList().getPlayer(r.rescuer),b=server.getPlayerList().getPlayer(r.target);
@@ -322,8 +331,7 @@ public final class CombatService {
                 Player state=entry.getValue();if(state.down==null||state.eliminated)continue;
                 ServerPlayer p=server.getPlayerList().getPlayer(entry.getKey());if(p==null)continue;
                 if(!g.engine.alive(entry.getKey())) {state.down=null;restorePose(p);continue;}
-                boolean canBeSaved=g.engine.roster().stream().anyMatch(m->sameTeam(g,m.id(),p.getUUID())&&standing(server,g,m.id()));
-                if(!canBeSaved){finish(p,g,new Hit(null,"",false,"team_wipe",""),"team_wipe");continue;}
+                if(refreshDirectDeath(g,p)){finish(p,g,new Hit(null,"",false,"team_wipe",""),"team_wipe");continue;}
                 Down down=state.down;setPose(p);p.stopUsingItem();p.setHealth(1);
                 Vec3 position=p.position();double horizontal=position.subtract(down.position).horizontalDistance();
                 double limit=.215*number(server,p.isInWater()?"dbno.swim_multiplier":"dbno.crawl_multiplier")+.012;
