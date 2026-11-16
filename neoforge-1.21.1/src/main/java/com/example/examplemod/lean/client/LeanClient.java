@@ -35,6 +35,7 @@ public final class LeanClient {
     }
 
     public static void register(IEventBus bus) {
+        LeanShotClient.register();
         bus.addListener((RegisterKeyMappingsEvent event) -> { event.register(LEFT); event.register(RIGHT); });
         NeoForge.EVENT_BUS.addListener(EventPriority.HIGHEST, (InputEvent.Key event) -> {
             if (event.getAction() == GLFW.GLFW_REPEAT) return;

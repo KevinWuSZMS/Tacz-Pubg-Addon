@@ -11,6 +11,7 @@
   "client": [
     "ClientMessageShotAccessor",
     "LocalPlayerShotMixin",
+    "client.LeanShotInventoryMixin",
     "EntityBulletTracerShotMixin"
   ],
   "injectors": { "defaultRequire": 1 }

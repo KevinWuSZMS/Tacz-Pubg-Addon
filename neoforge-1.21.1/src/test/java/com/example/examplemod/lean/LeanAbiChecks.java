@@ -5,9 +5,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.jar.JarFile;
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldInsnNode;
+import org.objectweb.asm.tree.InvokeDynamicInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TypeInsnNode;
@@ -40,6 +43,9 @@ public final class LeanAbiChecks {
             if (type == Type.INT_TYPE) integers++;
         }
         check(counters == 1 && integers == 1 && stacks == 1, "argsOnly locals identify one counter, burst size and held gun");
+        shotScheduling(local);
+        drawSessionEvent();
+        outboundInventoryHook();
         method(TACZ + "entity/EntityKineticBullet", "<init>", "(Lnet/minecraft/world/entity/EntityType;Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/resources/ResourceLocation;ZLcom/tacz/guns/resource/pojo/data/gun/GunData;Lcom/tacz/guns/resource/pojo/data/gun/BulletData;)V");
         check(load(TACZ + "entity/EntityKineticBullet").fields.stream().anyMatch(f -> f.name.equals("startPos") && f.desc.equals("Lnet/minecraft/world/phys/Vec3;")), "native startPos field");
         MethodNode tracer = named(TACZ + "client/renderer/entity/EntityBulletRenderer", "lambda$renderTracerAmmo$1");
@@ -60,6 +66,80 @@ public final class LeanAbiChecks {
         calls(method(MC + "client/renderer/entity/LivingEntityRenderer", "render", "(Lnet/minecraft/world/entity/LivingEntity;FFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V"),
                 MC + "client/model/EntityModel", "setupAnim", "(Lnet/minecraft/world/entity/Entity;FFFFF)V", 1);
         System.out.println("LeanAbiChecks: " + checks + " actual MC/TaCZ bytecode checks passed");
+    }
+    private static void shotScheduling(MethodNode round) throws Exception {
+        String owner = TACZ + "client/gameplay/LocalPlayerShoot";
+        String arguments = "(Ljava/util/concurrent/atomic/AtomicInteger;Lcom/tacz/guns/resource/pojo/data/gun/GunData;Lcom/tacz/guns/api/item/IGun;Lnet/minecraft/world/item/ItemStack;IFLcom/tacz/guns/client/resource/GunDisplayInstance;)V";
+        check(round.desc.equals(arguments), "scheduled round retains its counter, gun, burst limit and display arguments");
+        MethodNode schedule = method(owner, "doShoot", "(Lcom/tacz/guns/client/resource/GunDisplayInstance;Lcom/tacz/guns/api/item/IGun;Lnet/minecraft/world/item/ItemStack;Lcom/tacz/guns/resource/pojo/data/gun/GunData;JF)V");
+        int scheduleAt = callIndex(schedule, "java/util/concurrent/ScheduledExecutorService", "scheduleAtFixedRate",
+                "(Ljava/lang/Runnable;JJLjava/util/concurrent/TimeUnit;)Ljava/util/concurrent/ScheduledFuture;");
+        int factories = 0, factoryAt = -1;
+        for (var instruction : schedule.instructions) {
+            if (!(instruction instanceof InvokeDynamicInsnNode factory)) continue;
+            for (Object argument : factory.bsmArgs) {
+                if (argument instanceof Handle implementation && implementation.getOwner().equals(owner)
+                        && implementation.getName().equals(round.name) && implementation.getDesc().equals(arguments)) {
+                    factories++;
+                    factoryAt = schedule.instructions.indexOf(factory);
+                    check(Type.getReturnType(factory.desc).getDescriptor().equals("Ljava/lang/Runnable;"), "native round factory returns a runnable");
+                    long stacks = java.util.Arrays.stream(Type.getArgumentTypes(factory.desc))
+                            .filter(type -> type.getDescriptor().equals("Lnet/minecraft/world/item/ItemStack;")).count();
+                    check(stacks == 1, "native scheduler captures one held stack before its delay");
+                }
+            }
+        }
+        check(factories == 1 && factoryAt < scheduleAt, "one native round runnable is created before the session-capture scheduling hook");
+        int timestampAt = fieldIndex(round, Opcodes.PUTFIELD, TACZ + "client/gameplay/LocalPlayerDataHolder", "clientShootTimestamp", "J");
+        int sendAt = callIndex(round, "net/neoforged/neoforge/network/PacketDistributor", "sendToServer",
+                "(Lnet/minecraft/network/protocol/common/custom/CustomPacketPayload;[Lnet/minecraft/network/protocol/common/custom/CustomPacketPayload;)V");
+        int submitAt = callIndex(round, MC + "client/Minecraft", "submitAsync", "(Ljava/lang/Runnable;)Ljava/util/concurrent/CompletableFuture;");
+        int incrementAt = callIndex(round, "java/util/concurrent/atomic/AtomicInteger", "getAndIncrement", "()I");
+        check(timestampAt < sendAt && sendAt < submitAt && submitAt < incrementAt,
+                "native order is timestamp, first packet, animation submission, then burst-counter increment");
+    }
+    private static void drawSessionEvent() throws Exception {
+        String event = TACZ + "api/event/common/GunDrawEvent";
+        MethodNode draw = method(TACZ + "client/gameplay/LocalPlayerDraw", "draw", "(Lnet/minecraft/world/item/ItemStack;)V");
+        int sideAt = fieldIndex(draw, Opcodes.GETSTATIC, "net/neoforged/fml/LogicalSide", "CLIENT", "Lnet/neoforged/fml/LogicalSide;");
+        int eventAt = callIndex(draw, event, "<init>", "(Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/item/ItemStack;Lnet/neoforged/fml/LogicalSide;)V");
+        int postAt = callIndex(draw, "net/neoforged/bus/api/IEventBus", "post", "(Lnet/neoforged/bus/api/Event;)Lnet/neoforged/bus/api/Event;");
+        check(sideAt < eventAt && eventAt < postAt, "native draw posts its client-side session-change event");
+        method(event, "getEntity", "()Lnet/minecraft/world/entity/LivingEntity;");
+        method(event, "getLogicalSide", "()Lnet/neoforged/fml/LogicalSide;");
+        calls(method(TACZ + "client/event/InventoryEvent", "onPlayerChangeSelect", "(Ljava/lang/Boolean;)V"),
+                TACZ + "api/item/IAnimationItem", "isSame", "(Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/item/ItemStack;)Z", 1);
+    }
+    private static void outboundInventoryHook() throws Exception {
+        String common = MC + "client/multiplayer/ClientCommonPacketListenerImpl";
+        String descriptor = "(Lnet/minecraft/network/protocol/Packet;)V";
+        MethodNode send = method(common, "send", descriptor);
+        check((send.access & Opcodes.ACC_STATIC) == 0 && (send.access & Opcodes.ACC_PUBLIC) != 0,
+                "outbound inventory hook targets the public instance send(Packet) method");
+        calls(send, MC + "network/Connection", "send", descriptor, 1);
+        ClassNode play = load(MC + "client/multiplayer/ClientPacketListener");
+        check(common.equals(play.superName), "play connection inherits the common outbound listener");
+        check(play.methods.stream().noneMatch(candidate -> candidate.name.equals("send") && candidate.desc.equals(descriptor)),
+                "play connection does not override and bypass the common outbound hook");
+    }
+    private static int callIndex(MethodNode method, String owner, String name, String descriptor) {
+        calls(method, owner, name, descriptor, 1);
+        for (var instruction : method.instructions)
+            if (instruction instanceof MethodInsnNode call && call.owner.equals(owner) && call.name.equals(name) && call.desc.equals(descriptor))
+                return method.instructions.indexOf(instruction);
+        throw new AssertionError("Missing call already checked: " + name);
+    }
+    private static int fieldIndex(MethodNode method, int opcode, String owner, String name, String descriptor) {
+        int count = 0, position = -1;
+        for (var instruction : method.instructions) {
+            if (instruction instanceof FieldInsnNode field && field.getOpcode() == opcode && field.owner.equals(owner)
+                    && field.name.equals(name) && field.desc.equals(descriptor)) {
+                count++;
+                position = method.instructions.indexOf(instruction);
+            }
+        }
+        check(count == 1, method.name + " has one matching field access to " + owner + "." + name);
+        return position;
     }
     private static ClassNode load(String name) throws Exception {
         if (name.startsWith(TACZ)) {
