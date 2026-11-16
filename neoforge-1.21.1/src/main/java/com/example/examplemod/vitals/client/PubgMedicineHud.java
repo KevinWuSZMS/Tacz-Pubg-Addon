@@ -35,16 +35,21 @@ public final class PubgMedicineHud {
     public record Target(double total, double next) {}
     public static Target target(double health, double maximum) {
         var player = Minecraft.getInstance().player;
-        double budget = recoveryValid() ? recovery.remaining() : 0, step = recoveryValid() ? recovery.next() : 0;
-        double ceiling = recoveryValid() ? recovery.ceiling() : 0;
-        if (player != null && player.isUsingItem() && player.getUseItem().getItem() instanceof PubgMedicineItem medicine && !medicine.kind().isBoost()) {
-            double castBudget = medicine.kind().healingBudget(health, maximum);
-            budget += castBudget; ceiling = Math.max(ceiling, medicine.kind().ceiling());
-            var settings = com.example.examplemod.pubgsettings.PubgSettingsService.client();
-            step += medicine.kind() == PubgMedicineModel.Kind.FIRST_AID_KIT
-                    ? Math.min(castBudget, maximum * settings.number("medicine.first_aid_step_percent") / 100)
-                    : medicine.kind() == PubgMedicineModel.Kind.BANDAGE
-                    ? castBudget * settings.integer("medicine.recovery_step_ticks") / settings.integer("medicine.bandage_recovery_ticks") : castBudget;
+        boolean valid = recoveryValid();
+        var casting = player != null && player.isUsingItem()
+                && player.getUseItem().getItem() instanceof PubgMedicineItem medicine ? medicine.kind() : null;
+        return forecast(health, maximum, valid ? recovery.remaining() : 0,
+                valid ? recovery.next() : 0, valid ? recovery.ceiling() : 0, casting);
+    }
+    /** Both cast previews and authorized recovery packets use the same next-pulse amount as healing. */
+    public static Target forecast(double health, double maximum, double budget, double step,
+                                  double ceiling, PubgMedicineModel.Kind casting) {
+        if (casting != null && !casting.isBoost()) {
+            // An older treatment can still be pulsing while the next item is being cast.
+            // Its next pulse arrives first; the new cast belongs only in the total forecast.
+            if (budget <= 0) step = casting.firstStepBudget(health, maximum);
+            budget += casting.healingBudget(health, maximum);
+            ceiling = Math.max(ceiling, casting.ceiling());
         }
         return new Target(Math.max(health, Math.min(maximum * ceiling, health + budget)),
                 Math.max(health, Math.min(maximum * ceiling, health + step)));

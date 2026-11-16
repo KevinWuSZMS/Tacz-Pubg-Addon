@@ -156,12 +156,10 @@ public final class PubgMedicineService {
         if (kind.recoveryTicks() == 0) p.heal((float) budget);
         else {
             var settings = com.example.examplemod.pubgsettings.PubgSettingsService.server(p.server);
-            int interval = settings.integer("medicine.recovery_step_ticks");
-            double step = kind == PubgMedicineModel.Kind.FIRST_AID_KIT
-                    ? p.getMaxHealth() * settings.number("medicine.first_aid_step_percent") / 100 : 0;
-            int duration = step > 0 ? Math.max(1, (int) Math.ceil(budget / step)) * interval
-                    : settings.integer("medicine.bandage_recovery_ticks");
-            state.recoveries.add(new PubgMedicineModel.Recovery(budget, kind.ceiling(), duration, context.clock, 0, step, interval));
+            int duration = settings.integer(kind == PubgMedicineModel.Kind.FIRST_AID_KIT
+                    ? "medicine.first_aid_recovery_ticks" : "medicine.bandage_recovery_ticks");
+            state.recoveries.add(new PubgMedicineModel.Recovery(budget, kind.ceiling(), duration,
+                    context.clock, 0, kind.recoverySteps()));
             syncRecovery(p, state, context);
         }
         return true;
@@ -200,15 +198,21 @@ public final class PubgMedicineService {
             }
             if (!context.running) continue;
             boolean hadRecovery = !state.recoveries.isEmpty();
+            boolean advancedPulse = false;
+            float previousHealth = p.getHealth();
             var recoveries = state.recoveries.listIterator();
             while (recoveries.hasNext()) {
-                var step = recoveries.next().advance(context.clock, p.getHealth(), p.getMaxHealth());
+                var recovery = recoveries.next();
+                var step = recovery.advance(context.clock, p.getHealth(), p.getMaxHealth());
+                advancedPulse |= step.recovery().remainingBudget() < recovery.remainingBudget();
                 if (step.healing() > 0) p.heal((float) step.healing());
                 if (step.recovery().finished()) recoveries.remove();
                 else recoveries.set(step.recovery());
             }
-            int syncStep = com.example.examplemod.pubgsettings.PubgSettingsService.server(server).integer("medicine.recovery_step_ticks");
-            if (!state.recoveries.isEmpty() && context.clock % syncStep == 0 || hadRecovery && state.recoveries.isEmpty()
+            // Publish the new health before reducing its forecast, so both HUD edges move together.
+            if (p.getHealth() != previousHealth) p.connection.send(new net.minecraft.network.protocol.game.ClientboundSetHealthPacket(
+                    p.getHealth(), p.getFoodData().getFoodLevel(), p.getFoodData().getSaturationLevel()));
+            if (advancedPulse || !state.recoveries.isEmpty() && context.clock % 10 == 0 || hadRecovery && state.recoveries.isEmpty()
                     || state.use == null && state.recoveries.isEmpty())
                 syncRecovery(p, state, context);
             if (state.use == null && state.recoveries.isEmpty()) iterator.remove();

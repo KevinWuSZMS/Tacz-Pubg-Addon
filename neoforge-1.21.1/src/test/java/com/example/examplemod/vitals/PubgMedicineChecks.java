@@ -17,14 +17,19 @@ public final class PubgMedicineChecks {
         var bandage = PubgMedicineModel.Kind.BANDAGE;
         var aid = PubgMedicineModel.Kind.FIRST_AID_KIT;
         var kit = PubgMedicineModel.Kind.MED_KIT;
-        check(bandage.useTicks() == 60 && bandage.recoveryTicks() == 60, "PC 42.1 bandage takes 3s and recovers over 3s");
-        check(kit.useTicks() == 120, "PC 42.1 med kit takes 6s");
+        check(bandage.useTicks() == 60 && bandage.recoveryTicks() == 58, "PC 42.1 bandage takes 3s and recovers over 2.9s");
+        check(kit.useTicks() == 120 && kit.recoveryTicks() == 0, "PC 42.1 med kit takes 6s then heals instantly");
         check(aid.useTicks() == 120 && aid.recoveryTicks() == 40, "First aid casts for 6s then restores over 2s");
+        check(bandage.recoverySteps() == 5 && aid.recoverySteps() == 5 && kit.recoverySteps() == 1,
+                "Bandages and first aid use five pulses while med kits are immediate");
         near(bandage.healingBudget(1, 20), 2.4, "Bandage recovers 12% maximum health");
         near(bandage.healingBudget(14, 20), 1, "Bandage stops at 75%");
         near(aid.healingBudget(5, 20), 10, "First aid snapshots its 75% target");
         near(kit.healingBudget(5, 20), 15, "Med kit reaches full health");
         near(bandage.healingBudget(10, 40), 4.8, "Health normalization supports changed maximum HP");
+        near(bandage.firstStepBudget(5, 20), .48, "Each bandage pulse converts 2.4 PUBG HP to 0.48 MC HP");
+        near(aid.firstStepBudget(5, 20), 2, "First aid divides the current deficit to 15 MC HP into five equal pulses");
+        near(kit.firstStepBudget(5, 20), 15, "The med-kit preview contains its whole instant heal");
         for (var kind : new PubgMedicineModel.Kind[] {bandage, aid}) {
             check(!kind.canUse(15, 20, 0), "75%-limited healing cannot waste an item at its ceiling");
             check(!kind.canUse(16, 20, 0), "75%-limited healing cannot reduce health above its ceiling");
@@ -54,43 +59,90 @@ public final class PubgMedicineChecks {
         check(PubgMedicineModel.movedTooFar(Double.NaN), "Invalid movement cannot bypass validation");
         var recovery = new PubgMedicineModel.Recovery(10, .75, 40, 100, 0);
         var first = recovery.advance(120, 5, 20);
-        near(first.healing(), 5, "Half the first-aid recovery budget is delivered after one second");
+        near(first.healing(), 4, "Two of five first-aid pulses have completed after one second");
         var damaged = first.recovery().advance(140, 6, 20);
-        near(damaged.healing(), 5, "Damage during recovery does not enlarge the original budget");
+        near(damaged.healing(), 6, "Damage during recovery does not enlarge the original budget");
         check(damaged.recovery().finished(), "Recovery expires after its fixed duration");
         near(damaged.recovery().advance(200, 1, 20).healing(), 0, "Expired treatment cannot refill later damage");
         var capped = recovery.advance(120, 14, 20);
         near(capped.healing(), 1, "Other healing cannot make medicine exceed 75%");
-        near(capped.recovery().advance(140, 1, 20).healing(), 5, "Discarded capped healing cannot be banked");
+        near(capped.recovery().advance(140, 1, 20).healing(), 6, "Discarded capped healing cannot be banked");
         near(recovery.advance(100, 5, 20).healing(), 0, "A paused clock delivers no recovery");
-        var each = new PubgMedicineModel.Recovery(2.4, .75, 60, 0, 0);
-        double health = 5;
-        for (int tick = 1; tick <= 60; tick++) {
-            var step = each.advance(tick, health, 20);
-            health += step.healing(); each = step.recovery();
-        }
-        near(health, 7.4, "Per-tick bandaging preserves total recovery");
+        fivePulseSchedule(bandage, 5, 20, new int[]{12, 24, 35, 47, 58}, .48, 7.4);
+        fivePulseSchedule(aid, 5, 20, new int[]{8, 16, 24, 32, 40}, 2, 15);
+        fivePulseSchedule(bandage, 10, 40, new int[]{12, 24, 35, 47, 58}, .96, 14.8);
+        fivePulseSchedule(aid, 10, 40, new int[]{8, 16, 24, 32, 40}, 4, 30);
+        fivePulseSchedule(bandage, 14, 20, new int[]{12, 24, 35, 47, 58}, .2, 15);
         steppedRecoveryAndHud();
         inputPaths();
         System.out.println("PubgMedicineChecks: " + checks + " checks passed; no game launched.");
     }
+    private static void fivePulseSchedule(PubgMedicineModel.Kind kind, double health, double maximum,
+                                          int[] deadlines, double amount, double expectedHealth) {
+        var recovery = new PubgMedicineModel.Recovery(kind.healingBudget(health, maximum), kind.ceiling(),
+                kind.recoveryTicks(), 0, 0, kind.recoverySteps());
+        int pulses = 0;
+        for (int tick = 1; tick <= kind.recoveryTicks(); tick++) {
+            var step = recovery.advance(tick, health, maximum);
+            if (pulses < deadlines.length && tick == deadlines[pulses]) {
+                near(step.healing(), amount, kind + " delivers the expected converted health at pulse " + (pulses + 1));
+                pulses++;
+            } else near(step.healing(), 0, kind + " does not heal between pulse deadlines");
+            health += step.healing(); recovery = step.recovery();
+            check(recovery.finished() == (tick == kind.recoveryTicks()), kind + " recovery lasts its complete window");
+            near(recovery.nextBudget(), tick == kind.recoveryTicks() ? 0 : amount,
+                    kind + " HUD next-pulse budget matches the next scheduled heal");
+        }
+        check(pulses == 5, kind + " has exactly five positive pulses");
+        near(health, expectedHealth, kind + " total recovery uses the intended health scale and ceiling");
+        near(recovery.remainingBudget(), 0, kind + " has no recovery remaining after its fifth pulse");
+    }
     private static void steppedRecoveryAndHud() throws Exception {
-        // Measured grey lead is a configurable 15 percentage-point inference; the user specified four ticks.
-        var aid = new PubgMedicineModel.Recovery(7.4, .75, 12, 100, 0, 3, 4);
-        near(aid.advance(103, 7.6, 20).healing(), 0, "First aid cannot heal before its 0.2s step");
-        var first = aid.advance(104, 7.6, 20);
-        near(first.healing(), 3, "First aid next step is 15% maximum HP by configurable default");
-        near(first.recovery().remainingBudget(), 4.4, "Step subtracts from the original fixed budget");
-        near(first.recovery().advance(107, 10.6, 20).healing(), 0, "No smooth healing leaks between steps");
-        var second = first.recovery().advance(108, 10.6, 20);
-        near(second.healing(), 3, "Second scheduled first-aid step");
-        near(second.recovery().advance(112, 13.6, 20).healing(), 1.4, "Tail step truncates exactly at 75%");
-        near(second.recovery().advance(112, 5, 20).healing(), 1.4, "New damage cannot enlarge the remaining treatment budget");
-        near(first.recovery().advance(108, 14, 20).healing(), 1, "Concurrent healing still obeys the health ceiling");
-        var bandage = new PubgMedicineModel.Recovery(2.4, .75, 60, 0, 0, 0, 4);
-        near(bandage.advance(3, 5, 20).healing(), 0, "Bandage does not heal on intermediate ticks");
-        near(bandage.advance(4, 5, 20).healing(), .16, "Bandage distributes its budget over uniform small four-tick steps");
-        near(bandage.advance(60, 5, 20).healing(), 2.4, "Delayed settlement does not lose bandage recovery");
+        var aid = new PubgMedicineModel.Recovery(7.4, .75, 40, 100, 0, 5);
+        near(aid.advance(107, 7.6, 20).healing(), 0, "First aid cannot heal before its 0.4s pulse");
+        var first = aid.advance(108, 7.6, 20);
+        near(first.healing(), 1.48, "First aid divides the captured deficit into five pulses");
+        near(first.recovery().remainingBudget(), 5.92, "A pulse subtracts from the original fixed budget");
+        near(first.recovery().advance(115, 9.08, 20).healing(), 0, "No smooth healing leaks between pulses");
+        var second = first.recovery().advance(116, 9.08, 20);
+        near(second.healing(), 1.48, "Second scheduled first-aid pulse");
+        near(second.recovery().advance(140, 10.56, 20).healing(), 4.44, "The final three pulses reach 75% exactly");
+        near(second.recovery().advance(140, 5, 20).healing(), 4.44, "New damage cannot enlarge the remaining treatment budget");
+        near(first.recovery().advance(116, 14, 20).healing(), 1, "Concurrent healing still obeys the health ceiling");
+        near(first.recovery().advance(108, 9.08, 20).healing(), 0, "Revisiting the same clock cannot duplicate a pulse");
+        near(first.recovery().advance(107, 9.08, 20).healing(), 0, "A stale clock cannot roll a recovery back");
+        var bandage = new PubgMedicineModel.Recovery(2.4, .75, 58, 0, 0, 5);
+        near(bandage.advance(58, 5, 20).healing(), 2.4, "Delayed settlement does not lose bandage recovery");
+        var aidTarget = com.example.examplemod.vitals.client.PubgMedicineHud.forecast(7.6, 20, 0, 0, 0,
+                PubgMedicineModel.Kind.FIRST_AID_KIT);
+        near(aidTarget.total(), 15, "First-aid cast preview ends at 15 MC HP");
+        near(aidTarget.next(), 9.08, "First-aid next-pulse preview uses one fifth of the missing health");
+        var bandageTarget = com.example.examplemod.vitals.client.PubgMedicineHud.forecast(5, 20, 0, 0, 0,
+                PubgMedicineModel.Kind.BANDAGE);
+        near(bandageTarget.total(), 7.4, "Bandage preview adds only 2.4 MC HP");
+        near(bandageTarget.next(), 5.48, "Bandage next-pulse preview adds only 0.48 MC HP");
+        var continuedBandage = com.example.examplemod.vitals.client.PubgMedicineHud.forecast(5, 20, 2.4, .48, .75,
+                PubgMedicineModel.Kind.BANDAGE);
+        near(continuedBandage.total(), 9.8, "Starting another bandage previews both treatments' total remaining healing");
+        near(continuedBandage.next(), 5.48, "Casting another bandage does not double the older treatment's next pulse");
+        var bandageThenAid = com.example.examplemod.vitals.client.PubgMedicineHud.forecast(5, 20, 2.4, .48, .75,
+                PubgMedicineModel.Kind.FIRST_AID_KIT);
+        near(bandageThenAid.total(), 15, "Starting first aid during bandage recovery still previews the 75% ceiling");
+        near(bandageThenAid.next(), 5.48, "The pending bandage pulse remains next while first aid is being cast");
+        var injuredTarget = com.example.examplemod.vitals.client.PubgMedicineHud.forecast(6.08, 20,
+                first.recovery().remainingBudget(), first.recovery().nextBudget(), .75, null);
+        near(injuredTarget.total(), 12, "An injury during recovery reduces the HUD endpoint instead of expanding its budget");
+        near(injuredTarget.next(), 7.56, "The HUD preserves the next pulse after an injury");
+        var cappedTarget = com.example.examplemod.vitals.client.PubgMedicineHud.forecast(14.9, 20, 2, .4, .75, null);
+        near(cappedTarget.total(), 15, "The remaining-budget forecast respects the 75% cap");
+        near(cappedTarget.next(), 15, "The next-pulse forecast also respects the 75% cap");
+        var kitTarget = com.example.examplemod.vitals.client.PubgMedicineHud.forecast(5, 20, 0, 0, 0,
+                PubgMedicineModel.Kind.MED_KIT);
+        near(kitTarget.total(), 20, "Med-kit preview reaches full MC health");
+        near(kitTarget.next(), 20, "Med-kit preview does not invent a post-use healing sequence");
+        var finishedTarget = com.example.examplemod.vitals.client.PubgMedicineHud.forecast(12, 20, 0, 0, 0, null);
+        near(finishedTarget.total(), 12, "Finished or canceled healing leaves no total forecast");
+        near(finishedTarget.next(), 12, "Finished or canceled healing leaves no next-pulse forecast");
         var style = com.example.examplemod.vitals.client.PubgVitalsLayout.Style.defaults();
         check(com.example.examplemod.vitals.client.PubgVitalsLayout.healthColor(.25, style) == style.red(), "25% is red");
         check(com.example.examplemod.vitals.client.PubgVitalsLayout.healthColor(.250001, style) == style.apricot(), "Just above 25% is apricot");
@@ -100,12 +152,13 @@ public final class PubgMedicineChecks {
                 && (style.full() >>> 24) < (style.white() >>> 24), "Full HP is greyer and more transparent");
         for (int[] viewport : new int[][]{{220,160},{320,240},{640,360},{1920,1080}}) {
             var frame = com.example.examplemod.vitals.client.PubgVitalsLayout.frame(viewport[0], viewport[1], style);
-            var rectangles = com.example.examplemod.vitals.client.PubgVitalsLayout.bars(viewport[0],viewport[1],7.6,20,7.6,45,0,15,10.6,style);
+            var rectangles = com.example.examplemod.vitals.client.PubgVitalsLayout.bars(viewport[0],viewport[1],7.6,20,7.6,45,0,
+                    aidTarget.total(),aidTarget.next(),style);
             check(rectangles.stream().allMatch(r -> r.left() >= 0 && r.top() >= 0 && r.right() <= viewport[0] && r.bottom() <= viewport[1]), "Combat bars escaped a resized GUI");
             var target = rectangles.stream().filter(r -> r.color() == style.treatment()).findFirst().orElseThrow();
             var next = rectangles.stream().filter(r -> r.color() == style.nextStep()).findFirst().orElseThrow();
             check(target.right() == frame.left() + Math.round(frame.width() * .75)
-                    && next.right() == frame.left() + Math.round(frame.width() * .53), "Total and next-step grey targets lost their distinct reference endpoints");
+                    && next.right() == frame.left() + Math.round(frame.width() * .454), "Total and next-pulse grey targets lost their distinct reference endpoints");
             check(rectangles.stream().filter(r -> r.color() == style.reference()).allMatch(r -> r.right() <= target.right()), "75% reference hatching leaks past the healing ceiling");
         }
         check(com.example.examplemod.vitals.client.WeaponHudData.loaded(29, 95, false, true, false) == 30, "Closed bolt counts its chambered round");

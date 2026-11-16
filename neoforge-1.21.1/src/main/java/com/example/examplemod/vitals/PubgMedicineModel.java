@@ -3,7 +3,7 @@ package com.example.examplemod.vitals;
 /** PC battle-royale medical values, expressed as fractions of the player's actual maximum health. */
 public final class PubgMedicineModel {
     public enum Kind {
-        BANDAGE(60, 60, .75, .12, 0),
+        BANDAGE(60, 58, .75, .12, 0),
         FIRST_AID_KIT(120, 40, .75, 0, 0),
         MED_KIT(120, 0, 1, 0, 0),
         ENERGY_DRINK(80, 0, 0, 0, 40),
@@ -18,6 +18,7 @@ public final class PubgMedicineModel {
         }
         public int useTicks() { return useTicks; }
         public int recoveryTicks() { return recoveryTicks; }
+        public int recoverySteps() { return recoveryTicks > 0 ? 5 : 1; }
         public int boost() { return boost; }
         public double ceiling() { return ceiling; }
         public boolean isBoost() { return boost > 0; }
@@ -32,35 +33,38 @@ public final class PubgMedicineModel {
             double missing = maxHealth * ceiling - health;
             return fraction > 0 ? Math.min(missing, maxHealth * fraction) : missing;
         }
+        /** The cast preview and server recovery use the same five equal portions. */
+        public double firstStepBudget(double health, double maxHealth) {
+            return healingBudget(health, maxHealth) / recoverySteps();
+        }
     }
-    /** A fixed recovery budget; reaching the ceiling discards that tick's unused portion. */
+    /** A fixed budget split across discrete pulses; reaching the ceiling discards unused healing. */
     public record Recovery(double budget, double ceiling, int duration, long start, long advanced,
-                           double stepBudget, int interval) {
+                           int steps) {
         public Recovery(double budget, double ceiling, int duration, long start, long advanced) {
-            this(budget, ceiling, duration, start, advanced, 0, 1);
+            this(budget, ceiling, duration, start, advanced, 5);
         }
         public Recovery {
             if (!Double.isFinite(budget) || budget < 0 || !Double.isFinite(ceiling)
                     || ceiling <= 0 || duration <= 0 || advanced < 0 || advanced > duration
-                    || !Double.isFinite(stepBudget) || stepBudget < 0 || interval < 1)
+                    || steps < 1 || steps > duration)
                 throw new IllegalArgumentException("Invalid medical recovery");
         }
         private double scheduled(long ticks) {
-            return stepBudget > 0 ? Math.min(budget, ((ticks + interval - 1) / interval) * stepBudget)
-                    : budget * ticks / duration;
+            // Integer deadlines retain exactly five pulses even when 58 ticks cannot divide by five.
+            return budget * (ticks * steps / duration) / steps;
         }
         public double remainingBudget() { return Math.max(0, budget - scheduled(advanced)); }
         public double nextBudget() {
-            return Math.min(remainingBudget(), stepBudget > 0 ? stepBudget : budget * Math.min(interval, duration - advanced) / duration);
+            return Math.min(remainingBudget(), budget / steps);
         }
         public Step advance(long clock, double health, double maxHealth) {
             long elapsed = Math.min(duration, Math.max(0, clock - start));
-            if (elapsed < duration) elapsed = elapsed / interval * interval;
             elapsed = Math.max(advanced, elapsed);
             double scheduled = scheduled(elapsed) - scheduled(advanced);
             double allowed = Double.isFinite(health) && Double.isFinite(maxHealth)
                     ? Math.max(0, maxHealth * ceiling - health) : 0;
-            return new Step(new Recovery(budget, ceiling, duration, start, elapsed, stepBudget, interval),
+            return new Step(new Recovery(budget, ceiling, duration, start, elapsed, steps),
                     Math.min(scheduled, allowed));
         }
         public boolean finished() { return advanced >= duration; }

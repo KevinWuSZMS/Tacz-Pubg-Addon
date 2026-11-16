@@ -15,7 +15,22 @@ public final class PubgSettingsChecks {
     public static void main(String[] args) {
         var initial=PubgSettings.initial();
         check(initial.values().isEmpty()&&initial.toJson().equals("{}"),"Old worlds retain all versioned defaults without verbose overrides");
-        check(initial.integer("medicine.recovery_step_ticks")==4&&initial.number("medicine.first_aid_step_percent")==15,"Screenshot inference remains an explicit configurable 15 point / 0.2s default");
+        check(initial.integer("medicine.bandage_recovery_ticks")==58&&initial.integer("medicine.first_aid_recovery_ticks")==40,"PC 42.1 recovery durations are 2.9 and 2 seconds at 20 ticks per second");
+        check(initial.integer("medicine.bandage_use_ticks")==60&&initial.integer("medicine.first_aid_use_ticks")==120
+                &&initial.integer("medicine.med_kit_use_ticks")==120,"PC 42.1 medicine use durations are 3, 6 and 6 seconds");
+        var legacyMedicine="{\"medicine.recovery_step_ticks\":8,\"medicine.first_aid_step_percent\":10,\"medicine.bandage_recovery_ticks\":60,\"hud.bar_width\":200}";
+        var migratedMedicine=PubgSettings.parse(legacyMedicine);
+        check(migratedMedicine.integer("medicine.bandage_recovery_ticks")==60
+                &&migratedMedicine.integer("medicine.first_aid_recovery_ticks")==40
+                &&migratedMedicine.integer("hud.bar_width")==200,"Legacy cadence migrates while preserving custom duration and unrelated HUD settings");
+        check(!migratedMedicine.toJson().contains("recovery_step_ticks")&&!migratedMedicine.toJson().contains("first_aid_step_percent"),"Retired medicine controls are omitted from the new save and wire data");
+        check(PubgSettings.fields().stream().noneMatch(f->f.key().equals("medicine.recovery_step_ticks")||f.key().equals("medicine.first_aid_step_percent")),"The administrator editor no longer exposes ineffective cadence controls");
+        check(PubgSettings.parse("{\"medicine.recovery_step_ticks\":4,\"medicine.first_aid_step_percent\":15}").equals(initial),"Legacy default-only values receive the updated medicine defaults");
+        check(PubgSettings.parse("{\"medicine.bandage_recovery_ticks\":4}").integer("medicine.bandage_recovery_ticks")==5,"Legacy minimum duration migrates to fit five distinct recovery ticks");
+        rejects(()->initial.with("medicine.bandage_recovery_ticks",4));
+        for(String bad:new String[]{"{\"medicine.recovery_step_ticks\":0}","{\"medicine.recovery_step_ticks\":4.5}","{\"medicine.recovery_step_ticks\":21}",
+                "{\"medicine.first_aid_step_percent\":0}","{\"medicine.first_aid_step_percent\":76}","{\"medicine.first_aid_step_percent\":\"15\"}",
+                "{\"medicine.recovery_step_ticks\":4,\"medicine.recovery_step_ticks\":8}","{\"medicine.unknown_cadence\":4}"})rejects(()->PubgSettings.parse(bad));
         check(!initial.enabled("hud.hide_hotbar"),"Native slots six to nine retain visibility by default");
         String leanTolerance="lean.body_penetration_tolerance";
         check(initial.number(leanTolerance)==.06,"Lean body tolerance defaults to 0.06 blocks for the standard player scale");
@@ -60,6 +75,10 @@ public final class PubgSettingsChecks {
         check(!data.update(0,initial)&&data.settings().equals(maximum),"Stale admin cannot overwrite a concurrent edit");
         var encoded=data.save(new CompoundTag(),null);var restored=PubgSettingsSavedData.load(encoded,null);
         check(restored.readable()&&restored.settings().equals(maximum)&&restored.revision()==1,"Saved overrides and revision survive restart");
+        var legacySave=encoded.copy();legacySave.putString("settings",legacyMedicine);legacySave.putLong("revision",8);
+        var migratedSave=PubgSettingsSavedData.load(legacySave,null);
+        check(migratedSave.readable()&&migratedSave.revision()==8&&migratedSave.settings().equals(migratedMedicine),"Historical medicine overrides do not make the entire world settings unreadable");
+        check(PubgSettings.parse(migratedSave.save(new CompoundTag(),null).getString("settings")).equals(migratedMedicine),"Migrated world settings retain current values on the next save");
         var corrupt=encoded.copy();corrupt.putString("settings","{broken");var protectedData=PubgSettingsSavedData.load(corrupt,null);
         check(!protectedData.readable()&&!protectedData.update(1,initial)&&protectedData.save(new CompoundTag(),null).equals(corrupt),"Malformed source is preserved and protected from overwrite");
         var future=encoded.copy();future.putInt("version",99);check(!PubgSettingsSavedData.load(future,null).readable(),"Unknown future version protected");

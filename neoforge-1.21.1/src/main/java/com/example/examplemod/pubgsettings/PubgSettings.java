@@ -59,7 +59,7 @@ public record PubgSettings(Map<String, Double> values) {
     public String toJson() {
         var root = new JsonObject(); values.forEach(root::addProperty); return root.toString();
     }
-    /** Strict, bounded flat-object codec: reject duplicate/unknown keys and coercions. */
+    /** Strict flat-object codec, with migration of the two retired medicine cadence fields. */
     public static PubgSettings parse(String text) {
         if (text == null || text.length() > MAX_JSON) throw new IllegalArgumentException("Battle settings exceed size limit");
         var values = new LinkedHashMap<String, Double>();
@@ -70,7 +70,12 @@ public record PubgSettings(Map<String, Double> values) {
                 String key = reader.nextName();
                 if (!seen.add(key) || reader.peek() != JsonToken.NUMBER)
                     throw new IllegalArgumentException("Duplicate or nonnumeric battle setting: " + key);
-                field(key); values.put(key, reader.nextDouble());
+                double value = reader.nextDouble();
+                if (!retiredMedicineField(key, value)) {
+                    // Five distinct recovery pulses need at least five game ticks.
+                    if (key.equals("medicine.bandage_recovery_ticks") && value == 4) value = 5;
+                    field(key); values.put(key, value);
+                }
             }
             reader.endObject();
             if (reader.peek() != JsonToken.END_DOCUMENT) throw new IllegalArgumentException("Trailing battle settings data");
@@ -78,6 +83,18 @@ public record PubgSettings(Map<String, Double> values) {
         } catch (java.io.IOException | IllegalStateException error) {
             throw new IllegalArgumentException("Invalid battle settings JSON", error);
         }
+    }
+    private static boolean retiredMedicineField(String key, double value) {
+        // Old configurable cadence has been replaced by five recovery steps over each item's duration.
+        // Validate the historical range before dropping these keys; unrelated unknown fields still fail.
+        Field legacy = switch (key) {
+            case "medicine.recovery_step_ticks" -> new Field(key, 4, 1, 20, Kind.INTEGER);
+            case "medicine.first_aid_step_percent" -> new Field(key, 15, .1, 75, Kind.NUMBER);
+            default -> null;
+        };
+        if (legacy == null) return false;
+        legacy.validate(value);
+        return true;
     }
     private static Map<String, Field> fieldsByKey() {
         var f = new LinkedHashMap<String, Field>();
@@ -96,8 +113,8 @@ public record PubgSettings(Map<String, Double> values) {
         n(f,"hud.fuse_line_width",2,1,5,false); n(f,"hud.fuse_warning_fraction",.25,.05,.75,false);
         b(f,"hud.hide_hotbar",false); c(f,"hud.fuse_color",0xFFF2F0E8L);
         c(f,"hud.fuse_warning_color",0xFFFF6558L); c(f,"hud.fuse_track_color",0x554C5053L);
-        n(f,"medicine.recovery_step_ticks",4,1,20,true); n(f,"medicine.bandage_recovery_ticks",60,4,200,true);
-        n(f,"medicine.first_aid_step_percent",15,.1,75,false);
+        n(f,"medicine.bandage_recovery_ticks",58,5,200,true);
+        n(f,"medicine.first_aid_recovery_ticks",40,5,200,true);
         n(f,"medicine.circle_radius",20,12,50,true); n(f,"medicine.circle_line_width",3,1,8,false);
         n(f,"medicine.circle_offset_y",0,-120,120,true);
         c(f,"medicine.circle_background",0x90433F38L); c(f,"medicine.circle_track",0x88443F39L); c(f,"medicine.circle_progress",0xFFF2F0E8L);
