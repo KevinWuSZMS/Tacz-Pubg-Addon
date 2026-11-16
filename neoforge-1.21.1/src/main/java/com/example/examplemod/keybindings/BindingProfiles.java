@@ -30,7 +30,7 @@ public final class BindingProfiles {
     private static final BindingProfiles INSTANCE = new BindingProfiles();
     private static final Gson JSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
     private static final Map<String, String> MATCH_OVERRIDES = Map.of(
-            "key.togglePerspective", "V", "key.tacz.interact.desc", "F",
+            "key.togglePerspective", "V", "key.tacz.interact.desc", "F", "key.drop", "Backspace",
             "key.tacz.fire_select.desc", "B", "key.tacz.zoom.desc", "ScrollUp");
     private final EnumMap<BindingProfile, ProfileData> data = new EnumMap<>(BindingProfile.class);
     private final LinkedHashMap<String, BindingAction> catalog = new LinkedHashMap<>();
@@ -84,6 +84,7 @@ public final class BindingProfiles {
             general.defaults.putIfAbsent(mapping.getName(), matchAction ? InputBinding.empty() : factory);
             InputBinding matchSeed = matchAction ? InputBinding.chord(BindingProfileMigration.MATCH_ACTION_DEFAULTS.get(mapping.getName()))
                     : mapping.getName().equals("key.tacz.crawl.desc") ? InputBinding.empty()
+                    : mapping.getName().equals("key.inventory") ? new InputBinding(List.of("Tab", "I"), InputBinding.Mode.ANY)
                     : MATCH_OVERRIDES.containsKey(mapping.getName()) ? InputBinding.chord(MATCH_OVERRIDES.get(mapping.getName()))
                     : general.bindings.get(mapping.getName());
             match.bindings.putIfAbsent(mapping.getName(), matchSeed);
@@ -184,8 +185,8 @@ public final class BindingProfiles {
         if (!Files.exists(path)) return;
         try {
             JsonObject root = JsonParser.parseString(Files.readString(path, StandardCharsets.UTF_8)).getAsJsonObject();
-            if (root.has("version") && root.get("version").getAsInt() == 1) {
-                Files.copy(path, path.resolveSibling(path.getFileName() + ".pre-v2-" + System.currentTimeMillis() + ".bak"));
+            if (root.has("version") && root.get("version").getAsInt() < BindingProfileMigration.VERSION) {
+                Files.copy(path, path.resolveSibling(path.getFileName() + ".pre-v" + BindingProfileMigration.VERSION + "-" + System.currentTimeMillis() + ".bak"));
             }
             root = BindingProfileMigration.upgrade(root);
             globalBehavior = readBehavior(root.get("behavior"));

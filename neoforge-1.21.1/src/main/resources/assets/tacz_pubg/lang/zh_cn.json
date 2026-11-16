@@ -2765,5 +2765,7 @@
   "key.tacz_pubg.match_sprint": "冲刺",
   "key.tacz_pubg.match_crouch": "蹲下",
   "key.tacz_pubg.match_prone": "卧倒",
-  "key.tacz_pubg.match_walk": "行走"
+  "key.tacz_pubg.match_walk": "行走",
+  "key.tacz_pubg.lean_left": "向左探头",
+  "key.tacz_pubg.lean_right": "向右探头"
 }

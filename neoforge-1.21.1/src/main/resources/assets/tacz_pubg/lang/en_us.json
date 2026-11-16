@@ -2765,5 +2765,7 @@
   "key.tacz_pubg.match_sprint": "Sprint",
   "key.tacz_pubg.match_crouch": "Crouch",
   "key.tacz_pubg.match_prone": "Prone",
-  "key.tacz_pubg.match_walk": "Walk"
+  "key.tacz_pubg.match_walk": "Walk",
+  "key.tacz_pubg.lean_left": "Lean left",
+  "key.tacz_pubg.lean_right": "Lean right"
 }

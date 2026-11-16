@@ -184,3 +184,18 @@ config="tacz_pubg.movement_client.mixins.json"
 
 [[mixins]]
 config="tacz_pubg.movement_state.mixins.json"
+
+[[mixins]]
+config="tacz_pubg.lean_state.mixins.json"
+
+[[mixins]]
+config="tacz_pubg.lean_view.mixins.json"
+
+[[mixins]]
+config="tacz_pubg.lean_shots.mixins.json"
+
+[[mixins]]
+config="tacz_pubg.lean_render.mixins.json"
+
+[[mixins]]
+config="tacz_pubg.lean_hitboxes.mixins.json"

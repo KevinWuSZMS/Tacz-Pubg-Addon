@@ -36,6 +36,7 @@ public class ExampleModClient {
         com.example.examplemod.zones.match.client.MatchSpectatorClient.register(modEventBus);
         com.example.examplemod.zones.match.flight.client.FlightClient.register(modEventBus);
         com.example.examplemod.movement.client.MovementClient.register(modEventBus);
+        com.example.examplemod.lean.client.LeanClient.register(modEventBus);
         com.example.examplemod.zones.client.MapOverlayClient.register();
         com.example.examplemod.zones.client.MapOverlayHud.register(modEventBus);
         com.example.examplemod.zones.client.visual.BlueZoneVisuals.register(

@@ -424,7 +424,13 @@ tasks.named('check').configure { dependsOn droppedLootTransitionChecks }
         bindingModelChecks: 'com.example.examplemod.keybindings.InputBindingChecks',
         bindingInputChecks: 'com.example.examplemod.keybindings.BindingInputChecks',
         movementStateChecks: 'com.example.examplemod.movement.MovementStateChecks',
-        movementWireChecks: 'com.example.examplemod.movement.MovementWireChecks'
+        movementWireChecks: 'com.example.examplemod.movement.MovementWireChecks',
+        leanMotionChecks: 'com.example.examplemod.lean.LeanMotionChecks',
+        leanGeometryChecks: 'com.example.examplemod.lean.LeanGeometryChecks',
+        leanShotLedgerChecks: 'com.example.examplemod.lean.LeanShotLedgerChecks',
+        leanTrajectoryChecks: 'com.example.examplemod.lean.LeanTrajectoryChecks',
+        leanRenderChecks: 'com.example.examplemod.lean.client.LeanRenderChecks',
+        leanAbiChecks: 'com.example.examplemod.lean.LeanAbiChecks'
 ].each { checkName, checkClass ->
     def logicalCheck = tasks.register(checkName, JavaExec) {
         group = 'verification'
