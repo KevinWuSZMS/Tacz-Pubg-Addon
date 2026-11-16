@@ -336,6 +336,7 @@ tasks.named('check').configure { dependsOn droppedLootTransitionChecks }
         pubgFlowChecks: 'com.example.examplemod.zones.match.PubgFlowChecks',
         pubgBoostChecks: 'com.example.examplemod.vitals.PubgBoostChecks',
         matchVitalsChecks: 'com.example.examplemod.vitals.MatchVitalsChecks',
+        downedVitalsChecks: 'com.example.examplemod.vitals.DownedVitalsChecks',
         bombingTimelineChecks: 'com.example.examplemod.zones.bombing.BombingTimelineChecks',
         droppedLootCatalogChecks: 'com.example.examplemod.lootspawn.DroppedLootCatalogChecks',
         groundLootModelGeometryChecks: 'com.example.examplemod.lootspawn.GroundLootModelGeometryChecks',

@@ -21,6 +21,8 @@ public final class MatchVitalsHud {
     private static MatchVitalsPayloads.Snapshot current;
     private static int packetAge, trailHoldTicks;
     private static float damageTrail, lastObservedHealth;
+    private static final DownedHealthTrail downedTrail = new DownedHealthTrail();
+    private static boolean wasDowned;
 
     private MatchVitalsHud() {}
 
@@ -49,6 +51,8 @@ public final class MatchVitalsHud {
             var player = Minecraft.getInstance().player;
             lastObservedHealth = damageTrail = player == null ? next.health() : player.getHealth();
             trailHoldTicks = 0;
+            downedTrail.clear();
+            wasDowned = false;
         }
         current = next;
         packetAge = 0;
@@ -58,6 +62,8 @@ public final class MatchVitalsHud {
         current = null;
         packetAge = trailHoldTicks = 0;
         damageTrail = lastObservedHealth = 0;
+        downedTrail.clear();
+        wasDowned = false;
     }
 
     private static void tick() {
@@ -65,17 +71,29 @@ public final class MatchVitalsHud {
         PubgMedicineHud.tick();
         if (current == null || mc.player == null) return;
         float health = mc.player.getHealth();
-        if (health < lastObservedHealth) {
+        var combat = com.example.examplemod.combat.client.CombatHudClient.snapshot();
+        boolean downed = !mc.player.isSpectator() && mc.getCameraEntity() == mc.player
+                && combat != null && activeSession(combat.session()) && combat.downed();
+        if (downed || wasDowned) {
+            damageTrail = lastObservedHealth = health;
+            trailHoldTicks = 0;
+        } else if (health < lastObservedHealth) {
             damageTrail = Math.max(damageTrail, lastObservedHealth);
             trailHoldTicks = 12;
         } else if (health >= damageTrail) {
             damageTrail = health;
         }
+        wasDowned = downed;
+        if (!downed) downedTrail.clear();
         lastObservedHealth = health;
         // An integrated server can legitimately send no packets while the pause menu is open.
         if (mc.isPaused()) return;
         if (++packetAge > 100) { clear(); return; }
         if (current.paused()) return;
+        if (downed) {
+            downedTrail.tick(combat.downedHealth(), combat.downedMaxHealth(), combat.downCount());
+            return;
+        }
         if (trailHoldTicks > 0) trailHoldTicks--;
         else damageTrail = Math.max(health, damageTrail - Math.max(.05f, mc.player.getMaxHealth() * .025f));
     }
@@ -178,9 +196,13 @@ public final class MatchVitalsHud {
         double health = downed ? combat.downedHealth() : observing ? state.health() : mc.player.getHealth();
         double maximum = downed ? combat.downedMaxHealth() : observing ? state.maxHealth() : mc.player.getMaxHealth();
         var target = downed || observing ? new PubgMedicineHud.Target(health, health) : PubgMedicineHud.target(health, maximum);
-        for (var rectangle : PubgVitalsLayout.bars(graphics.guiWidth(), graphics.guiHeight(),
-                health, maximum, downed || observing ? health : damageTrail, downed ? 0 : state.boost(),
-                downed ? 0 : observing ? state.absorption() : mc.player.getAbsorptionAmount(), target.total(), target.next(), CombatHudStyle.vitals()))
+        var rectangles = downed
+                ? PubgVitalsLayout.downedBars(graphics.guiWidth(), graphics.guiHeight(), health, maximum,
+                    downedTrail.value(health, maximum, combat.downCount()), CombatHudStyle.vitals())
+                : PubgVitalsLayout.bars(graphics.guiWidth(), graphics.guiHeight(),
+                    health, maximum, observing ? health : damageTrail, state.boost(),
+                    observing ? state.absorption() : mc.player.getAbsorptionAmount(), target.total(), target.next(), CombatHudStyle.vitals());
+        for (var rectangle : rectangles)
             graphics.fill(rectangle.left(), rectangle.top(), rectangle.right(), rectangle.bottom(), rectangle.color());
         }
     }

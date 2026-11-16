@@ -1,7 +1,9 @@
 package com.example.examplemod.zones.client;
 
+import com.example.examplemod.combat.CombatPayloads;
 import com.example.examplemod.localization.Texts;
 import com.example.examplemod.vitals.client.MatchVitalsHud;
+import com.example.examplemod.vitals.client.PubgVitalsLayout;
 import com.example.examplemod.zones.MapOverlayPayloads.Teammate;
 import com.example.examplemod.zones.client.xaero.XaeroHudAnchor;
 import java.util.List;
@@ -78,6 +80,8 @@ public final class MapOverlayHud {
 
     private static void renderMatchSquad(GuiGraphics graphics, List<Teammate> team) {
         Minecraft mc = Minecraft.getInstance();
+        var combat = CombatPayloads.latest();
+        boolean currentCombat = MatchVitalsHud.activeSession(combat.session());
         int shown = Math.min(team.size(), Math.min(8, Math.max(1, (graphics.guiHeight() - 85) / 21)));
         if (shown == 0) return;
         int width = Math.min(148, Math.max(72, graphics.guiWidth() / 3));
@@ -122,9 +126,14 @@ public final class MapOverlayHud {
                 for (int at = 0; at < width; at += 7)
                     graphics.fill(left + at, row + 14, left + Math.min(width, at + 3), row + 15, 0xFF78828C);
             } else {
-                double health = Math.clamp(mate.health() / Math.max(1.0, mate.maxHealth()), 0, 1);
+                var downed = currentCombat ? combat.players().stream()
+                        .filter(player -> player.id().equals(mate.id()) && player.downed() && player.maxHealth() > 0)
+                        .findFirst().orElse(null) : null;
+                double health = downed == null ? PubgVitalsLayout.fraction(mate.health(), mate.maxHealth())
+                        : PubgVitalsLayout.fraction(downed.health(), downed.maxHealth());
+                // Squad bars share the downed pool and red fill, without the personal bar's hatch.
                 graphics.fill(left, row + 13, left + (int) Math.round(width * health), row + 16,
-                        health <= .25 ? 0xFFE88479 : 0xFFE6E7E5);
+                        downed != null ? PubgVitalsLayout.DOWNED_HEALTH : health <= .25 ? 0xFFE88479 : 0xFFE6E7E5);
             }
         }
         if (team.size() > shown) {

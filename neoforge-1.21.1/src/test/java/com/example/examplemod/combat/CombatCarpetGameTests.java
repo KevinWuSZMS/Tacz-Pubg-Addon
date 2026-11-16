@@ -25,11 +25,13 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.PacketSendListener;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
+import net.minecraft.network.protocol.game.ClientboundDamageEventPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.world.entity.Pose;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -40,6 +42,78 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @PrefixGameTestTemplate(false)
 public final class CombatCarpetGameTests {
     private static final AtomicLong MAP_IDS = new AtomicLong(9_200_000);
+
+    @GameTest(template = "empty", templateNamespace = "combat_dbno", batch = "combat_dbno", timeoutTicks = 600)
+    public static void downedHealthTracksEntityAndOnlyRealHitsSendDamageFeedback(GameTestHelper helper) throws Exception {
+        Fixture f = new Fixture(helper);
+        // A non-default maximum catches accidental copying of the 100-point DBNO pool into vanilla HP.
+        f.victim.getAttribute(Attributes.MAX_HEALTH).setBaseValue(40);
+        f.victim.setHealth(2);
+        f.later(65, () -> {
+            f.knock(1);
+            int initialDamageEvents = f.capture(f.victim).damageEvents.size();
+            if (f.setting("dbno.protection_ticks") > 0) {
+                float protectedHealth = f.snapshot().downedHealth();
+                f.hitFromEnemy(4);
+                helper.assertTrue(f.snapshot().downedHealth() == protectedHealth,
+                        "Damage during entry protection reduced downed health");
+                helper.assertTrue(f.capture(f.victim).damageEvents.size() == initialDamageEvents,
+                        "An ignored hit during entry protection flashed the downed player red");
+                f.assertHealthSynchronized();
+            }
+            f.later((int) f.setting("dbno.protection_ticks") + 2, () -> {
+                f.assertDowned(1);
+                helper.assertTrue(f.victim.getHealth() < f.victim.getMaxHealth(),
+                        "Natural bleeding did not reduce the entity's health");
+                helper.assertTrue(f.capture(f.victim).damageEvents.size() == initialDamageEvents,
+                        "Natural bleeding sent hurt feedback on every health update");
+                helper.assertTrue(f.victim.hurtTime == 0,
+                        "Natural bleeding kept the entity's hurt animation active");
+                float beforeHit = f.snapshot().downedHealth();
+                f.hitFromEnemy(4);
+                float afterHitPool = f.snapshot().downedHealth();
+                double expectedDamage = CombatRules.pubgDamage(4, f.victim.getMaxHealth());
+                helper.assertTrue(Math.abs(beforeHit - afterHitPool - expectedDamage) < .001,
+                        "A downed hit was lost, counted twice, or scaled against the wrong maximum: before="
+                                + beforeHit + ", after=" + afterHitPool + ", expectedDamage=" + expectedDamage
+                                + ", maxHealth=" + f.victim.getMaxHealth());
+                f.assertHealthSynchronized();
+                var feedback = f.capture(f.victim).damageEvents;
+                helper.assertTrue(feedback.size() == initialDamageEvents + 1,
+                        "An effective downed hit did not send exactly one native damage event");
+                helper.assertTrue(f.victim.hurtTime == 10 && f.victim.hurtDuration == 10,
+                        "An effective downed hit did not start the native hurt animation");
+                var last = feedback.getLast();
+                helper.assertTrue(last.entityId() == f.victim.getId() && last.sourceCauseId() == f.enemy.getId(),
+                        "The downed hurt feedback targeted the wrong entity or lost its damage source");
+                float afterHit = f.victim.getHealth();
+                f.victim.heal(5);
+                helper.assertTrue(f.victim.getHealth() == afterHit,
+                        "Ordinary healing increased entity health outside the authoritative downed pool");
+                f.beginRescue();
+                float rescueHealth = f.snapshot().downedHealth();
+                f.later(12, () -> {
+                    f.assertRescueCrouch();
+                    f.assertHealthSynchronized();
+                    helper.assertTrue(f.victim.hurtTime == 0,
+                            "The real hit's hurt animation did not expire while downed");
+                    if (f.setting("rescue.pause_bleeding") != 0) {
+                        helper.assertTrue(f.snapshot().downedHealth() == rescueHealth,
+                                "Rescue paused the displayed pool but continued reducing entity health");
+                    }
+                    helper.assertTrue(f.capture(f.victim).damageEvents.size() == initialDamageEvents + 1,
+                            "Health synchronization emitted extra hurt feedback after the real hit");
+                    f.later((int) f.setting("rescue.ticks") + 2, () -> {
+                        helper.assertTrue(!CombatService.downed(f.victim), "The synchronized-health victim could not be revived");
+                        helper.assertTrue(Math.abs(f.victim.getHealth() - f.victim.getMaxHealth()
+                                        * f.setting("rescue.health_percent") / 100) < .001,
+                                "Rescue restored the downed pool instead of the configured normal health");
+                        f.close(); helper.succeed();
+                    });
+                });
+            });
+        });
+    }
 
     @GameTest(template = "empty", templateNamespace = "combat_dbno", batch = "combat_dbno", timeoutTicks = 1400)
     public static void carpetDownedPlayersRemainOnlineAndCanBeRevivedRepeatedly(GameTestHelper helper) throws Exception {
@@ -255,6 +329,22 @@ public final class CombatCarpetGameTests {
             victim.invulnerableTime = 0;
             victim.hurt(victim.damageSources().generic(), 1000);
             assertDowned(count);
+            var data = snapshot();
+            helper.assertTrue(victim.getHealth() == victim.getMaxHealth()
+                            && data.downedHealth() == data.downedMaxHealth(),
+                    "Entering DBNO did not restore a full independent pool and full entity health");
+        }
+
+        void hitFromEnemy(float amount) {
+            // GameTestServer leaves PvP disabled. Enable it only for this synchronous real hit,
+            // then restore it so other concurrently running fixtures retain their server settings.
+            boolean previous = server.isPvpAllowed();
+            try {
+                server.setPvpAllowed(true);
+                helper.assertTrue(victim.canHarmPlayer(enemy), "The test's enemy hit is blocked before the combat damage event");
+                victim.invulnerableTime = 0;
+                victim.hurt(victim.damageSources().playerAttack(enemy), amount);
+            } finally { server.setPvpAllowed(previous); }
         }
 
         void assertDowned(int count) {
@@ -270,17 +360,29 @@ public final class CombatCarpetGameTests {
                     "Carpet removed or eliminated a player whose lethal damage entered DBNO" + observed);
             // TaCZ clears the shared forcedPose slot when no gun is crawling. The synchronized
             // pose and physical dimensions are the DBNO contract enforced by our Player hook.
-            helper.assertTrue(CombatService.downed(victim) && victim.getHealth() == 1
+            helper.assertTrue(CombatService.downed(victim)
                     && victim.getPose() == Pose.SWIMMING && victim.getBoundingBox().getYsize() <= .61,
-                    "Carpet continued its post-super death reset instead of preserving 1 HP and the downed pose" + observed);
+                    "Carpet continued its post-super death reset instead of preserving the downed pose" + observed);
             helper.assertTrue(data != null && data.downed() && data.downCount() == count,
                     "The authoritative snapshot lost the current or cumulative down state" + observed);
+            assertHealthSynchronized();
+        }
+
+        void assertHealthSynchronized() {
+            var data = snapshot();
+            double expected = victim.getMaxHealth() * data.downedHealth() / data.downedMaxHealth();
+            helper.assertTrue(Math.abs(victim.getHealth() - expected) < .001,
+                    "Entity health diverged from the downed pool: entity=" + victim.getHealth()
+                            + ", expected=" + expected + ", downed=" + data.downedHealth());
         }
 
         void measureLoss(boolean moving, DoubleConsumer result) {
             float before = snapshot().downedHealth();
             if (moving) victim.setPos(victim.position().add(.02, 0, 0));
-            later(1, () -> result.accept(before - snapshot().downedHealth()));
+            later(1, () -> {
+                assertHealthSynchronized();
+                result.accept(before - snapshot().downedHealth());
+            });
         }
 
         void later(int ticks, CheckedAction action) { helper.runAfterDelay(ticks, () -> guard(action)); }
@@ -314,12 +416,16 @@ public final class CombatCarpetGameTests {
     private static final class CaptureConnection extends NetHandlerPlayServerFake {
         CombatPayloads.Snapshot snapshot;
         final List<CombatPayloads.Event> events = new ArrayList<>();
+        final List<ClientboundDamageEventPacket> damageEvents = new ArrayList<>();
         CaptureConnection(MinecraftServer server, ServerPlayer player, CommonListenerCookie cookie) {
             super(server, player, cookie);
         }
         @Override public void send(Packet<?> packet) { capture(packet); }
         @Override public void send(Packet<?> packet, PacketSendListener listener) { capture(packet); }
         private void capture(Packet<?> packet) {
+            if (packet instanceof ClientboundDamageEventPacket damage && damage.entityId() == player.getId()) {
+                damageEvents.add(damage);
+            }
             if (packet instanceof ClientboundCustomPayloadPacket custom) {
                 if (custom.payload() instanceof CombatPayloads.Snapshot value) snapshot = value;
                 if (custom.payload() instanceof CombatPayloads.EventMessage value) events.add(value.event());

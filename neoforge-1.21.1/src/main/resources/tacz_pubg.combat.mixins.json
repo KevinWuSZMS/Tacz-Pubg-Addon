@@ -4,6 +4,6 @@
   "package": "com.example.examplemod.combat.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": ["CombatConnectionMixin", "CombatGameModeMixin", "CombatPlayerPoseMixin", "CombatJumpMixin", "CombatCarpetDeathMixin"],
-  "client": ["CombatKeyboardMixin", "CombatMinecraftMixin"],
+  "client": ["CombatKeyboardMixin", "CombatMinecraftMixin", "CombatLocalHealthMixin"],
   "injectors": {"defaultRequire": 1}
 }

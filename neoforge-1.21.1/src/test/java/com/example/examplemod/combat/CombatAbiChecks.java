@@ -37,6 +37,7 @@ public final class CombatAbiChecks {
     private static final String ENTITY = "net/minecraft/world/entity/Entity";
     private static final String KEYBOARD = "net/minecraft/client/KeyboardHandler";
     private static final String MINECRAFT = "net/minecraft/client/Minecraft";
+    private static final String LOCAL_PLAYER = "net/minecraft/client/player/LocalPlayer";
     private static final String SERVER_PLAYER = "Lnet/minecraft/server/level/ServerPlayer;";
     private static final Map<String, ClassNode> CLASSES = new HashMap<>();
     private static int checks;
@@ -49,7 +50,8 @@ public final class CombatAbiChecks {
         Map<String, String> owners = Map.of(
                 "CombatConnectionMixin", CONNECTION, "CombatGameModeMixin", MODE,
                 "CombatPlayerPoseMixin", PLAYER, "CombatJumpMixin", LIVING,
-                "CombatKeyboardMixin", KEYBOARD, "CombatMinecraftMixin", MINECRAFT);
+                "CombatKeyboardMixin", KEYBOARD, "CombatMinecraftMixin", MINECRAFT,
+                "CombatLocalHealthMixin", LOCAL_PLAYER);
         Map<String, Target> expected = new LinkedHashMap<>();
         for (String packet : List.of("ContainerClick", "Interact", "PlayerAction", "SetCarriedItem"))
             add(expected, CONNECTION, "handle" + packet,
@@ -63,6 +65,7 @@ public final class CombatAbiChecks {
         add(expected, KEYBOARD, "keyPress", "(JIIII)V");
         add(expected, MINECRAFT, "startAttack", "()Z");
         add(expected, MINECRAFT, "startUseItem", "()V");
+        add(expected, LOCAL_PLAYER, "hurtTo", "(F)V");
 
         JsonObject config;
         try (var input = resource("tacz_pubg.combat.mixins.json");
@@ -122,7 +125,7 @@ public final class CombatAbiChecks {
         var allMixins = new HashSet<>(owners.keySet());
         allMixins.add("CombatCarpetDeathMixin");
         check(seenMixins.equals(allMixins), "all native and optional Carpet combat mixins are registered exactly once");
-        check(seenTargets.equals(expected.keySet()), "all eleven combat target signatures are exercised");
+        check(seenTargets.equals(expected.keySet()), "all combat target signatures are exercised");
 
         // Pose is a Player/Entity API while the shared jump hook belongs to LivingEntity.
         inherited(PLAYER, "setForcedPose", "(Lnet/minecraft/world/entity/Pose;)V", false);
