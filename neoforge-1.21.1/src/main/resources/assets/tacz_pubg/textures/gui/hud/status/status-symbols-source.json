@@ -1,7 +1,7 @@
 {
   "source": "D:\\HMCL-3.9.1\\neoforge-mod-development\\docs\\repository\\status-bar-assets\\status-reference.png",
   "source_sha256": "910c918be96f8b680650543f8e0892cac9e3ce3e3f999cf2119fc81bd9395616",
-  "method": "Source-pixel alpha extraction with local background interpolation; no redrawn geometry.",
+  "method": "Source-pixel silhouette extraction with local background interpolation; no redrawn geometry.",
   "source_resolution_limitation": "Original symbols are approximately 30-40 pixels tall; resampling cannot recover absent details.",
   "outputs": [
     {
@@ -12,6 +12,8 @@
         496,
         61
       ],
+      "method": "local opening",
+      "symmetric_alpha": false,
       "sha256": "b47641abe75c2f807d1982cb488764f3bec11fb538da1064b43ca6c503c9e417"
     },
     {
@@ -22,7 +24,21 @@
         548,
         57
       ],
-      "sha256": "a0812b79759c1503c92737830e6bc53d7e71d29f378e5b44a71064b8207458a0"
+      "method": "pixel-edge silhouette and filled interior",
+      "symmetric_alpha": true,
+      "sha256": "3347ca4a7edb444866bbbb9fd55751fc08c0fd0e89c4cc471363388610fe9b0e"
+    },
+    {
+      "file": "lungs.png",
+      "source_crop_xyxy": [
+        558,
+        7,
+        613,
+        63
+      ],
+      "method": "pixel-edge silhouette and filled interior",
+      "symmetric_alpha": false,
+      "sha256": "e8163033a41174ddfb30fca36ed3ee70600e7b40d32b87c524cdaf6b36f0bb1a"
     }
   ]
 }

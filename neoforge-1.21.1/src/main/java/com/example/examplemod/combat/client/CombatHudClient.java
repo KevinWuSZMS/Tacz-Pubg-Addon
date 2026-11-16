@@ -5,6 +5,7 @@ import com.example.examplemod.combat.CombatPayloads.Event;
 import com.example.examplemod.combat.CombatPayloads.Actor;
 import com.example.examplemod.combat.CombatPayloads.Snapshot;
 import com.example.examplemod.combat.CombatTimeline;
+import com.example.examplemod.combat.CombatCounterNotice;
 import com.example.examplemod.combat.TeamPalette;
 import com.example.examplemod.hud.client.HudLayoutClient;
 import com.example.examplemod.hud.client.HudLayoutModel;
@@ -29,7 +30,7 @@ import net.neoforged.neoforge.common.NeoForge;
 public final class CombatHudClient {
     private static final CombatTimeline<Event> timeline=new CombatTimeline<>();
     private static Snapshot current=Snapshot.EMPTY;
-    private static boolean assistCounter;
+    private static final CombatCounterNotice counterNotice=new CombatCounterNotice();
     private static double renderFraction;
     private CombatHudClient() {}
     public static Snapshot snapshot() { return current; }
@@ -46,7 +47,7 @@ public final class CombatHudClient {
                 ResourceLocation.fromNamespaceAndPath("tacz_pubg","combat_hud"),(g,d)->render(g)));
         HudLayoutClient.registerPreview("combat_messages",(w,h)->new HudLayoutModel.Rect(Math.max(0,w/2-140),(int)(h*.72)-48,280,70),
                 (g,r,s)-> {
-                    centered(g,text("knock","AKM","Player"),r.x()+r.width()/2,r.y()+8,0xFFF1F1EE,1);
+                    centered(g,text("elimination","AKM","Player"),r.x()+r.width()/2,r.y()+8,0xFFF1F1EE,1);
                     centered(g,text("kills",2),r.x()+r.width()/2,r.y()+32,0xFFFF6B3D,1.4F);
                 });
         HudLayoutClient.registerPreview("combat_feed",(w,h)->new HudLayoutModel.Rect(Math.max(0,w-190),33,182,72),
@@ -55,12 +56,11 @@ public final class CombatHudClient {
                     g.drawString(Minecraft.getInstance().font,"21 Player  >  Player 23",r.x()+4,r.y()+i*18+3,0xFF57BDD8);
                 }});
     }
-    private static void clear() { current=Snapshot.EMPTY; timeline.reset(CombatPayloads.NO_SESSION); assistCounter=false; CombatPayloads.clearClient(); }
+    private static void clear() { current=Snapshot.EMPTY; timeline.reset(CombatPayloads.NO_SESSION); counterNotice.reset(CombatPayloads.NO_SESSION,0,0); CombatPayloads.clearClient(); }
     private static void accept(Snapshot next) {
-        if(!next.session().equals(current.session())) { timeline.reset(next.session()); assistCounter=false; }
-        if(next.kills()>current.kills()||next.assists()>current.assists()) {
-            assistCounter=next.assists()>current.assists()&&next.kills()==current.kills(); timeline.markPersonal();
-        }
+        if(!next.session().equals(current.session())) {
+            timeline.reset(next.session()); counterNotice.reset(next.session(),next.kills(),next.assists());
+        } else if(counterNotice.snapshot(next.session(),next.kills(),next.assists(),timeline.time())) timeline.markPersonal();
         current=next;
     }
     private static void event(Event value) {
@@ -68,7 +68,8 @@ public final class CombatHudClient {
         if(mc.player==null||!value.session().equals(current.session())) return;
         boolean own=value.attacker().id().equals(mc.player.getUUID());
         if(value.type().equals("assist")&&!own) return;
-        if(timeline.offer(value.session(),value.sequence(),value,own,!value.type().equals("assist"))&&own) assistCounter=value.type().equals("assist");
+        if(timeline.offer(value.session(),value.sequence(),value,own,!value.type().equals("assist"))&&own)
+            counterNotice.event(value.session(),value.type(),value.kills(),value.assists(),timeline.time());
     }
     private static void render(GuiGraphics g) {
         var mc=Minecraft.getInstance(); var status=MatchHudClient.currentStatus();
@@ -113,8 +114,9 @@ public final class CombatHudClient {
                 centered(g,message(entry.value()),x+width/2,y+height-25-i*row+(int)slide,
                         alpha(s.color(entry.value().type().equals("assist")?"combat.assist_color":i>0?"combat.older_color":"combat.text_color"),a),(float)s.number("combat.message_scale"));
             }
-            double a=CombatTimeline.alpha(timeline.personalAge()+renderFraction,s.number("combat.counter_seconds")*20,s.number("combat.fade_in_seconds")*20,s.number("combat.fade_out_seconds")*20);
-            int amount=assistCounter?current.assists():current.kills();
+            double a=CombatTimeline.alpha(counterNotice.age(time()),s.number("combat.counter_seconds")*20,s.number("combat.fade_in_seconds")*20,s.number("combat.fade_out_seconds")*20);
+            boolean assistCounter=counterNotice.assist();
+            int amount=counterNotice.amount();
             if(amount>0&&a>0) centered(g,text(assistCounter?"assists":"kills",amount),x+width/2,y+height-10,
                     alpha(s.color(assistCounter?"combat.assist_color":"combat.kill_color"),a),(float)s.number("combat.counter_scale"));
         }

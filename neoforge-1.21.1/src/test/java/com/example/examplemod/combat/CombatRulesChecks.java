@@ -11,6 +11,11 @@ public final class CombatRulesChecks {
         var damage=List.of(new CombatRules.Contributor(downer,"A",40,100),new CombatRules.Contributor(mate,"A",20,100),new CombatRules.Contributor(enemy,"B",30,100),new CombatRules.Contributor(friendly,"V",100,100));
         var same=CombatRules.credit(victim,"V",downer,"A",mate,"A",damage,200,1200,1);
         check(same.killer().equals(downer)&&same.assistants().equals(List.of(mate)),"Same-team finisher grants downer kill and finisher assist; excludes third parties/friendly hits");
+        var finishOnly=CombatRules.credit(victim,"V",downer,"A",mate,"A",List.of(),2000,1,100);
+        check(finishOnly.killer().equals(downer)&&finishOnly.assistants().equals(List.of(mate)),
+                "A teammate who only finishes the downed enemy still earns an assist without prior damage or time-window credit");
+        var ownFinish=CombatRules.credit(victim,"V",downer,"A",downer,"A",List.of(),2000,1,100);
+        check(ownFinish.killer().equals(downer)&&ownFinish.assistants().isEmpty(),"Finishing one's own knock awards no self-assist");
         var stolen=CombatRules.credit(victim,"V",downer,"A",enemy,"B",damage,200,1200,1);
         check(stolen.killer().equals(enemy)&&stolen.assistants().isEmpty(),"Different enemy team's finisher owns kill; unrelated team cannot gain an assist");
         var bleed=CombatRules.credit(victim,"V",downer,"A",null,"",damage,200,1200,1);

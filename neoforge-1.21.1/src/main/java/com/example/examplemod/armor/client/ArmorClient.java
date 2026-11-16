@@ -64,9 +64,10 @@ public final class ArmorClient {
         var gun = mc.player == null ? com.example.examplemod.vitals.client.WeaponHudData.Gun.EMPTY
                 : com.example.examplemod.vitals.client.WeaponHudData.read(mc.player, mc.player.getMainHandItem());
         String loadedText = gun.present() ? Integer.toString(gun.loaded()) : "30", reserveText = gun.present() ? gun.reserveText() : "95";
-        int weaponWidth = ArmorHudLayout.weaponWidth(CombatHudNumbers.width(loadedText), CombatHudNumbers.width(reserveText));
-        var fit = ArmorHudLayout.metrics(panel.width(), panel.height(), icon, gap, CombatHudNumbers.width("100%"), weaponWidth);
-        int logicalWidth = fit.logicalWidth(), logicalHeight = fit.logicalHeight();
+        var fit = ArmorHudLayout.metrics(panel.width(), panel.height(), icon, gap, CombatHudNumbers.visibleWidth("100%"),
+                CombatHudNumbers.visibleWidth(loadedText), CombatHudNumbers.visibleWidth(reserveText));
+        float logicalWidth = fit.logicalWidth();
+        int logicalHeight = fit.logicalHeight();
         float scale = fit.scale();
         // The shared frame remains exactly as wide as the health/boost bars; only its contents may shrink.
         graphics.fill(panel.x(), panel.y(), panel.x() + panel.width(), panel.y() + panel.height(), settings.color("hud.panel_color"));
@@ -94,43 +95,62 @@ public final class ArmorClient {
             compactCell(graphics, fit, index + 1, helmet ? CombatHudTextures.helmet(tier) : CombatHudTextures.armor(tier),
                     tier > 0 ? percentage(fraction) : "—", tier, tier > 0 && fraction <= .25 ? 0xffe45e54 : 0xffe8e9e7);
         }
-        int x = fit.weaponLeft();
-        int middle = logicalHeight / 2;
+        float middle = logicalHeight / 2f;
         if (gun.present() || preview) {
             RenderSystem.enableBlend();
+            graphics.pose().pushPose();
+            graphics.pose().translate(fit.modeCenter() - ArmorHudLayout.MODE_SIZE / 2f, middle - ArmorHudLayout.MODE_SIZE / 2f, 0);
             graphics.blit(com.example.examplemod.vitals.client.WeaponHudData.fireModeTexture(gun.present() ? gun.mode()
-                    : com.tacz.guns.api.item.gun.FireMode.AUTO), x, middle - 5, 0, 0, 10, 10, 10, 10);
-            String loaded = loadedText;
-            graphics.pose().pushPose(); graphics.pose().translate(fit.loadedLeft(), middle - 7, 0);
-            graphics.pose().scale(ArmorHudLayout.LOADED_SCALE, ArmorHudLayout.LOADED_SCALE, 1);
-            CombatHudNumbers.draw(graphics, loaded, 0, 0, gun.present() && gun.loaded() == 0 ? 0xFFFF5555 : 0xFFF2F0E8);
+                    : com.tacz.guns.api.item.gun.FireMode.AUTO), 0, 0, 0, 0, 10, 10, 10, 10);
             graphics.pose().popPose();
-            CombatHudNumbers.draw(graphics, reserveText, fit.reserveLeft(CombatHudNumbers.width(loaded)), middle - 2, 0xFF9DA1A2);
+            float loadedHeight = CombatHudNumbers.DEFAULT_HEIGHT * ArmorHudLayout.LOADED_SCALE;
+            CombatHudNumbers.drawVisibleCentered(graphics, loadedText, fit.loadedCenter(), middle - loadedHeight / 2,
+                    loadedHeight, gun.present() && gun.loaded() == 0 ? 0xFFFF5555 : 0xFFF2F0E8);
+            CombatHudNumbers.drawVisibleCentered(graphics, reserveText, fit.reserveCenter(), middle - 2,
+                    CombatHudNumbers.DEFAULT_HEIGHT, 0xFF9DA1A2);
         }
         int inactive = ((int) (settings.number("hud.icon_inactive_alpha") * 255) << 24) | 0xFFFFFF;
-        com.example.examplemod.vitals.client.CombatHudDraw.runner(graphics, fit.runnerLeft(), middle - 8, 15,
+        float statusMiddle = fit.iconSize() / 2f;
+        int statusSize = Math.min(ArmorHudLayout.STATUS_SIZE, fit.iconSize());
+        statusIcon(graphics, CombatHudTextures.SPRINT, fit.statusCenter(0), statusMiddle, statusSize,
                 preview || mc.player != null && mc.player.isSprinting() ? 0xFFFFFFFF : inactive);
-        com.example.examplemod.vitals.client.CombatHudDraw.plus(graphics, fit.recoveryLeft(), middle - 5, 10,
+        statusIcon(graphics, CombatHudTextures.HEAL, fit.statusCenter(1), statusMiddle, Math.min(ArmorHudLayout.HEAL_SIZE, fit.iconSize()),
                 preview || com.example.examplemod.vitals.client.PubgMedicineHud.recovering() ? 0xFFFFFFFF : inactive);
+        statusIcon(graphics, CombatHudTextures.LUNGS, fit.statusCenter(2), statusMiddle, fit.iconSize(),
+                preview || mc.player != null && (mc.player.isUnderWater() || mc.player.getAirSupply() < mc.player.getMaxAirSupply())
+                        ? 0xFFFFFFFF : inactive);
+        double oxygen = preview ? .72 : mc.player == null ? 1
+                : com.example.examplemod.vitals.client.PubgVitalsLayout.fraction(mc.player.getAirSupply(), mc.player.getMaxAirSupply());
+        CombatHudNumbers.drawVisibleCentered(graphics, percentage(oxygen), fit.statusCenter(2), fit.percentageTop(),
+                CombatHudNumbers.DEFAULT_HEIGHT * fit.percentageScale(), oxygen <= .25 ? 0xffe45e54 : 0xffe8e9e7);
+        graphics.pose().popPose();
+    }
+    private static void statusIcon(GuiGraphics graphics, ResourceLocation texture, float center, float middle, int size, int color) {
+        graphics.pose().pushPose();
+        graphics.pose().translate(center - size / 2f, middle - size / 2f, 0);
+        CombatHudTextures.draw(graphics, texture, 0, 0, size, size, color);
         graphics.pose().popPose();
     }
     private static String percentage(double fraction) { return Math.round(Math.clamp(fraction, 0, 1) * 100) + "%"; }
     private static void compactCell(GuiGraphics graphics, ArmorHudLayout.Metrics fit, int index,
             ResourceLocation icon, String value, int tier, int color) {
-        int size = fit.iconSize(), left = fit.cellLeft(index), contentWidth = fit.cellContentWidth();
-        int x = left + (contentWidth - size) / 2;
+        int size = fit.iconSize();
         int iconColor = tier > 0 ? 0xFFFFFFFF
                 : ((int) (com.example.examplemod.pubgsettings.PubgSettingsService.client().number("hud.icon_inactive_alpha") * 255) << 24) | 0xFFFFFF;
-        CombatHudTextures.draw(graphics, icon, x, 0, size, size, iconColor);
+        graphics.pose().pushPose();
+        graphics.pose().translate(fit.cellCenter(index) - size / 2f, 0, 0);
+        CombatHudTextures.draw(graphics, icon, 0, 0, size, size, iconColor);
         if (tier > 0) {
-            graphics.fill(x + size - 6, size - 7, x + size, size, 0x9B171B1E);
+            graphics.fill(size - 6, size - 7, size, size, 0x9B171B1E);
             graphics.pose().pushPose();
-            graphics.pose().translate(x + size - 5, size - 6.5f, 0);
+            graphics.pose().translate(size - 5, size - 6.5f, 0);
             graphics.pose().scale(.7f, .7f, 1);
             CombatHudNumbers.draw(graphics, Integer.toString(tier), 0, 0, 0xFFE8E9E7);
             graphics.pose().popPose();
         }
-        CombatHudNumbers.drawCentered(graphics, value, left + contentWidth / 2f, fit.percentageTop(), 9, color);
+        graphics.pose().popPose();
+        CombatHudNumbers.drawVisibleCentered(graphics, value, fit.cellCenter(index), fit.percentageTop(),
+                CombatHudNumbers.DEFAULT_HEIGHT * fit.percentageScale(), color);
     }
     private static final class Layer extends RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
         Layer(PlayerRenderer renderer) { super(renderer); }

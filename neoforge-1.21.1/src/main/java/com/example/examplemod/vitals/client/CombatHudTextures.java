@@ -8,6 +8,7 @@ import net.minecraft.resources.ResourceLocation;
 public final class CombatHudTextures {
     public static final ResourceLocation SPRINT = texture("sprint");
     public static final ResourceLocation HEAL = texture("heal");
+    public static final ResourceLocation LUNGS = texture("lungs");
     private static final ResourceLocation[] BACKPACK = equipment("backpack");
     private static final ResourceLocation[] HELMET = equipment("helmet");
     private static final ResourceLocation[] ARMOR = equipment("armor");

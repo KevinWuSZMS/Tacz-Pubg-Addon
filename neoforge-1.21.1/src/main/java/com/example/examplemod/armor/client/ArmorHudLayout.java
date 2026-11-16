@@ -8,26 +8,39 @@ public final class ArmorHudLayout {
     public static final int TEXT_HEIGHT = 9;
     public static final float LOADED_SCALE = 1.55f;
     public record Cell(int x, int y, int width, int height) {}
-    public record Metrics(int cellWidth, int logicalWidth, int logicalHeight, float scale, int iconSize, int percentageTop) {
-        public int weaponLeft() { return cellWidth * 3 + 2; }
-        public int loadedLeft() { return weaponLeft() + 13; }
-        public int reserveLeft(int loadedTextWidth) { return weaponLeft() + 15 + loadedWidth(loadedTextWidth); }
-        public int runnerLeft() { return logicalWidth - 29; }
-        public int recoveryLeft() { return logicalWidth - 12; }
-        public int cellLeft(int index) { return 1 + index * cellWidth; }
-        public int cellContentWidth() { return cellWidth - 2; }
+    public static final int MODE_SIZE = 10, STATUS_SIZE = 15, HEAL_SIZE = 12;
+    public record Metrics(float cellWidth, float logicalWidth, int logicalHeight, float scale, int iconSize,
+            int percentageTop, int gap, float ammoSpacing, float percentageScale) {
+        public float loadedCenter() { return logicalWidth / 2; }
+        public float modeCenter() { return loadedCenter() - ammoSpacing; }
+        public float reserveCenter() { return loadedCenter() + ammoSpacing; }
+        public float cellCenter(int index) { return (index + .5f) * cellWidth; }
+        public float statusCenter(int index) { return logicalWidth - cellCenter(2 - index); }
+        public float cellLeft(int index) { return index * cellWidth + gap / 2f; }
+        public float cellContentWidth() { return cellWidth - gap; }
+        public float groupWidth() { return cellWidth * 3; }
     }
     public static int loadedWidth(int textWidth) { return (int) Math.ceil(textWidth * (double) LOADED_SCALE); }
-    public static int weaponWidth(int loadedTextWidth, int reserveTextWidth) {
-        return Math.max(96, 13 + loadedWidth(loadedTextWidth) + reserveTextWidth + 37);
-    }
-    public static Metrics metrics(int width, int height, int icon, int gap, int percentageWidth, int weaponWidth) {
-        // Two compact baselines retain full-size percentages without shrinking the complete 182px row.
+    public static Metrics metrics(int width, int height, int icon, int gap, int percentageWidth,
+            int loadedTextWidth, int reserveTextWidth) {
         int iconSize = Math.min(icon, Math.max(1, height - TEXT_HEIGHT - 1));
-        int cell = Math.max(iconSize, percentageWidth) + Math.max(2, gap);
-        int logicalWidth = cell * 3 + weaponWidth + 2, logicalHeight = Math.max(iconSize + TEXT_HEIGHT + 1, 20);
+        int cellGap = Math.max(2, gap);
+        float sideMinimum = 3 * (Math.max(Math.max(iconSize, STATUS_SIZE), percentageWidth * .7f) + cellGap);
+        float flankWidth = Math.max(MODE_SIZE, reserveTextWidth);
+        float ammoMinimumSpacing = (loadedWidth(loadedTextWidth) + flankWidth) / 2 + 3;
+        float middleMinimum = 2 * (ammoMinimumSpacing + flankWidth / 2 + 4);
+        // A balanced middle may grow to a third even when its ammunition needs less room.
+        // Reserve three side minima as well, otherwise that growth steals icon/gap space.
+        float logicalWidth = Math.max(width, Math.max(sideMinimum * 3, sideMinimum * 2 + middleMinimum));
+        // Normally each group occupies one third. Very long counts may widen only the middle,
+        // with equal side groups and a final uniform fit preserving the center on small screens.
+        float middleWidth = Math.max(logicalWidth / 3, middleMinimum);
+        float cell = (logicalWidth - middleWidth) / 6;
+        float spacing = Math.min(Math.max(ammoMinimumSpacing, middleWidth / 3), middleWidth / 2 - flankWidth / 2 - 4);
+        int logicalHeight = Math.max(iconSize + TEXT_HEIGHT + 1, 20);
         return new Metrics(cell, logicalWidth, logicalHeight,
-                Math.min(1, Math.min(width / (float) logicalWidth, height / (float) logicalHeight)), iconSize, iconSize + 1);
+                Math.min(1, Math.min(width / logicalWidth, height / (float) logicalHeight)), iconSize, iconSize + 1,
+                cellGap, spacing, Math.min(1, (cell - cellGap) / Math.max(1, percentageWidth)));
     }
     public record Panel(int x, int y, int width, int height) {
         public Cell cell(int index) {
