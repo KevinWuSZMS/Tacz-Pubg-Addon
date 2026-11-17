@@ -3,6 +3,7 @@ package com.example.examplemod.lootspawn;
 import com.example.examplemod.lootconfig.LootSpawnRules.FloorSample;
 import com.example.examplemod.spawn.SpawnFloorGeometry;
 import com.example.examplemod.spawn.SpawnFloorGeometry.Surface;
+import com.example.examplemod.zones.match.MatchBoundaryService;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
@@ -81,6 +82,64 @@ final class LootSpawnPlacement {
         }
         shuffle(candidates, random);
         return reserveAvailable(candidates, count, occupied);
+    }
+
+    /** A bounded safe offset for displaced equipment; null keeps the existing drop position. */
+    static Slot replacementDrop(GroundLootEntity source, ItemStack item) {
+        if (!(source.level() instanceof ServerLevel level) || item.isEmpty()) return null;
+        AABB local = GroundLootFootprints.forItem(item, level);
+        AABB rotated = rotate(local, source.getYRot());
+        Vec3 origin = source.position();
+        int minX = (int) Math.floor(origin.x - 1 + rotated.minX), maxX = (int) Math.floor(origin.x + 1 + rotated.maxX);
+        int minZ = (int) Math.floor(origin.z - 1 + rotated.minZ), maxZ = (int) Math.floor(origin.z + 1 + rotated.maxZ);
+        int minY = (int) Math.floor(origin.y - 1.5), maxY = (int) Math.floor(origin.y + .5);
+        if ((long) (maxX - minX + 1) * (maxZ - minZ + 1) * (maxY - minY + 1) > 256) return null;
+        List<FloorSample> floors = new ArrayList<>();
+        for (int x = minX; x <= maxX; x++) for (int z = minZ; z <= maxZ; z++) for (int y = minY; y <= maxY; y++) {
+            BlockPos floor = new BlockPos(x, y, z);
+            if (SpawnFloorGeometry.isValidFloor(level, floor))
+                floors.add(new FloorSample(floor, y + SpawnFloorGeometry.topSurfaces(level, floor).stream()
+                        .mapToDouble(Surface::y).max().orElse(0)));
+        }
+        FloorIndex plane = new FloorIndex(floors);
+        List<AABB> occupied = new ArrayList<>();
+        // Reserve the source even when its carrier will be reused: leave the original pile accessible.
+        occupied.add(source.getBoundingBoxForCulling().inflate(.04, 0, .04));
+        for (var entity : level.getEntities(source, source.getBoundingBoxForCulling().inflate(3, 1, 3),
+                entity -> entity instanceof GroundLootEntity || entity instanceof net.minecraft.world.entity.item.ItemEntity)) {
+            AABB bounds = entity instanceof GroundLootEntity ground ? ground.getBoundingBoxForCulling()
+                    : GroundLootFootprints.worldBounds(GroundLootFootprints.forItem(
+                            ((net.minecraft.world.entity.item.ItemEntity) entity).getItem(), level), entity.position(), entity.getYRot());
+            occupied.add(bounds.inflate(.04, 0, .04));
+        }
+        double angle = level.getRandom().nextDouble() * Math.PI * 2;
+        AABB start = rotated.move(origin);
+        var border = level.getWorldBorder();
+        for (double radius : new double[] { .85, 1, .7 }) for (int direction = 0; direction < 12; direction++) {
+            double heading = angle + direction * Math.PI / 6;
+            double x = origin.x + Math.cos(heading) * radius, z = origin.z + Math.sin(heading) * radius;
+            for (FloorSample floor : plane.columns.getOrDefault(new Column((int) Math.floor(x), (int) Math.floor(z)), List.of())) {
+                Slot slot = candidate(level, plane, floor.floor(), x, z, local, source.getYRot());
+                if (slot == null || Math.abs(slot.y() - origin.y) > .5 + EPSILON) continue;
+                if (slot.bounds().minX < border.getMinX() || slot.bounds().maxX > border.getMaxX()
+                        || slot.bounds().minZ < border.getMinZ() || slot.bounds().maxZ > border.getMaxZ()) continue;
+                // setPos bypasses the ordinary movement boundary hook. Reject rather than
+                // clip an already-validated slot; both corners keep the full model inside too.
+                if (!mapAllows(source, new Vec3(slot.x(), slot.y(), slot.z()))
+                        || !mapAllows(source, new Vec3(slot.bounds().minX, slot.y(), slot.bounds().minZ))
+                        || !mapAllows(source, new Vec3(slot.bounds().maxX, slot.y(), slot.bounds().maxZ))) continue;
+                if (occupied.stream().anyMatch(bounds -> bounds.intersects(slot.bounds()))) continue;
+                // Use the same full-model sweep as companion ammo; never offset through a wall or floor.
+                if (isClear(level, start.minmax(slot.bounds()))) return slot;
+            }
+        }
+        return null;
+    }
+
+    private static boolean mapAllows(GroundLootEntity source, Vec3 target) {
+        Vec3 requested = target.subtract(source.position());
+        Vec3 constrained = MatchBoundaryService.constrain(source, requested);
+        return constrained.x == requested.x && constrained.z == requested.z;
     }
 
     /** A crowded or empty area simply supplies fewer piles, without invalidating other loot. */

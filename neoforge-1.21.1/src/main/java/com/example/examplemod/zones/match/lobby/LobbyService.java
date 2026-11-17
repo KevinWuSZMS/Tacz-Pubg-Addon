@@ -118,7 +118,9 @@ public final class LobbyService {
         var failures = FAILURES.get(server); if (failures != null) failures.remove(room.mapId());
     }
     public static String start(MinecraftServer server, long mapId, long expectedRevision) {
-        requireThread(server); LobbySavedData saved = readable(server);
+        requireThread(server);
+        MatchService.requireStartAllowed(server);
+        LobbySavedData saved = readable(server);
         if (saved.revision() != expectedRevision) throw new IllegalStateException(Texts.tr("message.tacz_pubg.lobby_service.lobby_version_changed_read_review_roster"));
         if (MatchService.isRunning(server, mapId)) throw new IllegalStateException(Texts.tr("message.tacz_pubg.lobby_service.map_already_has_preparing_active_match"));
         var templates = MatchConfigSavedData.get(server);
@@ -150,6 +152,7 @@ public final class LobbyService {
     }
     private static void prepareAfterReset(MinecraftServer server, Preparing pending, List<MatchBotService.BotSpec> specs) {
         if (pending.canceled || PREPARING.getOrDefault(server, Map.of()).get(pending.map.id()) != pending) return;
+        MatchService.requireStartAllowed(server);
         pending.terrainReady = true;
         validateHumans(server, pending.map, pending.room);
         if (pending.map.stagingSpawn() == null) prepareBodies(server, pending, specs);
@@ -166,6 +169,7 @@ public final class LobbyService {
                 }, error -> preparationFailed(server, pending, error));
     }
     private static void prepareBodies(MinecraftServer server, Preparing pending, List<MatchBotService.BotSpec> specs) {
+        MatchService.requireStartAllowed(server);
         if (specs.isEmpty()) complete(server, pending, null);
         else pending.token = MatchBotService.prepare(server, pending.map, specs,
                 pending.spawnPlan == null ? Map.of() : pending.spawnPlan.positions(), result -> complete(server, pending, result));
@@ -191,6 +195,7 @@ public final class LobbyService {
         if (result != null) pending.token = result.requestToken();
         MatchSession started = null;
         try {
+            MatchService.requireStartAllowed(server);
             if (result != null && !result.error().isEmpty()) throw new IllegalStateException(result.error());
             validateHumans(server, pending.map, pending.room);
             List<MatchEngine.Participant> roster = roster(server, pending.map, pending.room, result == null ? List.of() : result.bots());

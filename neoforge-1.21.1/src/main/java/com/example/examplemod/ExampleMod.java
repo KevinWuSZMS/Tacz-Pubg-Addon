@@ -58,7 +58,7 @@ public class ExampleMod {
             CREATIVE_MODE_TABS.register("pubg_tools", () -> CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup.tacz_pubg"))
                     .withTabsBefore(CreativeModeTabs.COMBAT)
-                    .icon(() -> ITEM_SPAWN_AREA_STICK.get().getDefaultInstance())
+                    .icon(() -> PUBG_CONFIG_MAP.get().getDefaultInstance())
                     .displayItems((parameters, output) -> {
                         output.accept(ITEM_SPAWN_VERY_LOW.get());
                         output.accept(ITEM_SPAWN_LOW.get());
@@ -66,18 +66,26 @@ public class ExampleMod {
                         output.accept(ITEM_SPAWN_AREA_STICK.get());
                         output.accept(ITEM_SPAWN_VERY_HIGH.get());
                         output.accept(PUBG_CONFIG_MAP.get());
-                        output.accept(PARACHUTE.get());
+                    })
+                    .build());
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> PUBG_MATCH_ITEMS =
+            CREATIVE_MODE_TABS.register("pubg_match_items", () -> CreativeModeTab.builder()
+                    .title(Component.translatable("itemGroup.tacz_pubg.match_items"))
+                    .withTabsBefore(PUBG_TOOLS.getKey())
+                    .icon(() -> com.example.examplemod.armor.ArmorRegistration.HELMET_3.get().getDefaultInstance())
+                    .displayItems((parameters, output) -> {
                         output.accept(com.example.examplemod.vitals.PubgMedicineItems.BANDAGE.get());
                         output.accept(com.example.examplemod.vitals.PubgMedicineItems.FIRST_AID_KIT.get());
                         output.accept(com.example.examplemod.vitals.PubgMedicineItems.MED_KIT.get());
-                        output.accept(com.example.examplemod.backpack.BackpackRegistration.LEVEL_1.get());
-                        output.accept(com.example.examplemod.backpack.BackpackRegistration.LEVEL_2.get());
-                        output.accept(com.example.examplemod.backpack.BackpackRegistration.LEVEL_3.get());
-                        com.example.examplemod.throwables.ThrowableRegistration.ITEMS.values().forEach(item -> output.accept(item.get()));
-                        com.example.examplemod.armor.ArmorRegistration.items().forEach(item -> output.accept(item.get()));
                         output.accept(com.example.examplemod.vitals.PubgBoostItems.ENERGY_DRINK.get());
                         output.accept(com.example.examplemod.vitals.PubgBoostItems.PAINKILLER.get());
                         output.accept(com.example.examplemod.vitals.PubgBoostItems.ADRENALINE_SYRINGE.get());
+                        output.accept(com.example.examplemod.backpack.BackpackRegistration.LEVEL_1.get());
+                        output.accept(com.example.examplemod.backpack.BackpackRegistration.LEVEL_2.get());
+                        output.accept(com.example.examplemod.backpack.BackpackRegistration.LEVEL_3.get());
+                        com.example.examplemod.armor.ArmorRegistration.items().forEach(item -> output.accept(item.get()));
+                        output.accept(PARACHUTE.get());
+                        com.example.examplemod.throwables.ThrowableRegistration.ITEMS.values().forEach(item -> output.accept(item.get()));
                     })
                     .build());
 

@@ -353,17 +353,19 @@ public final class GroundLootEntity extends Entity {
     private boolean commitExchange(Player player, ItemStack replacement, ItemStack previous, ItemStack rollback,
             java.util.function.Consumer<ItemStack> equip) {
         int quantity = getQuantity();
+        LootSpawnPlacement.Slot offset = previous.isEmpty() ? null : LootSpawnPlacement.replacementDrop(this, previous);
         GroundLootEntity displaced = null;
         if (!previous.isEmpty() && quantity > 1) {
             displaced = LootSpawnRegistration.GROUND_LOOT.get().create(level());
             if (displaced == null) return false;
-            displaced.initializeDrop(previous, anchor, 10, null);
-            displaced.setPos(getX() + .25, getY(), getZ() + .25);
+            displaced.initializeDrop(previous, offset == null ? anchor : offset.floor(), 10, null);
+            displaced.setPos(position());
             displaced.setYRot(getYRot());
-            // Spawn cancellation leaves source and worn item completely untouched.
-            if (!level().addFreshEntity(displaced)) { displaced.discard(); return false; }
+            if (offset != null) displaced.placeReplacement(offset);
         }
         try {
+            // Spawn cancellation leaves source and worn item completely untouched.
+            if (displaced != null && !level().addFreshEntity(displaced)) { displaced.discard(); return false; }
             equip.accept(replacement);
         } catch (RuntimeException failure) {
             if (displaced != null) displaced.discard();
@@ -374,8 +376,9 @@ public final class GroundLootEntity extends Entity {
         if (!previous.isEmpty() && quantity == 1) {
             // Reuse this carrier: there is no entity-spawn failure window for the usual one-item swap.
             byte physics = entityData.get(PHYSICS_STATE);
-            initializeDrop(previous, anchor, 0, null);
-            setPhysicsState(physics);
+            initializeDrop(previous, offset == null ? anchor : offset.floor(), 0, null);
+            if (offset == null) setPhysicsState(physics);
+            else placeReplacement(offset);
         } else {
             entityData.set(QUANTITY, quantity - 1);
             if (quantity == 1) discard();
@@ -383,6 +386,14 @@ public final class GroundLootEntity extends Entity {
         player.getInventory().setChanged();
         player.containerMenu.broadcastChanges();
         return true;
+    }
+
+    private void placeReplacement(LootSpawnPlacement.Slot slot) {
+        setPos(slot.x(), slot.y(), slot.z());
+        setDeltaMovement(Vec3.ZERO);
+        setOnGround(true);
+        setPhysicsState(RESTING);
+        hasImpulse = true;
     }
 
     private static int physicalCapacity(Inventory inventory, ItemStack stack) {

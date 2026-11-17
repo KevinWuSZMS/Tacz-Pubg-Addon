@@ -2630,5 +2630,6 @@
   "3d76398764f2": "screen.tacz_pubg.map_entities.title",
   "ca4519f40368": "screen.tacz_pubg.battle_settings.field.lean.body_penetration_tolerance",
   "d5cb194c0455": "screen.tacz_pubg.battle_settings.group.lean",
-  "73db83305df1": "screen.tacz_pubg.battle_settings.lean_body_tolerance_hint"
+  "73db83305df1": "screen.tacz_pubg.battle_settings.lean_body_tolerance_hint",
+  "54d74b0e910c": "message.tacz_pubg.match_service.open_to_lan_before_start"
 }

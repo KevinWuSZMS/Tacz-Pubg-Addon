@@ -129,7 +129,13 @@ public final class MatchService {
     public static long elapsedTicks(MinecraftServer server, long mapId) {
         MatchRuntimeState state = STATES.get(server); return state == null ? 0 : state.elapsedTicks(mapId);
     }
+    /** Check only new starts and their asynchronous handoffs; live matches keep their existing lifecycle. */
+    public static void requireStartAllowed(MinecraftServer server) {
+        if (!server.isDedicatedServer() && server.isSingleplayer() && !server.isPublished())
+            throw new IllegalStateException(Texts.tr("message.tacz_pubg.match_service.open_to_lan_before_start"));
+    }
     public static String start(MinecraftServer server, long mapId) {
+        requireStartAllowed(server);
         if (isRunning(server, mapId)) throw new IllegalStateException(Texts.tr("message.tacz_pubg.match_service.map_already_has_preparing_active_match"));
         var map = MapZoneSavedData.get(server).map(mapId);
         if (map == null) throw new IllegalArgumentException(Texts.tr("message.tacz_pubg.map_zone_saved_data.map_does_not_exist", mapId));
@@ -141,6 +147,7 @@ public final class MatchService {
         return Texts.tr("message.tacz_pubg.match_service.pre_match_restoration_scheduled_once_complete_participants_will");
     }
     private static MatchSession startNow(MinecraftServer server, long mapId) {
+        requireStartAllowed(server);
         if (session(server, mapId) != null || LobbyService.isPreparing(server, mapId)) throw new IllegalStateException(Texts.tr("message.tacz_pubg.match_service.map_already_has_match"));
         MapZoneSavedData maps = MapZoneSavedData.get(server);
         if (!maps.loadError().isEmpty()) throw new IllegalStateException(Texts.tr("message.tacz_pubg.map_backup.could_not_read_map_data", maps.loadError()));
@@ -199,6 +206,7 @@ public final class MatchService {
     public static MatchSession startRoster(MinecraftServer server, MapDefinition map, MatchConfigModel.Settings settings,
             List<MatchEngine.Participant> roster) {
         if (!server.isSameThread()) throw new IllegalStateException(Texts.tr("message.tacz_pubg.match_service.start_matches_server_thread"));
+        requireStartAllowed(server);
         MapResetService.requirePrepared(server, map);
         if (server.getLevel(ResourceKey.create(Registries.DIMENSION, map.dimension())) == null)
             throw new IllegalArgumentException(Texts.tr("message.tacz_pubg.lobby_service.load_map_dimension_first"));

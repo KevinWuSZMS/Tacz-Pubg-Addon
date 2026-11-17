@@ -53,6 +53,7 @@ public final class MatchCommands {
     }
 
     private static int start(CommandSourceStack source, long mapId) {
+        MatchService.requireStartAllowed(source.getServer());
         var rooms = LobbySavedData.get(source.getServer());
         if (!rooms.loadError().isEmpty()) throw new IllegalStateException(Texts.tr("message.tacz_pubg.match_commands.restore_protected_lobby_data_first", rooms.loadError()));
         if (rooms.hasRoom(mapId)) {

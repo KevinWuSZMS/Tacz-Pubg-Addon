@@ -261,6 +261,7 @@ public final class MapResetService {
         return e != null && e.state.equals("PREPARED");
     }
     public static void beforeStart(MinecraftServer server, MapDefinition map, Runnable ready, Consumer<String> failed) {
+        com.example.examplemod.zones.match.MatchService.requireStartAllowed(server);
         var run = runtime(server); run.data.requireWritable(); requireNoActiveOverlap(server, map);
         var e = run.data.entries.get(map.id());
         if (e == null || !MapResetData.sameRange(e.map, map)) throw new IllegalStateException(Texts.tr("message.tacz_pubg.journal.not_ready"));

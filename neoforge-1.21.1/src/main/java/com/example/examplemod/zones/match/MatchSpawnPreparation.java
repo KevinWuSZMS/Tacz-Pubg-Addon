@@ -60,6 +60,7 @@ public final class MatchSpawnPreparation {
     public static UUID begin(MinecraftServer server, MapDefinition map, List<UUID> plannedMembers,
             Consumer<Plan> ready, Consumer<String> failed) {
         requireThread(server);
+        MatchService.requireStartAllowed(server);
         if (map.stagingSpawn() == null || plannedMembers.isEmpty()
                 || new HashSet<>(plannedMembers).size() != plannedMembers.size())
             throw changed();
@@ -209,6 +210,7 @@ public final class MatchSpawnPreparation {
         /** Checks the whole human roster again before the first teleport; rollback restores original dimensions too. */
         public void teleportHumans(List<UUID> humans) {
             requireThread(server);
+            MatchService.requireStartAllowed(server);
             if (closed || !originals.isEmpty() || new HashSet<>(humans).size() != humans.size()) throw changed();
             List<ServerPlayer> players = new ArrayList<>();
             for (UUID id : humans) {
