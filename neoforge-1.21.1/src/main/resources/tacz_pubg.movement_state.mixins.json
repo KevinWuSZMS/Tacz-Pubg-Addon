@@ -3,6 +3,6 @@
   "minVersion": "0.8",
   "package": "com.example.examplemod.movement.mixin",
   "compatibilityLevel": "JAVA_21",
-  "mixins": ["MovementPlayerMixin"],
+  "mixins": ["MovementPlayerMixin", "SwimmingSurfaceMoveMixin", "SwimmingStepMixin", "SwimmingGunShootMixin", "SwimmingGunAimMixin", "SwimmingGunRoundMixin"],
   "injectors": {"defaultRequire": 1}
 }

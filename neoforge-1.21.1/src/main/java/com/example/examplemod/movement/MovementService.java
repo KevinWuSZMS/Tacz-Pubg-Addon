@@ -22,6 +22,11 @@ public final class MovementService {
         bus.addListener(EventPriority.LOWEST, (PlayerTickEvent.Pre event) -> {
             if (!(event.getEntity() instanceof ServerPlayer player)) return;
             MatchSwimming.syncParticipation(player);
+            if (MatchSwimming.wading(player)) {
+                update(player, MovementModes.encode(Mode.WALK, true), false);
+                player.setSprinting(false);
+                return;
+            }
             byte state = data(player).taczPubg$movementMode();
             if (state == 0) return;
             if (!eligible(player)) clear(player);
@@ -57,6 +62,7 @@ public final class MovementService {
 
     /** Local prediction uses exactly the same metadata as the later server acknowledgement. */
     public static void predict(Player player, Mode mode, boolean active) {
+        if (MatchSwimming.wading(player)) { mode = Mode.WALK; active = true; }
         update(player, MovementModes.authorize(mode, active, eligible(player)), false);
     }
 
@@ -64,6 +70,7 @@ public final class MovementService {
         // Stance input ends rescue before the new stance is authorized and applied.
         if (CombatService.rescuing(player) && (!active || mode != Mode.CROUCH))
             CombatService.rescue(player, player.getUUID(), true);
+        if (MatchSwimming.wading(player)) { mode = Mode.WALK; active = true; }
         // Force a metadata acknowledgement even when rejection leaves the server's old value unchanged.
         update(player, MovementModes.authorize(mode, active, eligible(player)), true);
     }

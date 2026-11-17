@@ -18,6 +18,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.block.Blocks;
@@ -36,23 +37,51 @@ public final class MatchSwimmingGameTests {
     private static final AtomicLong MAP_IDS = new AtomicLong(9_600_000);
 
     @GameTest(template = "empty", templateNamespace = "movement_swimming")
-    public static void shallowGroundAllowsCrouchLeanAndDeepGroundForcesSwimming(GameTestHelper helper) throws Exception {
+    public static void shallowWaterNeverSwimsAndDeepWaterForcesSwimming(GameTestHelper helper) throws Exception {
         try (Fixture f = new Fixture(helper)) {
             f.pool(1);
             f.place(0, true);
             f.player.samplePose();
             helper.assertTrue(f.player.isInWater() && MatchSwimming.controls(f.player), "Shallow fixture did not contact match water");
-            helper.assertTrue(!f.player.isSwimming() && !MatchSwimming.hasStandingDepth(f.player),
+            helper.assertTrue(!f.player.isSwimming() && MatchSwimming.wading(f.player) && !MatchSwimming.hasSwimmingDepth(f.player),
                     "One-block grounded water incorrectly forced swimming");
-            MovementService.input(f.player, Mode.CROUCH, true);
-            f.player.samplePose();
-            helper.assertTrue(MovementService.active(f.player) && f.player.getPose() == Pose.CROUCHING,
-                    "Shallow grounded water blocked the match crouch pose");
+            for (Mode requested : new Mode[] { Mode.CROUCH, Mode.PRONE, Mode.SPRINT }) {
+                MovementService.input(f.player, requested, true);
+                f.player.samplePose();
+                helper.assertTrue(MovementService.mode(f.player) == Mode.WALK && f.player.getPose() == Pose.STANDING
+                                && !f.player.isSprinting(),
+                        "Shallow water did not retain standing walking for " + requested);
+            }
             helper.assertTrue(LeanService.eligible(f.player), "Shallow grounded water blocked leaning");
+            f.player.setYRot(-90);
+            f.player.zza = 1;
+            helper.assertTrue(!MatchSwimming.canClimbOut(f.player), "A level shallow pool floor was mistaken for a bank");
+            for (int z = -1; z <= 1; z++) f.put(f.origin.offset(1, 0, z), Blocks.STONE.defaultBlockState());
+            helper.assertTrue(MatchSwimming.canClimbOut(f.player), "Walking toward a higher shallow-water bank did not allow climbing");
+            f.player.zza = 0;
+            helper.assertTrue(!MatchSwimming.canClimbOut(f.player), "Looking at a shallow bank without moving allowed hopping");
+            f.player.zza = 1;
+            for (int z = -1; z <= 1; z++) f.put(f.origin.offset(1, 2, z), Blocks.STONE.defaultBlockState());
+            helper.assertTrue(!MatchSwimming.canClimbOut(f.player), "A shallow bank without standing headroom allowed climbing");
+            f.player.zza = 0;
+            f.pool(1);
+            f.put(f.origin.east(), Blocks.AIR.defaultBlockState());
+            f.player.setPos(f.origin.getX() + 1.1, f.origin.getY(), f.origin.getZ() + .5);
+            f.player.samplePose();
+            helper.assertTrue(f.player.isInWater() && !MatchSwimming.wading(f.player)
+                            && !MatchSwimming.swimming(f.player) && MovementService.eligible(f.player),
+                    "Body-edge water contact kept the dry center column in shallow-water controls");
+            f.pool(1);
+            f.place(.2, false);
             f.player.setSprinting(true);
             f.player.samplePose();
-            helper.assertTrue(!f.player.isSwimming(), "Sprinting in shallow grounded water bypassed the depth rule");
+            helper.assertTrue(!f.player.onGround() && !f.player.isSwimming() && !f.player.isSprinting()
+                            && f.player.getPose() == Pose.STANDING && MatchSwimming.wading(f.player),
+                    "Jumping into one-block water incorrectly started swimming or sprinting");
 
+            f.pool(0);
+            f.place(0, true);
+            f.player.samplePose();
             MovementService.input(f.player, Mode.SPRINT, true);
             MovementService.clear(f.player);
             helper.assertTrue(!f.player.isSprinting(), "Releasing ordinary ground controls retained sprint");
@@ -66,7 +95,7 @@ public final class MatchSwimmingGameTests {
                     "Entering deep water cleared the held sprint flag while relinquishing ground controls");
             f.player.setSprinting(false);
             f.player.samplePose();
-            helper.assertTrue(f.player.onGround() && MatchSwimming.hasStandingDepth(f.player), "Deep fixture lost its grounded condition");
+            helper.assertTrue(f.player.onGround() && MatchSwimming.hasSwimmingDepth(f.player), "Deep fixture lost its grounded condition");
             double depth = 1 + helper.getLevel().getFluidState(f.origin.above()).getHeight(helper.getLevel(), f.origin.above());
             helper.assertTrue(MatchSwimming.depthAtLeast(f.player, depth)
                             && !MatchSwimming.depthAtLeast(f.player, depth + .0001),
@@ -87,14 +116,55 @@ public final class MatchSwimmingGameTests {
             f.player.samplePose();
             helper.assertTrue(f.player.isSwimming(), "Deep entry did not start swimming");
             f.place(1.4, false);
-            for (int sample = 0; sample < 8; sample++) {
+            for (int sample = 0; sample < 40; sample++) {
+                // Attempt the upward displacement after liquid jumping/look thrust,
+                // exercising the shared Entity.move surface limiter used by real players.
+                f.player.setDeltaMovement(0, .2, 0);
+                f.player.move(MoverType.SELF, f.player.getDeltaMovement());
                 f.player.samplePose();
-                helper.assertTrue(MatchSwimming.hasStandingDepth(f.player) && f.player.isSwimming()
+                helper.assertTrue(MatchSwimming.hasSwimmingDepth(f.player) && f.player.isSwimming()
                                 && f.player.getPose() == Pose.SWIMMING,
-                        "Swimming pose/surface height shortened the same deep column at sample " + sample);
+                        "Holding upward swimming oscillated at the surface at sample " + sample);
             }
-            f.pool(0);
-            f.place(0, true);
+            double surfaceHeight = 1 + f.level.getFluidState(f.origin.above()).getHeight(f.level, f.origin.above());
+            double surfaceY = f.origin.getY() + surfaceHeight;
+            helper.assertTrue(f.player.getY() < surfaceY && f.player.getEyeY() > surfaceY
+                            && !MatchSwimming.canClimbOut(f.player),
+                    "Open-water rise did not retain an immersed body with breathing room");
+
+            f.place(surfaceHeight + .1, false);
+            for (int sample = 0; sample < 4; sample++) f.player.samplePose();
+            helper.assertTrue(!f.player.isInWater() && MatchSwimming.swimming(f.player)
+                            && !MatchSwimming.wading(f.player) && f.player.getPose() == Pose.SWIMMING,
+                    "A brief native fluid-contact gap discarded an existing surface swimmer");
+            f.place(surfaceHeight + .5, false);
+            f.player.samplePose();
+            helper.assertTrue(!MatchSwimming.controls(f.player) && !f.player.isSwimming(),
+                    "Swimming ownership followed the player too far above the water");
+
+            f.place(1.4, false);
+            f.player.samplePose();
+            for (int z = -1; z <= 1; z++) for (int y = 0; y < 2; y++)
+                f.put(f.origin.offset(1, y, z), Blocks.STONE.defaultBlockState());
+            f.player.setYRot(-90);
+            helper.assertTrue(!MatchSwimming.canClimbOut(f.player)
+                            && MatchSwimming.limitSurfaceRise(f.player, new Vec3(0, .3, 0)).y < .3,
+                    "Looking at a bank without horizontal motion bypassed the surface limit");
+            for (int sample = 0; sample < 8; sample++) {
+                f.player.setDeltaMovement(0, .2, 0);
+                f.player.move(MoverType.SELF, f.player.getDeltaMovement());
+                f.player.samplePose();
+                helper.assertTrue(MatchSwimming.swimming(f.player) && f.player.getY() < surfaceY,
+                        "Stationary upward swimming next to a bank left the water at sample " + sample);
+            }
+            f.player.zza = 1;
+            helper.assertTrue(MatchSwimming.canClimbOut(f.player)
+                            && MatchSwimming.limitSurfaceRise(f.player, new Vec3(.08, .3, 0)).y == .3,
+                    "A reachable dry bank was blocked by the open-water rise limit");
+            f.player.setPos(f.origin.getX() + 1.5, f.origin.getY() + 2, f.origin.getZ() + .5);
+            f.player.zza = 0;
+            f.player.setOnGround(true);
+            f.player.setDeltaMovement(Vec3.ZERO);
             f.player.samplePose();
             f.player.samplePose();
             helper.assertTrue(!f.player.isInWater() && !MatchSwimming.controls(f.player) && !f.player.isSwimming()
@@ -109,7 +179,7 @@ public final class MatchSwimmingGameTests {
     }
 
     @GameTest(template = "empty", templateNamespace = "movement_swimming")
-    public static void standingScaleAndWaterloggedSupportDetermineUsableDepth(GameTestHelper helper) throws Exception {
+    public static void fixedThresholdAndWaterloggedSupportDetermineUsableDepth(GameTestHelper helper) throws Exception {
         try (Fixture f = new Fixture(helper)) {
             f.pool(2);
             f.player.getAttribute(Attributes.SCALE).setBaseValue(2);
@@ -117,16 +187,16 @@ public final class MatchSwimmingGameTests {
             f.place(0, true);
             f.player.samplePose();
             helper.assertTrue(f.player.getDimensions(Pose.STANDING).height() > 3
-                            && !MatchSwimming.hasStandingDepth(f.player) && !f.player.isSwimming(),
-                    "Swimming depth ignored the enlarged standing body");
+                            && MatchSwimming.hasSwimmingDepth(f.player) && f.player.isSwimming(),
+                    "Enlarging the body changed the fixed deep-water threshold");
             f.player.getAttribute(Attributes.SCALE).setBaseValue(.4);
             f.player.refreshDimensions();
             f.pool(1);
             f.place(0, true);
             f.player.samplePose();
             helper.assertTrue(f.player.getDimensions(Pose.STANDING).height() < 1
-                            && MatchSwimming.hasStandingDepth(f.player) && f.player.isSwimming(),
-                    "Swimming depth ignored the smaller standing body");
+                            && !MatchSwimming.hasSwimmingDepth(f.player) && !f.player.isSwimming(),
+                    "Shrinking the body changed the fixed shallow-water threshold");
 
             f.player.getAttribute(Attributes.SCALE).setBaseValue(1);
             f.player.refreshDimensions();
@@ -135,10 +205,20 @@ public final class MatchSwimmingGameTests {
                     .setValue(SlabBlock.WATERLOGGED, true));
             f.place(.5, true);
             f.player.samplePose();
-            helper.assertTrue(f.player.isInWater() && !MatchSwimming.hasStandingDepth(f.player) && !f.player.isSwimming(),
+            helper.assertTrue(f.player.isInWater() && !MatchSwimming.hasSwimmingDepth(f.player) && !f.player.isSwimming(),
                     "Waterlogged bottom slab counted solid support as swimmable depth");
             helper.assertTrue(MovementService.eligible(f.player) && LeanService.eligible(f.player),
                     "Waterlogged shallow support blocked ground actions");
+
+            f.pool(2);
+            f.put(f.origin.above(), Blocks.OAK_SLAB.defaultBlockState().setValue(SlabBlock.TYPE, SlabType.TOP)
+                    .setValue(SlabBlock.WATERLOGGED, true));
+            f.place(0, true);
+            f.player.samplePose();
+            helper.assertTrue(MatchSwimming.depthAtLeast(f.player, 1.5)
+                            && !MatchSwimming.depthAtLeast(f.player, 1.5001)
+                            && !MatchSwimming.hasSwimmingDepth(f.player) && !f.player.isSwimming(),
+                    "Exactly 1.5 blocks of traversable water must remain below the swimming threshold");
         }
         helper.succeed();
     }
@@ -177,7 +257,7 @@ public final class MatchSwimmingGameTests {
         helper.succeed();
     }
 
-    private static final class PosePlayer extends FakePlayer {
+    static final class PosePlayer extends FakePlayer {
         PosePlayer(ServerLevel level) { super(level, new GameProfile(UUID.randomUUID(), "[swim-fixture]")); }
         void samplePose() {
             // FakePlayer.tick is empty. Run the actual fluid update owner (which calls
@@ -187,7 +267,7 @@ public final class MatchSwimmingGameTests {
         }
     }
 
-    private static final class Fixture implements AutoCloseable {
+    static final class Fixture implements AutoCloseable {
         final PosePlayer player;
         final ServerLevel level;
         final BlockPos origin;

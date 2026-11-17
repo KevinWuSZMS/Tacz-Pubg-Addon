@@ -7,11 +7,11 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-/** Manual vertical controls keep their direction even while looking the other way. */
+/** Match swimming always travels horizontally with yaw; pitch only moves the camera. */
 @Mixin(Player.class)
 abstract class MovementSwimmingTravelMixin {
     @Redirect(method = "travel", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/player/Player;isSwimming()Z"))
     private boolean taczPubg$manualVerticalOverridesLook(Player player) {
-        return player.isSwimming() && !(player == Minecraft.getInstance().player && MovementClient.manualSwimmingVertical());
+        return player.isSwimming() && !(player == Minecraft.getInstance().player && MovementClient.swimmingContext());
     }
 }

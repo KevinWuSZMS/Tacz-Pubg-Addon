@@ -12,6 +12,7 @@ public final class LeanShotDispatchChecks {
         sameGunSynchronization();
         realWeaponChanges();
         lifecycleChanges();
+        swimmingCancelsBurstsAcrossWaterExit();
         equalOwnersStillHaveDistinctLifetimes();
         staleOwnerDoesNotInvalidateCurrentShots();
         interleavedBursts();
@@ -115,6 +116,28 @@ public final class LeanShotDispatchChecks {
             check(fixture.fire(fresh, "fresh", 0), "replacement " + changed + " retains its already captured new ticket");
             check(fixture.events.equals(List.of("fresh.pose0", "fresh.send", "fresh.animation0")),
                     "new " + changed + " lifetime completes one whole shot");
+        }
+    }
+
+    private static void swimmingCancelsBurstsAcrossWaterExit() {
+        for (boolean roundWhileSwimming : new boolean[]{true, false}) {
+            Fixture fixture = new Fixture();
+            LeanShotDispatch burst = fixture.group();
+            check(fixture.fire(burst, "burst", 0), "land burst starts before entering water");
+            int before = fixture.events.size();
+            if (roundWhileSwimming) {
+                check(!burst.dispatch(fixture.session, null, 1,
+                                () -> fixture.events.add("wet.pose"), null, () -> fixture.events.add("wet.animation")),
+                        "swimming's unavailable firing context rejects the entire next round");
+            } else {
+                // ClientTick.Pre observes water even if the burst timer has no due round.
+                fixture.session.observe(null);
+            }
+            fixture.session.observe(fixture.identity());
+            check(!fixture.fire(burst, "old", 1) && !fixture.fire(burst, "old", 2),
+                    "exiting water cannot resume the previous burst, including between timer callbacks");
+            check(fixture.events.size() == before, "interrupted burst adds no stale pose, packet or animation after water exit");
+            check(fixture.fire(fixture.group(), "fresh", 0), "a newly requested shot works after leaving water");
         }
     }
 

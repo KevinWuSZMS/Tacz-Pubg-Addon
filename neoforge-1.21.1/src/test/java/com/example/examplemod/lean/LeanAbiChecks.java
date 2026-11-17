@@ -46,6 +46,9 @@ public final class LeanAbiChecks {
         }
         check(counters == 1 && integers == 1 && stacks == 1, "argsOnly locals identify one counter, burst size and held gun");
         shotScheduling(local);
+        calls(named("com/example/examplemod/lean/client/LeanShotClient", "identity"),
+                "com/example/examplemod/movement/SwimmingGunRestrictions", "blocked",
+                "(Lnet/minecraft/world/entity/LivingEntity;)Z", 1);
         drawSessionEvent();
         outboundInventoryHook();
         method(TACZ + "entity/EntityKineticBullet", "<init>", "(Lnet/minecraft/world/entity/EntityType;Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/resources/ResourceLocation;ZLcom/tacz/guns/resource/pojo/data/gun/GunData;Lcom/tacz/guns/resource/pojo/data/gun/BulletData;)V");

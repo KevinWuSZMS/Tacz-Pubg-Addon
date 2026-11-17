@@ -2,6 +2,7 @@ package com.example.examplemod.lean.client;
 
 import com.example.examplemod.lean.LeanService;
 import com.example.examplemod.lean.LeanShotPayloads;
+import com.example.examplemod.movement.SwimmingGunRestrictions;
 import com.tacz.guns.api.event.common.GunDrawEvent;
 import com.tacz.guns.api.item.IGun;
 import java.util.Objects;
@@ -130,6 +131,9 @@ public final class LeanShotClient {
         var minecraft = Minecraft.getInstance();
         if (player == null || minecraft.player != player || minecraft.level == null
                 || minecraft.getConnection() == null || !player.isAlive() || minecraft.isPaused()) return null;
+        // Invalidate the whole queued burst on the main thread. A later dry-land round
+        // must not revive effects after the server has already discarded that burst.
+        if (SwimmingGunRestrictions.blocked(player)) return null;
         GunIdentity gun = gunIdentity(player.getMainHandItem());
         if (gun == null) return null;
         // TaCZ's equip identity, without mutable ammo/heat/attachment components or the stack reference.

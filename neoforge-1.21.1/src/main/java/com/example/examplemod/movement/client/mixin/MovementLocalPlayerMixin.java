@@ -17,7 +17,7 @@ abstract class MovementLocalPlayerMixin {
     @Inject(method = "aiStep", at = @At("HEAD"))
     private void taczPubg$beforeGroundInput(CallbackInfo ci) {
         MovementClient.beforeAiStep((LocalPlayer) (Object) this);
-        if (MovementClient.consumesJump() || MovementClient.swimmingContext()) {
+        if (MovementClient.consumesJump() || MovementClient.waterContext()) {
             autoJumpTime = 0;
             ((MovementPlayerAccess) this).taczPubg$setJumpTriggerTime(0);
         }
@@ -35,5 +35,9 @@ abstract class MovementLocalPlayerMixin {
     @Inject(method = "canStartSprinting", at = @At("HEAD"), cancellable = true)
     private void taczPubg$fixedSprintMode(CallbackInfoReturnable<Boolean> cir) {
         if (!MovementClient.canStartSprint()) cir.setReturnValue(false);
+    }
+    @Inject(method = "canAutoJump", at = @At("HEAD"), cancellable = true)
+    private void taczPubg$noWaterAutoJump(CallbackInfoReturnable<Boolean> cir) {
+        if (MovementClient.waterContext()) cir.setReturnValue(false);
     }
 }

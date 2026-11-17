@@ -68,6 +68,15 @@ abstract class MovementPlayerMixin implements MovementStateAccess {
             ci.cancel();
             return;
         }
+        if (MatchSwimming.wading(player)) {
+            player.setSwimming(false);
+            player.setSprinting(false);
+            if (canPlayerFitWithinBlocksAndEntitiesWhen(Pose.STANDING)) player.setPose(Pose.STANDING);
+            else if (canPlayerFitWithinBlocksAndEntitiesWhen(Pose.CROUCHING)) player.setPose(Pose.CROUCHING);
+            else if (canPlayerFitWithinBlocksAndEntitiesWhen(Pose.SWIMMING)) player.setPose(Pose.SWIMMING);
+            ci.cancel();
+            return;
+        }
         if (!MovementService.active(player)) return;
         // TaCZ clears its forcedPose whenever native crawl stops. Our independent ownership also works unarmed.
         Pose requested = switch (MovementService.mode(player)) {
