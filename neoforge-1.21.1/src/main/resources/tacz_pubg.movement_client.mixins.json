@@ -3,6 +3,6 @@
   "minVersion": "0.8",
   "package": "com.example.examplemod.movement.client.mixin",
   "compatibilityLevel": "JAVA_21",
-  "client": ["MovementPlayerAccess", "MovementKeyboardInputMixin", "MovementLocalPlayerMixin", "MovementSwimmingTravelMixin", "SwimmingLocalGunShootMixin", "SwimmingLocalGunAimMixin"],
+  "client": ["MovementPlayerAccess", "MovementKeyboardInputMixin", "MovementLocalPlayerMixin", "MovementSwimmingTravelMixin", "SwimmingPlayerRenderMixin", "SwimmingLocalGunShootMixin", "SwimmingLocalGunAimMixin"],
   "injectors": {"defaultRequire": 1}
 }

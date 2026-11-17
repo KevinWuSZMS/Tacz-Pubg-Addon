@@ -30,6 +30,7 @@ public final class SwimmingInputChecks {
         nativeHooks();
         implementationHooks();
         wadingInputHooks();
+        swimmingRenderHook();
         clientRegistration();
         System.out.println("SwimmingInputChecks: " + checks + " input and native hook checks passed; no game launched.");
     }
@@ -264,7 +265,7 @@ public final class SwimmingInputChecks {
         try (InputStream input = resource("tacz_pubg.movement_client.mixins.json")) {
             var config = JsonParser.parseReader(new InputStreamReader(input, StandardCharsets.UTF_8)).getAsJsonObject();
             var client = config.getAsJsonArray("client");
-            for (String mixin : new String[]{"MovementKeyboardInputMixin", "MovementLocalPlayerMixin", "MovementSwimmingTravelMixin"}) {
+            for (String mixin : new String[]{"MovementKeyboardInputMixin", "MovementLocalPlayerMixin", "MovementSwimmingTravelMixin", "SwimmingPlayerRenderMixin"}) {
                 check(client.asList().stream().anyMatch(entry -> entry.getAsString().equals(mixin)),
                         mixin + " is registered for client distribution only");
             }
@@ -275,11 +276,60 @@ public final class SwimmingInputChecks {
         try (InputStream input = resource("tacz_pubg.movement_state.mixins.json")) {
             var config = JsonParser.parseReader(new InputStreamReader(input, StandardCharsets.UTF_8)).getAsJsonObject();
             var common = config.getAsJsonArray("mixins");
+            check(common.asList().stream().noneMatch(entry -> entry.getAsString().endsWith("SwimmingPlayerRenderMixin")),
+                    "the player renderer hook is absent from the common client/server mixin list");
             for (String mixin : new String[]{"SwimmingSurfaceMoveMixin", "SwimmingStepMixin"}) {
                 check(common.asList().stream().anyMatch(entry -> entry.getAsString().equals(mixin)),
                         mixin + " is registered on both client and server");
             }
         }
+    }
+
+    private static void swimmingRenderHook() throws Exception {
+        String renderDescriptor = "(Lnet/minecraft/client/player/AbstractClientPlayer;Lcom/mojang/blaze3d/vertex/PoseStack;FFFF)V";
+        var setup = method("net/minecraft/client/renderer/entity/player/PlayerRenderer", "setupRotations", renderDescriptor);
+        call(setup, "net/minecraft/util/Mth", "lerp", "(FFF)F", Opcodes.INVOKESTATIC);
+        var hook = method("com/example/examplemod/movement/client/mixin/SwimmingPlayerRenderMixin",
+                "taczPubg$limitSwimmingBodyPitch",
+                "(FFFLcom/llamalad7/mixinextras/injector/wrapoperation/Operation;Lnet/minecraft/client/player/AbstractClientPlayer;Lcom/mojang/blaze3d/vertex/PoseStack;FFFF)F");
+        var annotations = new ArrayList<AnnotationNode>();
+        if (hook.visibleAnnotations != null) annotations.addAll(hook.visibleAnnotations);
+        if (hook.invisibleAnnotations != null) annotations.addAll(hook.invisibleAnnotations);
+        boolean wrapsExactCall = false;
+        for (var annotation : annotations) {
+            if (!annotation.desc.equals("Lcom/llamalad7/mixinextras/injector/wrapoperation/WrapOperation;")) continue;
+            boolean exactMethod = annotationValue(annotation, "method") instanceof java.util.List<?> methods
+                    && methods.size() == 1 && methods.contains("setupRotations" + renderDescriptor);
+            Object point = annotationValue(annotation, "at");
+            if (point instanceof java.util.List<?> points && points.size() == 1) point = points.getFirst();
+            wrapsExactCall = exactMethod && point instanceof AnnotationNode at
+                    && "INVOKE".equals(annotationValue(at, "value"))
+                    && "Lnet/minecraft/util/Mth;lerp(FFF)F".equals(annotationValue(at, "target"));
+        }
+        check(wrapsExactCall, "render wrapper captures all setupRotations arguments at the sole native swimming lerp");
+        call(hook, "com/example/examplemod/movement/MatchSwimming", "swimming",
+                "(Lnet/minecraft/world/entity/player/Player;)Z", Opcodes.INVOKESTATIC);
+        call(hook, "net/minecraft/client/player/AbstractClientPlayer", "getViewXRot", "(F)F", Opcodes.INVOKEVIRTUAL);
+        call(hook, "com/llamalad7/mixinextras/injector/wrapoperation/Operation", "call",
+                "([Ljava/lang/Object;)Ljava/lang/Object;", Opcodes.INVOKEINTERFACE);
+
+        // A render-only adapter may read the shared local/remote swim predicate and view angle,
+        // then forward its interpolation. No camera, networking, input or entity setter belongs here.
+        var allowedCalls = java.util.Set.of(
+                "com/example/examplemod/movement/MatchSwimming.swimming(Lnet/minecraft/world/entity/player/Player;)Z",
+                "net/minecraft/client/player/AbstractClientPlayer.getViewXRot(F)F",
+                "net/minecraft/util/Mth.clamp(FFF)F",
+                "com/llamalad7/mixinextras/injector/wrapoperation/Operation.call([Ljava/lang/Object;)Ljava/lang/Object;",
+                "java/lang/Float.valueOf(F)Ljava/lang/Float;", "java/lang/Float.floatValue()F");
+        boolean writesState = false;
+        var unexpectedCalls = new ArrayList<String>();
+        for (var instruction : hook.instructions) {
+            if (instruction.getOpcode() == Opcodes.PUTFIELD || instruction.getOpcode() == Opcodes.PUTSTATIC) writesState = true;
+            if (instruction instanceof MethodInsnNode call && !allowedCalls.contains(call.owner + "." + call.name + call.desc))
+                unexpectedCalls.add(call.owner + "." + call.name);
+        }
+        check(!writesState, "swimming rendering never changes entity pitch, velocity or shared camera state");
+        check(unexpectedCalls.isEmpty(), "render wrapper remains read-only and applies equally to remote players: " + unexpectedCalls);
     }
 
     private static void expect(SwimmingInput actual, int vertical, boolean fast, boolean manual, String reason) {
