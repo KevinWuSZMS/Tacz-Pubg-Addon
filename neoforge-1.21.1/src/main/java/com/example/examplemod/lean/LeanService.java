@@ -38,6 +38,7 @@ public final class LeanService {
 
     public static boolean eligible(Player player) {
         return MovementService.eligible(player) && !player.isSprinting()
+                && !(player.isInWater() && (player.isSwimming() || player.getPose() == net.minecraft.world.entity.Pose.SWIMMING))
                 && !com.example.examplemod.combat.CombatService.blocked(player);
     }
 

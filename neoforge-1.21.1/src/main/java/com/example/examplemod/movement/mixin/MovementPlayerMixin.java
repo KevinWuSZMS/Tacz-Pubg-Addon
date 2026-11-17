@@ -1,6 +1,7 @@
 package com.example.examplemod.movement.mixin;
 
 import com.example.examplemod.movement.MovementService;
+import com.example.examplemod.movement.MatchSwimming;
 import com.example.examplemod.movement.MovementState.Mode;
 import com.example.examplemod.movement.MovementStateAccess;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -20,12 +21,15 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 abstract class MovementPlayerMixin implements MovementStateAccess {
     @Unique private static final EntityDataAccessor<Byte> TACZ_PUBG_GROUND_MODE =
             SynchedEntityData.defineId(Player.class, EntityDataSerializers.BYTE);
+    @Unique private static final EntityDataAccessor<Boolean> TACZ_PUBG_MATCH_PARTICIPANT =
+            SynchedEntityData.defineId(Player.class, EntityDataSerializers.BOOLEAN);
 
     @Shadow protected abstract boolean canPlayerFitWithinBlocksAndEntitiesWhen(Pose pose);
 
     @Inject(method = "defineSynchedData", at = @At("TAIL"))
     private void taczPubg$defineMovement(SynchedEntityData.Builder builder, CallbackInfo ci) {
         builder.define(TACZ_PUBG_GROUND_MODE, (byte) 0);
+        builder.define(TACZ_PUBG_MATCH_PARTICIPANT, false);
     }
 
     @Override public byte taczPubg$movementMode() {
@@ -36,9 +40,34 @@ abstract class MovementPlayerMixin implements MovementStateAccess {
         ((Player) (Object) this).getEntityData().set(TACZ_PUBG_GROUND_MODE, value, acknowledge);
     }
 
+    @Override public boolean taczPubg$matchParticipant() {
+        return ((Player) (Object) this).getEntityData().get(TACZ_PUBG_MATCH_PARTICIPANT);
+    }
+
+    @Override public void taczPubg$matchParticipant(boolean value) {
+        ((Player) (Object) this).getEntityData().set(TACZ_PUBG_MATCH_PARTICIPANT, value);
+    }
+
+    @Inject(method = "updateSwimming", at = @At("HEAD"), cancellable = true)
+    private void taczPubg$waterSwimming(CallbackInfo ci) {
+        Player player = (Player) (Object) this;
+        if (!MatchSwimming.controls(player)) return;
+        boolean swimming = MatchSwimming.swimming(player);
+        if (swimming) MovementService.clear(player);
+        player.setSwimming(swimming);
+        ci.cancel();
+    }
+
     @Inject(method = "updatePlayerPose", at = @At("HEAD"), cancellable = true)
     private void taczPubg$groundPose(CallbackInfo ci) {
         Player player = (Player) (Object) this;
+        if (MatchSwimming.swimming(player)) {
+            MovementService.clear(player);
+            player.setSwimming(true);
+            if (canPlayerFitWithinBlocksAndEntitiesWhen(Pose.SWIMMING)) player.setPose(Pose.SWIMMING);
+            ci.cancel();
+            return;
+        }
         if (!MovementService.active(player)) return;
         // TaCZ clears its forcedPose whenever native crawl stops. Our independent ownership also works unarmed.
         Pose requested = switch (MovementService.mode(player)) {

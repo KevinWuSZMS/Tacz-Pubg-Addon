@@ -75,7 +75,7 @@ neoForge {
         // The gametest system is also enabled by default for other run configs under the /test command.
         gameTestServer {
             type = "gameTestServer"
-            systemProperty 'neoforge.enabledGameTestNamespaces', providers.gradleProperty('pubgEntityBenchmark').isPresent() ? 'entity_benchmark' : providers.gradleProperty('pubgCombatGameTests').isPresent() ? 'combat_dbno' : project.mod_id
+            systemProperty 'neoforge.enabledGameTestNamespaces', providers.gradleProperty('pubgEntityBenchmark').isPresent() ? 'entity_benchmark' : providers.gradleProperty('pubgCombatGameTests').isPresent() ? 'combat_dbno' : providers.gradleProperty('pubgMovementGameTests').isPresent() ? 'movement_swimming' : project.mod_id
             gameDirectory = project.file(providers.gradleProperty('pubgEntityBenchmark').isPresent() ? 'run-entity-benchmark' : 'run-inventory-tests')
             if (providers.gradleProperty('pubgEntityBenchmark').isPresent()) {
                 systemProperty 'tacz_pubg.entityBenchmark', 'true'
@@ -116,7 +116,7 @@ neoForge {
         // multi mod projects should define one per mod
         "${mod_id}" {
             sourceSet(sourceSets.main)
-            if (providers.gradleProperty('pubgInventoryGameTests').isPresent() || providers.gradleProperty('pubgCombatGameTests').isPresent()) {
+            if (providers.gradleProperty('pubgInventoryGameTests').isPresent() || providers.gradleProperty('pubgCombatGameTests').isPresent() || providers.gradleProperty('pubgMovementGameTests').isPresent()) {
                 sourceSet(sourceSets.test)
             }
         }
@@ -427,6 +427,7 @@ tasks.named('check').configure { dependsOn droppedLootTransitionChecks }
         bindingInputChecks: 'com.example.examplemod.keybindings.BindingInputChecks',
         movementStateChecks: 'com.example.examplemod.movement.MovementStateChecks',
         movementWireChecks: 'com.example.examplemod.movement.MovementWireChecks',
+        swimmingInputChecks: 'com.example.examplemod.movement.SwimmingInputChecks',
         leanMotionChecks: 'com.example.examplemod.lean.LeanMotionChecks',
         leanGeometryChecks: 'com.example.examplemod.lean.LeanGeometryChecks',
         leanCollisionChecks: 'com.example.examplemod.lean.LeanCollisionChecks',

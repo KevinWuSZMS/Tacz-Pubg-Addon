@@ -21,27 +21,27 @@ public final class MovementService {
         var bus = NeoForge.EVENT_BUS;
         bus.addListener(EventPriority.LOWEST, (PlayerTickEvent.Pre event) -> {
             if (!(event.getEntity() instanceof ServerPlayer player)) return;
+            MatchSwimming.syncParticipation(player);
             byte state = data(player).taczPubg$movementMode();
             if (state == 0) return;
             if (!eligible(player)) clear(player);
             else if (MovementModes.decode(state) != Mode.SPRINT) player.setSprinting(false);
         });
         bus.addListener((LivingDeathEvent event) -> {
-            if (event.getEntity() instanceof ServerPlayer player) clear(player);
+            if (event.getEntity() instanceof ServerPlayer player) reset(player);
         });
-        bus.addListener((PlayerEvent.PlayerLoggedInEvent event) -> clear(event.getEntity()));
-        bus.addListener((PlayerEvent.PlayerLoggedOutEvent event) -> clear(event.getEntity()));
-        bus.addListener((PlayerEvent.PlayerChangedDimensionEvent event) -> clear(event.getEntity()));
+        bus.addListener((PlayerEvent.PlayerLoggedInEvent event) -> reset(event.getEntity()));
+        bus.addListener((PlayerEvent.PlayerLoggedOutEvent event) -> reset(event.getEntity()));
+        bus.addListener((PlayerEvent.PlayerChangedDimensionEvent event) -> reset(event.getEntity()));
         bus.addListener((PlayerEvent.Clone event) -> {
-            clear(event.getOriginal());
-            clear(event.getEntity());
+            reset(event.getOriginal());
+            reset(event.getEntity());
         });
     }
 
     public static boolean eligible(Player player) {
-        boolean rescue=CombatService.rescuing(player);
         if (!player.isAlive() || player.isSpectator() || player.getAbilities().flying || player.isPassenger()
-                || player.isSleeping() || (!rescue&&(player.isSwimming() || player.isInWater())) || player.isUnderWater() || player.isInLava()
+                || player.isSleeping() || !MatchSwimming.waterAllowsGround(player) || player.isInLava()
                 || player.isFallFlying() || player.isAutoSpinAttack() || CombatService.downed(player)) return false;
         if (player instanceof ServerPlayer server && MatchFlightService.airborne(server.server, player.getUUID())) return false;
         return !ParachuteItem.isEquipped(player) || player.onGround();
@@ -77,11 +77,20 @@ public final class MovementService {
 
     public static void clear(Player player) { update(player, (byte) 0, false); }
 
+    private static void reset(Player player) {
+        clear(player);
+        player.setSprinting(false);
+        data(player).taczPubg$matchParticipant(false);
+    }
+
     private static void update(Player player, byte next, boolean acknowledge) {
         MovementStateAccess state = data(player);
         byte previous = state.taczPubg$movementMode();
         state.taczPubg$movementMode(next, acknowledge);
-        if (MovementModes.stopsSprint(previous, next)) player.setSprinting(false);
+        // Entering water relinquishes only ground stance ownership. The client's existing
+        // sprint flag can remain held, so it may not send another START_SPRINT command.
+        if (MovementModes.stopsSprint(previous, next) && !(next == 0 && MatchSwimming.swimming(player)))
+            player.setSprinting(false);
     }
 
     private static MovementStateAccess data(Player player) { return (MovementStateAccess) player; }

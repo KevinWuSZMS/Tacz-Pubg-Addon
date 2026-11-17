@@ -8,10 +8,11 @@ import com.example.examplemod.keybindings.BindingProfiles;
 import com.example.examplemod.keybindings.mixin.KeyMappingAccess;
 import com.example.examplemod.movement.MovementPayloads;
 import com.example.examplemod.movement.MovementService;
+import com.example.examplemod.movement.MatchSwimming;
+import com.example.examplemod.movement.SwimmingInput;
 import com.example.examplemod.movement.MovementState;
 import com.example.examplemod.movement.MovementState.Action;
 import com.example.examplemod.movement.MovementState.Mode;
-import com.example.examplemod.zones.match.flight.ParachuteItem;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.tacz.guns.api.client.gameplay.IClientPlayerGunOperator;
 import java.util.EnumMap;
@@ -32,12 +33,12 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
-/** Five fixed ground actions; vanilla jump/sneak retain physical hold controls in flight. */
+/** Ground stance toggles and water/flight physical holds share the player's existing bindings. */
 public final class MovementClient {
     private static final MovementState STATE = new MovementState();
     private static final EnumMap<Action, KeyMapping> KEYS = new EnumMap<>(Action.class);
     private static Mode sentMode = Mode.STAND;
-    private static boolean sentActive, clearNativeCrawl, pendingStandFrame, wasFlying, wasRescuing;
+    private static boolean sentActive, clearNativeCrawl, pendingStandFrame, wasFlying, wasRescuing, wasSwimming;
     private static Object playerIdentity;
     private static BindingProfile profile;
     static {
@@ -95,7 +96,7 @@ public final class MovementClient {
     private static void tick() {
         var mc = Minecraft.getInstance();
         if (mc.player != playerIdentity) {
-            STATE.reset(); sentMode = Mode.STAND; sentActive = false; clearNativeCrawl = false; pendingStandFrame = false; wasRescuing = false;
+            STATE.reset(); sentMode = Mode.STAND; sentActive = false; clearNativeCrawl = false; pendingStandFrame = false; wasRescuing = false; wasSwimming = false;
             playerIdentity = mc.player;
         }
         BindingProfile current = BindingProfiles.get().activeProfile();
@@ -111,6 +112,24 @@ public final class MovementClient {
             // Flying's physical descent key must not leave the ordinary crouch toggle latched on landing.
             ((KeyMappingAccess) mc.options.keyShift).taczPubg$setRawDown(false);
             wasFlying = flight;
+        }
+        if (swimmingContext()) {
+            reset(true);
+            clearNativeMovementToggles();
+            var gun = IClientPlayerGunOperator.fromLocalPlayer(mc.player);
+            if (gun.isCrawl()) gun.crawl(false);
+            wasSwimming = true;
+            return;
+        }
+        if (wasSwimming) {
+            wasSwimming = false;
+            reset(true);
+            clearNativeMovementToggles();
+            mc.player.setSprinting(false);
+            mc.player.input.shiftKeyDown = false;
+            // Sprint is a hold in both environments; landing must not require releasing/repressing it.
+            if (groundContext() && acceptsSwimmingInput() && BindingInput.physicallyHeld(KEYS.get(Action.SPRINT)))
+                STATE.press(Action.SPRINT);
         }
         if (!groundContext()) { reset(true); return; }
         if (!mc.isWindowActive() || mc.screen != null) {
@@ -129,11 +148,35 @@ public final class MovementClient {
         return p != null && (p.getAbilities().flying || p.isSpectator());
     }
     public static boolean groundContext() {
-        var mc = Minecraft.getInstance(); var p = mc.player;
-        boolean rescue = p != null && CombatService.rescuing(p);
-        return p != null && p.isAlive() && !p.isSpectator() && !p.getAbilities().flying && !p.isPassenger()
-                && (rescue || !p.isSwimming() && !p.isInWater()) && !p.isUnderWater() && !p.isInLava() && !p.isFallFlying() && !p.isSleeping() && !p.isAutoSpinAttack()
-                && !(ParachuteItem.isEquipped(p) && !p.onGround()) && !CombatService.downed(p);
+        var p = Minecraft.getInstance().player;
+        return p != null && MovementService.eligible(p);
+    }
+    public static boolean swimmingContext() {
+        var p = Minecraft.getInstance().player;
+        return p != null && MatchSwimming.swimming(p);
+    }
+    private static SwimmingInput swimmingInput() {
+        var mc = Minecraft.getInstance();
+        return SwimmingInput.resolve(acceptsSwimmingInput(), BindingInput.physicallyHeld(mc.options.keyJump),
+                BindingInput.physicallyHeld(KEYS.get(Action.CROUCH)),
+                BindingInput.physicallyHeld(KEYS.get(Action.SPRINT)), mc.player == null ? 0 : mc.player.input.forwardImpulse);
+    }
+    private static boolean acceptsSwimmingInput() {
+        var mc = Minecraft.getInstance();
+        return mc.player != null && mc.screen == null && mc.getOverlay() == null && mc.isWindowActive();
+    }
+    /** Explicit rise/dive wins over vanilla's look-direction vertical thrust. */
+    public static boolean manualSwimmingVertical() {
+        return swimmingContext() && swimmingInput().manualVertical();
+    }
+    private static void swimmingInput(Input input) {
+        var movement = swimmingInput();
+        input.jumping = movement.vertical() > 0;
+        input.shiftKeyDown = movement.vertical() < 0;
+        // KeyboardInput has already applied vanilla crouch slowdown. Swimming uses full directional input.
+        input.forwardImpulse = !acceptsSwimmingInput() || input.up == input.down ? 0 : input.up ? 1 : -1;
+        input.leftImpulse = !acceptsSwimmingInput() || input.left == input.right ? 0 : input.left ? 1 : -1;
+        clearNativeMovementToggles();
     }
     private static void adoptRescueStance() {
         if (Minecraft.getInstance().player == null) { wasRescuing = false; return; }
@@ -162,6 +205,10 @@ public final class MovementClient {
     /** Called before vanilla snapshots last tick's crouch/jump flags. */
     public static void beforeAiStep(LocalPlayer player) {
         if (player != Minecraft.getInstance().player) return;
+        if (swimmingContext()) {
+            swimmingInput(player.input);
+            return;
+        }
         if (ownsGround()) {
             player.input.shiftKeyDown = STATE.mode() == Mode.CROUCH;
             if (consumesJump()) player.input.jumping = false;
@@ -177,6 +224,10 @@ public final class MovementClient {
             input.jumping = acceptsFlightInput && BindingInput.physicallyHeld(mc.options.keyJump);
             input.shiftKeyDown = acceptsFlightInput && BindingInput.physicallyHeld(mc.options.keyShift);
             ((KeyMappingAccess) mc.options.keyShift).taczPubg$setRawDown(input.shiftKeyDown);
+            return;
+        }
+        if (swimmingContext()) {
+            swimmingInput(input);
             return;
         }
         if (!ownsGround()) return;
@@ -200,10 +251,21 @@ public final class MovementClient {
     }
 
     public static boolean nativeSprint(KeyMapping mapping) {
+        if (mapping == Minecraft.getInstance().options.keySprint && swimmingContext()) return swimmingInput().fast();
         if (mapping != Minecraft.getInstance().options.keySprint || !ownsGround()) return mapping.isDown();
         return STATE.mode() == Mode.SPRINT && BindingInput.physicallyHeld(KEYS.get(Action.SPRINT));
     }
-    public static boolean canStartSprint() { return !ownsGround() || STATE.mode() == Mode.SPRINT; }
+    public static boolean canStartSprint() {
+        return swimmingContext() ? swimmingInput().fast() : !ownsGround() || STATE.mode() == Mode.SPRINT;
+    }
+    /** Run after vanilla sprint decisions and before LivingEntity applies water movement this tick. */
+    public static void beforeTravel(LocalPlayer player) {
+        if (player != Minecraft.getInstance().player || !swimmingContext()) return;
+        boolean fast = swimmingInput().fast() && !player.isUsingItem()
+                && !player.hasEffect(net.minecraft.world.effect.MobEffects.BLINDNESS)
+                && (player.getFoodData().getFoodLevel() > 6 || player.getAbilities().mayfly);
+        player.setSprinting(fast);
+    }
     public static void afterAiStep(LocalPlayer player) {
         if (player == Minecraft.getInstance().player && ownsGround()
                 && (STATE.mode() != Mode.SPRINT || !BindingInput.physicallyHeld(KEYS.get(Action.SPRINT)))) player.setSprinting(false);
@@ -228,6 +290,6 @@ public final class MovementClient {
             if (send && sentActive && mc.getConnection() != null) PacketDistributor.sendToServer(new MovementPayloads.Input(Mode.STAND, false));
         }
         sentMode = Mode.STAND; sentActive = false;
-        if (mc.player == null) wasRescuing = false;
+        if (mc.player == null) { wasRescuing = false; wasSwimming = false; }
     }
 }

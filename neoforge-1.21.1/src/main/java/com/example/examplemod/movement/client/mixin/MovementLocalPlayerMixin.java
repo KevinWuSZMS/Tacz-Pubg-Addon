@@ -17,7 +17,7 @@ abstract class MovementLocalPlayerMixin {
     @Inject(method = "aiStep", at = @At("HEAD"))
     private void taczPubg$beforeGroundInput(CallbackInfo ci) {
         MovementClient.beforeAiStep((LocalPlayer) (Object) this);
-        if (MovementClient.consumesJump()) {
+        if (MovementClient.consumesJump() || MovementClient.swimmingContext()) {
             autoJumpTime = 0;
             ((MovementPlayerAccess) this).taczPubg$setJumpTriggerTime(0);
         }
@@ -25,6 +25,10 @@ abstract class MovementLocalPlayerMixin {
     @Inject(method = "aiStep", at = @At("RETURN"))
     private void taczPubg$afterGroundInput(CallbackInfo ci) {
         MovementClient.afterAiStep((LocalPlayer) (Object) this);
+    }
+    @Inject(method = "aiStep", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/AbstractClientPlayer;aiStep()V"))
+    private void taczPubg$swimmingBeforeTravel(CallbackInfo ci) {
+        MovementClient.beforeTravel((LocalPlayer) (Object) this);
     }
     @Redirect(method = "aiStep", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/KeyMapping;isDown()Z"))
     private boolean taczPubg$groundSprintKey(KeyMapping mapping) { return MovementClient.nativeSprint(mapping); }
