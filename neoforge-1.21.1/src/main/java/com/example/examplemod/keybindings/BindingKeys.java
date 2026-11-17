@@ -13,6 +13,7 @@ import org.lwjgl.glfw.GLFW;
 public final class BindingKeys {
     private static final Map<String, Integer> CODES = new LinkedHashMap<>();
     private static final Map<Integer, String> IDS = new LinkedHashMap<>();
+    private static final Map<Integer, Integer> SCAN_CODES = new LinkedHashMap<>();
     static {
         for (char c = 'A'; c <= 'Z'; c++) add(String.valueOf(c), c);
         for (char c = '0'; c <= '9'; c++) add(String.valueOf(c), c);
@@ -56,7 +57,20 @@ public final class BindingKeys {
     }
 
     public static String fromKeyboard(int keysym, int scancode) {
+        if (keysym != GLFW.GLFW_KEY_UNKNOWN && scancode >= 0) SCAN_CODES.put(scancode, keysym);
         return fromKey(InputConstants.getKey(keysym, scancode));
+    }
+
+    /** GLFW polls key symbols, so translate a stored scan code using valid native keys only. */
+    static int keySymbol(int scan) {
+        if (scan < 0) return GLFW.GLFW_KEY_UNKNOWN;
+        return SCAN_CODES.computeIfAbsent(scan, value -> {
+            for (int code : CODES.values()) if (GLFW.glfwGetKeyScancode(code) == value) return code;
+            for (int code : new int[]{GLFW.GLFW_KEY_WORLD_1, GLFW.GLFW_KEY_WORLD_2}) {
+                if (GLFW.glfwGetKeyScancode(code) == value) return code;
+            }
+            return GLFW.GLFW_KEY_UNKNOWN;
+        });
     }
     public static String fromMouse(int button) { return "Mouse" + (button + 1); }
 

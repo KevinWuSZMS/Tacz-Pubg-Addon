@@ -55,7 +55,7 @@ final class ThrowableWheelScreen extends Screen {
 
     /** Consume each native movement in order, including movements before the release event. */
     void movePointer(double dx, double dy) {
-        if (closed || !cursorCaptured || !canChoose() || !BindingInput.physicallyHeld(trigger)) return;
+        if (closed || !cursorCaptured || !canChoose() || !BindingInput.pollHeld(trigger)) return;
         var window = minecraft.getWindow();
         if (GLFW.glfwGetInputMode(window.getWindow(), GLFW.GLFW_CURSOR) != GLFW.GLFW_CURSOR_DISABLED) return;
         pointer.move(dx * width / Math.max(1, window.getScreenWidth()),
@@ -65,8 +65,9 @@ final class ThrowableWheelScreen extends Screen {
     private boolean updateOpenState() {
         if (closed) return false;
         if (!canChoose()) { onClose(); return false; }
-        // Opening a Screen clears KeyMapping.isDown(), but not the physical trigger chord.
-        if (!BindingInput.physicallyHeld(trigger)) { choose(); return false; }
+        // Poll native state even if a cancelled callback left the logical key cache held.
+        ThrowableClient.releaseWheelTrigger();
+        if (closed) return false;
         if (GLFW.glfwGetInputMode(minecraft.getWindow().getWindow(), GLFW.GLFW_CURSOR) != GLFW.GLFW_CURSOR_DISABLED) {
             captureCursor();
         }
@@ -92,9 +93,8 @@ final class ThrowableWheelScreen extends Screen {
         return counts;
     }
 
-    private void choose() {
+    void confirmRelease() {
         if (closed) return;
-        ThrowableClient.releaseWheelTrigger();
         int hovered = pointer.hovered(RadialWheelRenderer.radius(bounds));
         String action = canChoose() && hovered >= 0 && counts()[hovered] > 0 ? entries.get(hovered).action : null;
         onClose();
@@ -104,11 +104,13 @@ final class ThrowableWheelScreen extends Screen {
     @Override public void onClose() {
         if (closed) return;
         closed = true;
+        ThrowableClient.wheelClosed();
         super.onClose();
     }
 
     @Override public void removed() {
         closed = true;
+        ThrowableClient.wheelClosed();
         if (cursorCaptured) {
             GLFW.glfwSetInputMode(minecraft.getWindow().getWindow(), GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
             minecraft.mouseHandler.setIgnoreFirstMove();
@@ -126,13 +128,13 @@ final class ThrowableWheelScreen extends Screen {
     }
 
     @Override public boolean mouseReleased(double x, double y, int button) {
-        if (!BindingInput.physicallyHeld(trigger)) choose();
+        ThrowableClient.releaseWheelTrigger();
         return true;
     }
 
     @Override public boolean keyReleased(int key, int scan, int modifiers) {
-        if (!BindingInput.physicallyHeld(trigger)) { choose(); return true; }
-        return super.keyReleased(key, scan, modifiers);
+        ThrowableClient.releaseWheelTrigger();
+        return true;
     }
 
     @Override public boolean keyPressed(int key, int scan, int modifiers) {

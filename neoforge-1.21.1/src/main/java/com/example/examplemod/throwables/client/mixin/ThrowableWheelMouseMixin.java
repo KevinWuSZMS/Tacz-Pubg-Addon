@@ -29,6 +29,6 @@ abstract class ThrowableWheelMouseMixin {
     @Inject(method = "onPress", at = @At("HEAD"))
     private void taczPubg$wheelButton(long window, int button, int action, int modifiers, CallbackInfo ci) {
         // PhysicalMouseMixin (priority 2000) has already recorded this release.
-        ThrowableClient.captureWheelMouseButton(window);
+        ThrowableClient.captureWheelMouseButton(window, button, action);
     }
 }

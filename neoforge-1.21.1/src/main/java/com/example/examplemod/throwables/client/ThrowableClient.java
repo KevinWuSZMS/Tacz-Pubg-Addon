@@ -45,6 +45,7 @@ public final class ThrowableClient {
     private static final KeyMapping MED = key("med_kit", GLFW.GLFW_KEY_7), AID = key("first_aid_kit", GLFW.GLFW_KEY_8),
             BANDAGE = key("bandage", GLFW.GLFW_KEY_9), BOOST = key("boost", GLFW.GLFW_KEY_0);
     private static final KeyMapping[] KEYS = {COOK, CANCEL, THROWABLE, WHEEL, WHEEL_ALT, MED_WHEEL, MED_WHEEL_ALT, MED, AID, BANDAGE, BOOST};
+    private static final KeyMapping[] WHEEL_KEYS = {WHEEL, WHEEL_ALT, MED_WHEEL, MED_WHEEL_ALT};
     private static int fuse = -1, quickTicks, quickSlot = -1;
     private static boolean quickStarted;
     private static boolean cookedHeld, cookedReleaseSent;
@@ -52,7 +53,7 @@ public final class ThrowableClient {
     private static ItemStack cookedVisual = ItemStack.EMPTY;
     private static ItemStack animationVisual = ItemStack.EMPTY;
     private static int animationTicks, animationSlot = -1;
-    private static KeyMapping wheelTrigger;
+    private static final RadialWheelInput<KeyMapping> WHEEL_INPUT = new RadialWheelInput<>();
     private ThrowableClient() {}
     private static KeyMapping key(String id, int code) { return new KeyMapping("key.tacz_pubg." + id, code, CATEGORY); }
     public static void register(IEventBus modBus) {
@@ -120,7 +121,7 @@ public final class ThrowableClient {
         wasSwimming = false;
         cookedHeld = cookedReleaseSent = false; cookedVisual = ItemStack.EMPTY;
         animationVisual = ItemStack.EMPTY; animationTicks = 0; animationSlot = -1;
-        cancelQuick(); wheelTrigger = null;
+        cancelQuick(); WHEEL_INPUT.clear();
     }
     /** Capture item controls before vanilla F1/F2 and numbered-hotbar actions run. */
     public static boolean captureKey(long window, int key, int scan, int action, int modifiers) {
@@ -144,6 +145,7 @@ public final class ThrowableClient {
                     && !com.example.examplemod.vitals.client.MedicineClient.pending()) return false;
             mapping.setDown(action != GLFW.GLFW_RELEASE);
             if (action == GLFW.GLFW_PRESS) {
+                if (BindingInput.freshPress(mapping, BindingInput.keyboardId(key, scan))) WHEEL_INPUT.pressed(mapping);
                 if (mapping == COOK) requestCook();
                 else if (mapping == CANCEL) requestCancel();
                 else if (mapping == THROWABLE) sendQuick("throwable");
@@ -167,13 +169,22 @@ public final class ThrowableClient {
         return false;
     }
 
-    public static void captureWheelMouseButton(long window) {
-        if (window == Minecraft.getInstance().getWindow().getWindow()) releaseWheelTrigger();
+    public static void captureWheelMouseButton(long window, int button, int action) {
+        if (window != Minecraft.getInstance().getWindow().getWindow()) return;
+        releaseWheelTrigger();
+        if (action == GLFW.GLFW_PRESS) {
+            for (var mapping : WHEEL_KEYS) {
+                if (mapping.matchesMouse(button) && BindingInput.freshPress(mapping, BindingInput.mouseId(button))) WHEEL_INPUT.pressed(mapping);
+            }
+        }
     }
 
     static void releaseWheelTrigger() {
-        if (wheelTrigger != null && !BindingInput.physicallyHeld(wheelTrigger)) wheelTrigger = null;
+        if (WHEEL_INPUT.release(BindingInput::pollHeld)
+                && Minecraft.getInstance().screen instanceof ThrowableWheelScreen screen) screen.confirmRelease();
     }
+
+    static void wheelClosed() { WHEEL_INPUT.cancel(); }
     private static void requestCook() {
         var mc = Minecraft.getInstance();
         if (mc.player != null && SwimmingGunRestrictions.blocked(mc.player)) return;
@@ -265,24 +276,23 @@ public final class ThrowableClient {
             while (THROWABLE.consumeClick()) {}
             while (MED.consumeClick()) {} while (AID.consumeClick()) {}
             while (BANDAGE.consumeClick()) {} while (BOOST.consumeClick()) {}
-            wheelTrigger = null; return;
+            WHEEL_INPUT.clear(); return;
         }
         while (THROWABLE.consumeClick()) sendQuick("throwable");
         while (MED.consumeClick()) sendQuick("med_kit");
         while (AID.consumeClick()) sendQuick("first_aid_kit");
         while (BANDAGE.consumeClick()) sendQuick("bandage");
         while (BOOST.consumeClick()) sendQuick("boost");
-        if (!mc.isWindowActive() || mc.getOverlay() != null || wheelTrigger != null) return;
+        if (!mc.isWindowActive() || mc.getOverlay() != null || WHEEL_INPUT.blocked()) return;
         KeyMapping trigger = wheelDown(WHEEL) ? WHEEL : wheelDown(WHEEL_ALT) ? WHEEL_ALT
                 : wheelDown(MED_WHEEL) ? MED_WHEEL : wheelDown(MED_WHEEL_ALT) ? MED_WHEEL_ALT : null;
-        if (trigger != null) {
-            wheelTrigger = trigger;
+        if (trigger != null && WHEEL_INPUT.tryOpen(trigger)) {
             cancelQuick();
             mc.setScreen(new ThrowableWheelScreen(trigger == MED_WHEEL || trigger == MED_WHEEL_ALT, trigger));
         }
     }
     private static boolean wheelDown(KeyMapping mapping) {
-        return mapping.isDown() && BindingInput.physicallyHeld(mapping);
+        return mapping.isDown() && BindingInput.pollHeld(mapping);
     }
 
     private static void cancelSwimmingThrowable() {

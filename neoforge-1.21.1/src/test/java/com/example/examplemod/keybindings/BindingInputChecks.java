@@ -5,6 +5,7 @@ import java.util.Set;
 
 /** Physical trigger scenarios; the transformed Minecraft event pipeline is checked in the client. */
 public final class BindingInputChecks {
+    private static int checks;
     public static void main(String[] args) {
         var chord = InputBinding.chord("ControlAny", "G");
         check(!BindingInput.held(chord, Set.of("G")), "G alone must not trigger Ctrl+G");
@@ -31,10 +32,25 @@ public final class BindingInputChecks {
         check(!BindingInput.modifiedVersion(List.of("ControlAny", "G"), List.of("ControlLeft")), "Modifier's own action remains independent");
         check(!BindingInput.modifiedVersion(List.of("ControlAny", "G"), List.of("ControlAny", "G")), "Identical chords can conflict and both fire");
         check(!BindingInput.modifiedVersion(List.of("G", "H"), List.of("G")), "Arbitrary two-key chord does not change modifier precedence");
-        System.out.println("BindingInputChecks: 22 physical input scenarios passed");
+        var staleEvents = Set.of("G", "ControlLeft", "Mouse4");
+        check(BindingInput.held(chord, staleEvents), "reproduce a cached chord with a lost release callback");
+        check(!BindingInput.pollHeld(chord, key -> false), "native release wins over the stale event cache");
+        check(BindingInput.pollHeld(chord, Set.of("G", "ControlRight")::contains), "native polling supports generic right Ctrl");
+        check(!BindingInput.pollHeld(chord, Set.of("G")::contains), "native modifier release ends a chord");
+        check(!BindingInput.pollHeld(chord, Set.of("ControlLeft")::contains), "native primary release ends a chord");
+        check(BindingInput.pollHeld(alternatives, Set.of("Mouse4")::contains), "remaining native mouse alternative keeps the wheel open");
+        check(!BindingInput.pollHeld(alternatives, key -> false), "native release of the final alternative closes the wheel");
+        check(!BindingInput.pollHeld(InputBinding.empty(), key -> true), "empty bindings never become held from native input");
+        check(!BindingInput.pollHeld(InputBinding.chord("ScanCode:99999"), key -> false), "unresolvable scan codes cannot latch a wheel");
+        check(!BindingInput.pollHeld(InputBinding.chord("G"), Set.of("G")::contains, "G"), "a fresh single-key press can rearm after a missed release");
+        check(BindingInput.pollHeld(alternatives, Set.of("G", "Mouse4")::contains, "Mouse4"), "a second alternative does not rearm while the first remains held");
+        check(BindingInput.pollHeld(chord, Set.of("G", "ControlLeft", "ControlRight")::contains, "ControlRight"), "second Ctrl does not rearm an already complete generic chord");
+        check(!BindingInput.pollHeld(chord, Set.of("G", "ControlRight")::contains, "ControlRight"), "completing a previously released chord rearms it");
+        System.out.println("BindingInputChecks: " + checks + " physical input scenarios passed");
     }
 
     private static void check(boolean condition, String scenario) {
+        checks++;
         if (!condition) throw new AssertionError(scenario);
     }
 }

@@ -8,6 +8,7 @@ public final class RadialWheelChecks {
     private static int checks;
 
     public static void main(String[] args) throws Exception {
+        RadialWheelInputChecks.main(args);
         check(RadialWheelLayout.actions(false).equals(List.of("frag_grenade", "sticky_bomb", "stun_grenade",
                 "smoke_grenade", "molotov", "blue_zone_grenade")), "throwables follow the requested six-slot order");
         check(RadialWheelLayout.actions(true).equals(List.of("bandage", "first_aid_kit", "med_kit",
