@@ -1,6 +1,7 @@
 package com.example.examplemod.throwables.client;
 
 import com.example.examplemod.localization.Texts;
+import com.example.examplemod.keybindings.BindingInput;
 import com.example.examplemod.throwables.PubgThrowableEntity;
 import com.example.examplemod.throwables.PubgThrowableItem;
 import com.example.examplemod.throwables.ThrowableSettingsService;
@@ -43,7 +44,7 @@ public final class ThrowableClient {
     private static final KeyMapping MED = key("med_kit", GLFW.GLFW_KEY_7), AID = key("first_aid_kit", GLFW.GLFW_KEY_8),
             BANDAGE = key("bandage", GLFW.GLFW_KEY_9), BOOST = key("boost", GLFW.GLFW_KEY_0);
     private static final KeyMapping[] KEYS = {COOK, CANCEL, THROWABLE, WHEEL, WHEEL_ALT, MED_WHEEL, MED_WHEEL_ALT, MED, AID, BANDAGE, BOOST};
-    private static int fuse = -1, wheelHeld, quickTicks, quickSlot = -1;
+    private static int fuse = -1, quickTicks, quickSlot = -1;
     private static boolean quickStarted;
     private static boolean cookedHeld, cookedReleaseSent;
     private static ItemStack cookedVisual = ItemStack.EMPTY;
@@ -113,7 +114,7 @@ public final class ThrowableClient {
     }
     private static void clear() {
         ThrowableTrajectoryClient.clear();
-        wheelHeld = 0; fuse = -1;
+        fuse = -1;
         cookedHeld = cookedReleaseSent = false; cookedVisual = ItemStack.EMPTY;
         animationVisual = ItemStack.EMPTY; animationTicks = 0; animationSlot = -1;
         cancelQuick(); wheelTrigger = null;
@@ -123,6 +124,7 @@ public final class ThrowableClient {
         var mc = Minecraft.getInstance();
         if (mc.player == null || !mc.player.isAlive() || mc.player.isSpectator()
                 || window != mc.getWindow().getWindow()) return false;
+        releaseWheelTrigger();
         if (mc.screen instanceof ThrowableWheelScreen screen) {
             for (KeyMapping mapping : KEYS) if (mapping.matches(key, scan)) {
                 mapping.setDown(action != GLFW.GLFW_RELEASE);
@@ -150,6 +152,24 @@ public final class ThrowableClient {
             return true;
         }
         return false;
+    }
+
+    /** Wheel movement uses native event order without enabling MouseHandler's camera capture. */
+    public static boolean captureWheelMouseMovement(long window, double dx, double dy) {
+        var mc = Minecraft.getInstance();
+        if (window == mc.getWindow().getWindow() && mc.screen instanceof ThrowableWheelScreen screen) {
+            screen.movePointer(dx, dy);
+            return true;
+        }
+        return false;
+    }
+
+    public static void captureWheelMouseButton(long window) {
+        if (window == Minecraft.getInstance().getWindow().getWindow()) releaseWheelTrigger();
+    }
+
+    static void releaseWheelTrigger() {
+        if (wheelTrigger != null && !BindingInput.physicallyHeld(wheelTrigger)) wheelTrigger = null;
     }
     private static void requestCook() {
         var mc = Minecraft.getInstance();
@@ -212,6 +232,8 @@ public final class ThrowableClient {
     private static void tick() {
         var mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null) { clear(); return; }
+        // Keep a cancelled wheel closed until its trigger is physically released.
+        releaseWheelTrigger();
         if (quickTicks > 0 && mc.screen != null) requestCancel();
         if (mc.isPaused() || MatchVitalsHud.paused()) return;
         if (fuse > 0) fuse--;
@@ -237,25 +259,24 @@ public final class ThrowableClient {
             while (THROWABLE.consumeClick()) {}
             while (MED.consumeClick()) {} while (AID.consumeClick()) {}
             while (BANDAGE.consumeClick()) {} while (BOOST.consumeClick()) {}
-            wheelHeld = 0; wheelTrigger = null; return;
+            wheelTrigger = null; return;
         }
         while (THROWABLE.consumeClick()) sendQuick("throwable");
         while (MED.consumeClick()) sendQuick("med_kit");
         while (AID.consumeClick()) sendQuick("first_aid_kit");
         while (BANDAGE.consumeClick()) sendQuick("bandage");
         while (BOOST.consumeClick()) sendQuick("boost");
-        KeyMapping trigger = WHEEL.isDown() ? WHEEL : WHEEL_ALT.isDown() ? WHEEL_ALT
-                : MED_WHEEL.isDown() ? MED_WHEEL : MED_WHEEL_ALT.isDown() ? MED_WHEEL_ALT : null;
+        if (!mc.isWindowActive() || mc.getOverlay() != null || wheelTrigger != null) return;
+        KeyMapping trigger = wheelDown(WHEEL) ? WHEEL : wheelDown(WHEEL_ALT) ? WHEEL_ALT
+                : wheelDown(MED_WHEEL) ? MED_WHEEL : wheelDown(MED_WHEEL_ALT) ? MED_WHEEL_ALT : null;
         if (trigger != null) {
-            if (wheelTrigger != trigger) { wheelHeld = 0; wheelTrigger = trigger; }
-            if (++wheelHeld == 5) {
-                cancelQuick();
-                mc.setScreen(new ThrowableWheelScreen(trigger == MED_WHEEL || trigger == MED_WHEEL_ALT, trigger));
-            }
-        } else {
-            if (wheelHeld > 0 && wheelHeld < 5 && (wheelTrigger == WHEEL || wheelTrigger == WHEEL_ALT)) sendQuick("throwable");
-            wheelHeld = 0; wheelTrigger = null;
+            wheelTrigger = trigger;
+            cancelQuick();
+            mc.setScreen(new ThrowableWheelScreen(trigger == MED_WHEEL || trigger == MED_WHEEL_ALT, trigger));
         }
+    }
+    private static boolean wheelDown(KeyMapping mapping) {
+        return mapping.isDown() && BindingInput.physicallyHeld(mapping);
     }
     private static void render(GuiGraphics graphics) {
         var mc = Minecraft.getInstance();

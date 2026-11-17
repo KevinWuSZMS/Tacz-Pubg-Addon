@@ -2505,7 +2505,7 @@
   "screen.tacz_pubg.throwable.throw_hint": "按住使用准备，松开投掷；潜行时低抛。",
   "screen.tacz_pubg.throwable.throwable_wheel": "投掷物",
   "screen.tacz_pubg.throwable.underhand": "低抛",
-  "screen.tacz_pubg.throwable.wheel_hint": "指向物品后松开按键或左键选择 · 右键取消",
+  "screen.tacz_pubg.throwable.wheel_hint": "按住按键移动鼠标选择 · 松开确认 · 右键取消",
   "screen.tacz_pubg.throwable_settings.back": "返回设置",
   "screen.tacz_pubg.throwable_settings.complete_json": "完整属性 JSON",
   "screen.tacz_pubg.throwable_settings.discard": "放弃未保存的投掷物设置？",

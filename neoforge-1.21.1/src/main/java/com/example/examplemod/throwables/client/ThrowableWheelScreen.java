@@ -2,8 +2,8 @@ package com.example.examplemod.throwables.client;
 
 import com.example.examplemod.hud.client.HudLayoutClient;
 import com.example.examplemod.hud.client.HudLayoutModel;
+import com.example.examplemod.keybindings.BindingInput;
 import com.example.examplemod.localization.Texts;
-import com.mojang.blaze3d.platform.InputConstants;
 import java.util.List;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.gui.GuiGraphics;
@@ -12,7 +12,6 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import org.lwjgl.glfw.GLFW;
-import org.lwjgl.system.MemoryStack;
 
 /** Hold-and-release radial selection with a hidden relative pointer and a neutral center. */
 final class ThrowableWheelScreen extends Screen {
@@ -22,8 +21,7 @@ final class ThrowableWheelScreen extends Screen {
     private final boolean medicine;
     private final RadialWheelLayout.Pointer pointer = new RadialWheelLayout.Pointer();
     private HudLayoutModel.Rect bounds;
-    private double lastMouseX, lastMouseY;
-    private boolean cursorCaptured, committed;
+    private boolean cursorCaptured, closed;
 
     ThrowableWheelScreen(boolean medicine, KeyMapping trigger) {
         super(Texts.of(medicine ? "screen.tacz_pubg.throwable.medicine_wheel" : "screen.tacz_pubg.throwable.throwable_wheel"));
@@ -39,9 +37,7 @@ final class ThrowableWheelScreen extends Screen {
                 defaults.x(), defaults.y(), defaults.width(), defaults.height());
         pointer.reset();
         // Keep MouseHandler ungrabbed: grabMouse() closes screens and enables camera turning.
-        GLFW.glfwSetInputMode(minecraft.getWindow().getWindow(), GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
-        cursorCaptured = true;
-        samplePointer(true);
+        captureCursor();
     }
 
     @Override public boolean isPauseScreen() { return false; }
@@ -51,51 +47,68 @@ final class ThrowableWheelScreen extends Screen {
                 && !minecraft.player.isSpectator() && minecraft.level != null;
     }
 
-    private void samplePointer(boolean reset) {
-        if (!cursorCaptured) return;
+    private void captureCursor() {
+        minecraft.mouseHandler.setIgnoreFirstMove();
+        GLFW.glfwSetInputMode(minecraft.getWindow().getWindow(), GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
+        cursorCaptured = true;
+    }
+
+    /** Consume each native movement in order, including movements before the release event. */
+    void movePointer(double dx, double dy) {
+        if (closed || !cursorCaptured || !canChoose() || !BindingInput.physicallyHeld(trigger)) return;
         var window = minecraft.getWindow();
-        try (var memory = MemoryStack.stackPush()) {
-            var x = memory.mallocDouble(1);
-            var y = memory.mallocDouble(1);
-            GLFW.glfwGetCursorPos(window.getWindow(), x, y);
-            double currentX = x.get(0), currentY = y.get(0);
-            if (!reset) pointer.move((currentX - lastMouseX) * width / window.getScreenWidth(),
-                    (currentY - lastMouseY) * height / window.getScreenHeight(), RadialWheelRenderer.radius(bounds));
-            lastMouseX = currentX;
-            lastMouseY = currentY;
+        if (GLFW.glfwGetInputMode(window.getWindow(), GLFW.GLFW_CURSOR) != GLFW.GLFW_CURSOR_DISABLED) return;
+        pointer.move(dx * width / Math.max(1, window.getScreenWidth()),
+                dy * height / Math.max(1, window.getScreenHeight()), RadialWheelRenderer.radius(bounds));
+    }
+
+    private boolean updateOpenState() {
+        if (closed) return false;
+        if (!canChoose()) { onClose(); return false; }
+        // Opening a Screen clears KeyMapping.isDown(), but not the physical trigger chord.
+        if (!BindingInput.physicallyHeld(trigger)) { choose(); return false; }
+        if (GLFW.glfwGetInputMode(minecraft.getWindow().getWindow(), GLFW.GLFW_CURSOR) != GLFW.GLFW_CURSOR_DISABLED) {
+            captureCursor();
         }
+        return true;
     }
 
     @Override public void tick() {
-        if (!canChoose()) { onClose(); return; }
-        // Opening a Screen clears KeyMapping.isDown(), so inspect the physical trigger instead.
-        if (!com.example.examplemod.keybindings.BindingInput.physicallyHeld(trigger)) choose();
+        updateOpenState();
     }
 
     @Override public void render(GuiGraphics graphics, int mouseX, int mouseY, float partial) {
-        if (!canChoose()) { onClose(); return; }
-        samplePointer(false);
+        if (!updateOpenState()) return;
+        RadialWheelRenderer.draw(graphics, bounds, medicine, pointer.hovered(RadialWheelRenderer.radius(bounds)), counts());
+    }
+
+    private int[] counts() {
         int[] counts = new int[RadialWheelLayout.SLOT_COUNT];
         var inventory = minecraft.player.getInventory();
         for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
             var stack = inventory.getItem(slot);
             for (int i = 0; i < entries.size(); i++) if (stack.is(entries.get(i).item)) counts[i] += stack.getCount();
         }
-        RadialWheelRenderer.draw(graphics, bounds, medicine, pointer.hovered(RadialWheelRenderer.radius(bounds)), counts);
+        return counts;
     }
 
     private void choose() {
-        // A release may arrive before this frame's render/mouseMoved callback; include the final flick.
-        samplePointer(false);
+        if (closed) return;
+        ThrowableClient.releaseWheelTrigger();
         int hovered = pointer.hovered(RadialWheelRenderer.radius(bounds));
-        if (!committed && canChoose() && hovered >= 0) {
-            committed = true;
-            ThrowableClient.sendQuick(entries.get(hovered).action);
-        }
+        String action = canChoose() && hovered >= 0 && counts()[hovered] > 0 ? entries.get(hovered).action : null;
         onClose();
+        if (action != null) ThrowableClient.sendQuick(action);
+    }
+
+    @Override public void onClose() {
+        if (closed) return;
+        closed = true;
+        super.onClose();
     }
 
     @Override public void removed() {
+        closed = true;
         if (cursorCaptured) {
             GLFW.glfwSetInputMode(minecraft.getWindow().getWindow(), GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
             minecraft.mouseHandler.setIgnoreFirstMove();
@@ -108,18 +121,17 @@ final class ThrowableWheelScreen extends Screen {
 
     @Override public boolean mouseClicked(double x, double y, int button) {
         if (trigger.matchesMouse(button)) return true;
-        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) { choose(); return true; }
         if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) { onClose(); return true; }
         return true;
     }
 
     @Override public boolean mouseReleased(double x, double y, int button) {
-        if (trigger.matchesMouse(button) && !com.example.examplemod.keybindings.BindingInput.physicallyHeld(trigger)) choose();
+        if (!BindingInput.physicallyHeld(trigger)) choose();
         return true;
     }
 
     @Override public boolean keyReleased(int key, int scan, int modifiers) {
-        if (trigger.matches(key, scan) && !com.example.examplemod.keybindings.BindingInput.physicallyHeld(trigger)) { choose(); return true; }
+        if (!BindingInput.physicallyHeld(trigger)) { choose(); return true; }
         return super.keyReleased(key, scan, modifiers);
     }
 
