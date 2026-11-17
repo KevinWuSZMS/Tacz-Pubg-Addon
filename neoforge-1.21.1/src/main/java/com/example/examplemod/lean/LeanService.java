@@ -1,6 +1,7 @@
 package com.example.examplemod.lean;
 
 import com.example.examplemod.movement.MovementService;
+import com.example.examplemod.movement.MatchSwimming;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
@@ -38,7 +39,8 @@ public final class LeanService {
 
     public static boolean eligible(Player player) {
         return MovementService.eligible(player) && !player.isSprinting()
-                && !(player.isInWater() && (player.isSwimming() || player.getPose() == net.minecraft.world.entity.Pose.SWIMMING))
+                && !player.isSwimming() && !MatchSwimming.swimming(player)
+                && (!player.isInWater() || player.onGround())
                 && !com.example.examplemod.combat.CombatService.blocked(player);
     }
 

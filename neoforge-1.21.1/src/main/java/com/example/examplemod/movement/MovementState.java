@@ -1,6 +1,7 @@
 package com.example.examplemod.movement;
 
 import java.util.EnumSet;
+import java.util.Objects;
 
 /** Input-edge reducer: an older held action never reasserts itself over a newer action. */
 public final class MovementState {
@@ -17,6 +18,15 @@ public final class MovementState {
 
     /** Keep existing key latches: an old held key must not undo the server's rescue crouch. */
     public void adoptRescueCrouch() { mode = Mode.CROUCH; consumeJump = false; }
+
+    /** Apply an environment restriction without inventing releases or reviving older held actions. */
+    public boolean constrainMode(Mode legalMode) {
+        Objects.requireNonNull(legalMode, "legalMode");
+        if (mode == legalMode) return false;
+        mode = legalMode;
+        consumeJump = false;
+        return true;
+    }
 
     public void press(Action action) { press(action, false); }
     public void press(Action action, boolean externallyLowered) {

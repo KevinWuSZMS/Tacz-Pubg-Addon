@@ -9,6 +9,7 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 
@@ -28,6 +29,7 @@ public final class SwimmingInputChecks {
         retainedMotion();
         nativeHooks();
         implementationHooks();
+        wadingInputHooks();
         clientRegistration();
         System.out.println("SwimmingInputChecks: " + checks + " input and native hook checks passed; no game launched.");
     }
@@ -122,7 +124,11 @@ public final class SwimmingInputChecks {
             }
         }
         check(finalSprintAt >= 0 && finalSprintAt < movementAt,
-                "fast-swim restoration runs after every vanilla sprint start/cancel decision");
+                "authorized water sprint restoration runs after every vanilla sprint start/cancel decision");
+        // LocalPlayer.aiStep cancels non-swimming sprint at the waterline. Its collision gate
+        // distinguishes a blocking wall from a minor glancing collision; the late hook retains it.
+        field(ENTITY, "horizontalCollision", "Z");
+        field(ENTITY, "minorHorizontalCollision", "Z");
         method(LOCAL, "canStartSprinting", "()Z");
         method(LOCAL, "canAutoJump", "()Z");
         call(method(LOCAL, "updateAutoJump", "(FF)V"), LOCAL, "canAutoJump", "()Z", Opcodes.INVOKEVIRTUAL);
@@ -192,6 +198,66 @@ public final class SwimmingInputChecks {
                 "(Lnet/minecraft/world/phys/Vec3;Lnet/minecraft/world/entity/MoverType;Lnet/minecraft/world/phys/Vec3;)Lnet/minecraft/world/phys/Vec3;");
         call(surface, "com/example/examplemod/movement/MatchSwimming", "limitSurfaceRise",
                 "(Lnet/minecraft/world/entity/player/Player;Lnet/minecraft/world/phys/Vec3;)Lnet/minecraft/world/phys/Vec3;", Opcodes.INVOKESTATIC);
+    }
+
+    private static void wadingInputHooks() throws Exception {
+        var client = load(CLIENT);
+        check(client.methods.stream().noneMatch(method -> method.name.equals("wadingInput")),
+                "wading has no separate directional-input slowdown path");
+        boolean automaticallyWalks = false;
+        for (var method : client.methods) {
+            for (var instruction : method.instructions) {
+                if (!(instruction instanceof FieldInsnNode field) || field.getOpcode() != Opcodes.GETSTATIC
+                        || !field.owner.equals("com/example/examplemod/movement/MovementState$Action")
+                        || !field.name.equals("WALK")) continue;
+                for (var next = instruction.getNext(); next != null; next = next.getNext()) {
+                    if (!(next instanceof MethodInsnNode call)) continue;
+                    if (call.owner.equals("com/example/examplemod/movement/MovementState") && call.name.equals("press"))
+                        automaticallyWalks = true;
+                    break;
+                }
+            }
+        }
+        check(!automaticallyWalks, "water entry never synthesizes a WALK press; walking requires the user's action");
+
+        var jump = method(CLIENT, "wadingJump", "(Lnet/minecraft/client/player/Input;)V");
+        int inputWrites = 0;
+        boolean changesDirections = false, readsSpeed = false;
+        for (var instruction : jump.instructions) {
+            if (instruction instanceof FieldInsnNode field && field.getOpcode() == Opcodes.PUTFIELD) {
+                inputWrites++;
+                if (!field.owner.equals("net/minecraft/client/player/Input") || !field.name.equals("jumping")
+                        || !field.desc.equals("Z")) changesDirections = true;
+            }
+            if (instruction instanceof MethodInsnNode call && call.name.equals("getAttributeValue")) readsSpeed = true;
+        }
+        check(inputWrites == 1 && !changesDirections && !readsSpeed,
+                "the wading helper controls only jumping, with no XZ input or speed multiplier");
+        call(jump, "com/example/examplemod/movement/MatchSwimming", "canClimbOut",
+                "(Lnet/minecraft/world/entity/player/Player;)Z", Opcodes.INVOKESTATIC);
+
+        var restrict = method(CLIENT, "enforceWaterMode", "()V");
+        call(restrict, "com/example/examplemod/movement/MatchSwimming", "legalGroundMode",
+                "(Lnet/minecraft/world/entity/player/Player;Lcom/example/examplemod/movement/MovementState$Mode;)Lcom/example/examplemod/movement/MovementState$Mode;",
+                Opcodes.INVOKESTATIC);
+        call(restrict, "com/example/examplemod/movement/MovementState", "constrainMode",
+                "(Lcom/example/examplemod/movement/MovementState$Mode;)Z", Opcodes.INVOKEVIRTUAL);
+        boolean resetsHeld = false;
+        for (var instruction : restrict.instructions) {
+            if (instruction instanceof MethodInsnNode call && call.owner.equals("com/example/examplemod/movement/MovementState")
+                    && call.name.equals("reset")) resetsHeld = true;
+        }
+        check(!resetsHeld, "crossing a shallow-water depth boundary preserves held-key ordering");
+
+        var travel = method(CLIENT, "beforeTravel", "(Lnet/minecraft/client/player/LocalPlayer;)V");
+        boolean checksBlockingCollision = false, checksMinorCollision = false;
+        for (var instruction : travel.instructions) {
+            if (!(instruction instanceof FieldInsnNode field) || field.getOpcode() != Opcodes.GETFIELD) continue;
+            if (field.name.equals("horizontalCollision") && field.desc.equals("Z")) checksBlockingCollision = true;
+            if (field.name.equals("minorHorizontalCollision") && field.desc.equals("Z")) checksMinorCollision = true;
+        }
+        check(checksBlockingCollision && checksMinorCollision,
+                "restoring shallow sprint retains vanilla's blocking-wall versus glancing-collision gate");
     }
 
     private static void clientRegistration() throws Exception {

@@ -3,8 +3,10 @@ package com.example.examplemod.zones.match;
 import com.example.examplemod.combat.CombatService;
 import com.example.examplemod.lean.LeanService;
 import com.example.examplemod.movement.MatchSwimming;
+import com.example.examplemod.movement.MatchSwimming.DepthBand;
 import com.example.examplemod.movement.MovementService;
 import com.example.examplemod.movement.MovementState.Mode;
+import com.example.examplemod.movement.SwimmingGunRestrictions;
 import com.example.examplemod.zones.MapZoneModel;
 import com.mojang.authlib.GameProfile;
 import java.util.LinkedHashMap;
@@ -48,9 +50,11 @@ public final class MatchSwimmingGameTests {
             for (Mode requested : new Mode[] { Mode.CROUCH, Mode.PRONE, Mode.SPRINT }) {
                 MovementService.input(f.player, requested, true);
                 f.player.samplePose();
-                helper.assertTrue(MovementService.mode(f.player) == Mode.WALK && f.player.getPose() == Pose.STANDING
+                Mode expected = requested == Mode.CROUCH ? Mode.CROUCH : Mode.STAND;
+                Pose expectedPose = requested == Mode.CROUCH ? Pose.CROUCHING : Pose.STANDING;
+                helper.assertTrue(MovementService.mode(f.player) == expected && f.player.getPose() == expectedPose
                                 && !f.player.isSprinting(),
-                        "Shallow water did not retain standing walking for " + requested);
+                        "One-block water did not enforce crouch-only stance permission for " + requested);
             }
             helper.assertTrue(LeanService.eligible(f.player), "Shallow grounded water blocked leaning");
             f.player.setYRot(-90);
@@ -104,6 +108,100 @@ public final class MatchSwimmingGameTests {
                     "Two-block water must swim while grounded without requesting sprint");
             helper.assertTrue(!MovementService.eligible(f.player) && !LeanService.eligible(f.player),
                     "Deep grounded swimming retained ground stance or leaning");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", templateNamespace = "movement_swimming")
+    public static void waterDepthBandsPreserveLegalStancesAndCorrectCrossings(GameTestHelper helper) throws Exception {
+        helper.assertTrue(MatchSwimming.depthBand(.5) == DepthBand.ANKLE
+                        && MatchSwimming.depthBand(Math.nextUp(.5)) == DepthBand.KNEE
+                        && MatchSwimming.depthBand(1) == DepthBand.KNEE
+                        && MatchSwimming.depthBand(Math.nextUp(1.0)) == DepthBand.WAIST
+                        && MatchSwimming.depthBand(1.5) == DepthBand.WAIST
+                        && MatchSwimming.depthBand(Math.nextUp(1.5)) == DepthBand.DEEP,
+                "A depth-band equality boundary was rounded into the next band");
+        try (Fixture f = new Fixture(helper)) {
+            f.pool(1);
+            f.put(f.origin, Blocks.OAK_SLAB.defaultBlockState().setValue(SlabBlock.TYPE, SlabType.BOTTOM)
+                    .setValue(SlabBlock.WATERLOGGED, true));
+            f.place(.5, true);
+            f.player.samplePose();
+            helper.assertTrue(MatchSwimming.depthBand(f.player) == DepthBand.ANKLE,
+                    "Shallow water above a bottom slab was not in the <=.5 band");
+            for (Mode requested : new Mode[] { Mode.SPRINT, Mode.CROUCH, Mode.PRONE }) {
+                MovementService.input(f.player, requested, true);
+                f.player.setSprinting(requested == Mode.SPRINT);
+                for (int tick = 0; tick < 3; tick++) f.player.samplePose();
+                Pose expected = requested == Mode.PRONE ? Pose.SWIMMING
+                        : requested == Mode.CROUCH ? Pose.CROUCHING : Pose.STANDING;
+                helper.assertTrue(MovementService.mode(f.player) == requested && f.player.getPose() == expected
+                                && f.player.isSprinting() == (requested == Mode.SPRINT)
+                                && !f.player.isSwimming() && !SwimmingGunRestrictions.blocked(f.player),
+                        "The <=.5 band lost a legal stance or misclassified shallow prone as swimming: " + requested);
+                if (requested != Mode.SPRINT)
+                    helper.assertTrue(LeanService.eligible(f.player), "Legal shallow-water stance blocked grounded leaning");
+            }
+            f.player.setOnGround(false);
+            f.player.samplePose();
+            helper.assertTrue(MovementService.mode(f.player) == Mode.PRONE && f.player.getPose() == Pose.SWIMMING
+                            && !f.player.isSwimming() && !LeanService.eligible(f.player),
+                    "Unsupported shallow-water prone lost its stance or incorrectly allowed leaning");
+
+            // Keep the old PRONE metadata: only the water changes, with no new stance packet.
+            f.pool(1);
+            f.place(0, true);
+            f.player.samplePose();
+            helper.assertTrue(MatchSwimming.depthBand(f.player) == DepthBand.KNEE
+                            && MovementService.mode(f.player) == Mode.STAND && f.player.getPose() == Pose.STANDING,
+                    "Crossing .5 did not automatically return an existing prone stance to STAND");
+            MovementService.input(f.player, Mode.CROUCH, true);
+            f.player.samplePose();
+            helper.assertTrue(f.player.getPose() == Pose.CROUCHING && MovementService.mode(f.player) == Mode.CROUCH,
+                    "The (.5,1] band rejected crouching");
+            f.pool(2);
+            f.put(f.origin, Blocks.OAK_SLAB.defaultBlockState().setValue(SlabBlock.TYPE, SlabType.BOTTOM)
+                    .setValue(SlabBlock.WATERLOGGED, true));
+            f.place(.5, true);
+            f.player.samplePose();
+            helper.assertTrue(MatchSwimming.depthBand(f.player) == DepthBand.WAIST
+                            && MovementService.mode(f.player) == Mode.STAND && f.player.getPose() == Pose.STANDING,
+                    "Crossing 1 did not automatically return an existing crouch stance to STAND");
+            for (Mode requested : new Mode[] { Mode.SPRINT, Mode.CROUCH, Mode.PRONE }) {
+                MovementService.input(f.player, requested, true);
+                f.player.samplePose();
+                helper.assertTrue(MovementService.mode(f.player) == Mode.STAND && f.player.getPose() == Pose.STANDING
+                                && !f.player.isSwimming() && !SwimmingGunRestrictions.blocked(f.player),
+                        "The (1,1.5] band did not use STAND for " + requested);
+            }
+            MovementService.input(f.player, Mode.WALK, true);
+            helper.assertTrue(MovementService.mode(f.player) == Mode.WALK, "Explicit manual walking was disabled");
+
+            // Exact boundaries are made from real waterlogged collision intervals.
+            // A small player fits below the slab ceiling; scale must not change the band.
+            MovementService.clear(f.player);
+            f.player.getAttribute(Attributes.SCALE).setBaseValue(.2);
+            f.player.refreshDimensions();
+            f.pool(1);
+            f.put(f.origin, Blocks.OAK_SLAB.defaultBlockState().setValue(SlabBlock.TYPE, SlabType.TOP)
+                    .setValue(SlabBlock.WATERLOGGED, true));
+            f.place(0, true);
+            f.player.samplePose();
+            helper.assertTrue(MatchSwimming.depthBand(f.player) == DepthBand.ANKLE
+                            && MatchSwimming.depthAtLeast(f.player, .5)
+                            && !MatchSwimming.depthAtLeast(f.player, .5001),
+                    "Exactly .5 blocks of real water did not remain in the unrestricted band");
+            f.pool(2);
+            f.put(f.origin, Blocks.OAK_SLAB.defaultBlockState().setValue(SlabBlock.TYPE, SlabType.BOTTOM)
+                    .setValue(SlabBlock.WATERLOGGED, true));
+            f.put(f.origin.above(), Blocks.OAK_SLAB.defaultBlockState().setValue(SlabBlock.TYPE, SlabType.TOP)
+                    .setValue(SlabBlock.WATERLOGGED, true));
+            f.place(.5, true);
+            f.player.samplePose();
+            helper.assertTrue(MatchSwimming.depthBand(f.player) == DepthBand.KNEE
+                            && MatchSwimming.depthAtLeast(f.player, 1)
+                            && !MatchSwimming.depthAtLeast(f.player, 1.0001),
+                    "Exactly 1 block of real water did not retain crouching permission");
         }
         helper.succeed();
     }
@@ -217,6 +315,7 @@ public final class MatchSwimmingGameTests {
             f.player.samplePose();
             helper.assertTrue(MatchSwimming.depthAtLeast(f.player, 1.5)
                             && !MatchSwimming.depthAtLeast(f.player, 1.5001)
+                            && MatchSwimming.depthBand(f.player) == DepthBand.WAIST
                             && !MatchSwimming.hasSwimmingDepth(f.player) && !f.player.isSwimming(),
                     "Exactly 1.5 blocks of traversable water must remain below the swimming threshold");
         }

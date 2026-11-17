@@ -22,11 +22,7 @@ public final class MovementService {
         bus.addListener(EventPriority.LOWEST, (PlayerTickEvent.Pre event) -> {
             if (!(event.getEntity() instanceof ServerPlayer player)) return;
             MatchSwimming.syncParticipation(player);
-            if (MatchSwimming.wading(player)) {
-                update(player, MovementModes.encode(Mode.WALK, true), false);
-                player.setSprinting(false);
-                return;
-            }
+            reconcileWater(player);
             byte state = data(player).taczPubg$movementMode();
             if (state == 0) return;
             if (!eligible(player)) clear(player);
@@ -62,7 +58,7 @@ public final class MovementService {
 
     /** Local prediction uses exactly the same metadata as the later server acknowledgement. */
     public static void predict(Player player, Mode mode, boolean active) {
-        if (MatchSwimming.wading(player)) { mode = Mode.WALK; active = true; }
+        mode = MatchSwimming.legalGroundMode(player, mode);
         update(player, MovementModes.authorize(mode, active, eligible(player)), false);
     }
 
@@ -70,7 +66,7 @@ public final class MovementService {
         // Stance input ends rescue before the new stance is authorized and applied.
         if (CombatService.rescuing(player) && (!active || mode != Mode.CROUCH))
             CombatService.rescue(player, player.getUUID(), true);
-        if (MatchSwimming.wading(player)) { mode = Mode.WALK; active = true; }
+        mode = MatchSwimming.legalGroundMode(player, mode);
         // Force a metadata acknowledgement even when rejection leaves the server's old value unchanged.
         update(player, MovementModes.authorize(mode, active, eligible(player)), true);
     }
@@ -83,6 +79,17 @@ public final class MovementService {
     }
 
     public static void clear(Player player) { update(player, (byte) 0, false); }
+
+    /** Crossing a depth boundary also corrects an already-held stance without another packet. */
+    public static void reconcileWater(Player player) {
+        var band = MatchSwimming.depthBand(player);
+        if (band == MatchSwimming.DepthBand.DRY || band == MatchSwimming.DepthBand.DEEP) return;
+        byte previous = data(player).taczPubg$movementMode();
+        Mode current = MovementModes.decode(previous);
+        Mode legal = MatchSwimming.legalGroundMode(player, current);
+        if (legal != current) update(player, MovementModes.encode(legal, previous != 0), false);
+        if (MatchSwimming.legalGroundMode(player, Mode.SPRINT) != Mode.SPRINT) player.setSprinting(false);
+    }
 
     private static void reset(Player player) {
         clear(player);

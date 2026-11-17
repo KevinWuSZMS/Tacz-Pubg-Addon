@@ -84,6 +84,7 @@ public final class ThrowableService {
         var states = HELD.get(p.server); return states == null ? null : states.remove(p.getUUID());
     }
     private static boolean canUse(ServerPlayer p) {
+        if (com.example.examplemod.movement.SwimmingGunRestrictions.blocked(p)) return false;
         if (com.example.examplemod.combat.CombatService.actionBlocked(p)) return false;
         if (!p.isAlive() || p.isSpectator() || !p.server.tickRateManager().runsNormally()
                 || MapResetService.isLocked(p.serverLevel(), p.blockPosition())) return false;
@@ -164,6 +165,9 @@ public final class ThrowableService {
         return held != null && held.cooked >= 0;
     }
     private static void releaseNow(ServerPlayer p, boolean dropped) {
+        // An already paid grenade keeps its fuse, but entering deep water can only drop
+        // it. An unpinned preparation is cancelled without taking inventory supply.
+        dropped |= com.example.examplemod.movement.SwimmingGunRestrictions.blocked(p);
         Held held = remove(p);
         if (held == null) return;
         PacketDistributor.sendToPlayer(p, new ThrowablePayloads.Effect(0, 0, -1));

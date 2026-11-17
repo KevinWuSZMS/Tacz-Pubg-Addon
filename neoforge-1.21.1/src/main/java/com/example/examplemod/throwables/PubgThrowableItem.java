@@ -36,6 +36,7 @@ public final class PubgThrowableItem extends Item implements IThrowable, IAnimat
     @Override public UseAnim getUseAnimation(ItemStack stack) { return UseAnim.BOW; }
     @Override public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         var stack = player.getItemInHand(hand);
+        if (com.example.examplemod.movement.SwimmingGunRestrictions.blocked(player)) return InteractionResultHolder.fail(stack);
         // LR's native throwable interaction/first-person pipeline is main-hand only.
         if (hand == InteractionHand.OFF_HAND) return InteractionResultHolder.fail(stack);
         if (player instanceof ServerPlayer p && ThrowableService.cooking(p)) return InteractionResultHolder.fail(stack);

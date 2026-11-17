@@ -48,7 +48,40 @@ public final class MovementStateChecks {
         check(state.mode() == Mode.STAND, "C toggles the adopted rescue crouch off");
         state.release(CROUCH); state.adoptRescueCrouch(); state.press(PRONE);
         check(state.mode() == Mode.PRONE, "Z changes adopted rescue crouch to prone");
+        constrainedModes();
         System.out.println("MovementStateChecks: " + checks + " movement and input-order scenarios passed");
     }
+
+    private static void constrainedModes() {
+        var state = new MovementState();
+        state.press(SPRINT); state.press(PRONE);
+        check(state.constrainMode(Mode.STAND) && state.mode() == Mode.STAND,
+                "entering a restrictive water depth clears an illegal posture to standing");
+        check(state.held(SPRINT) && state.held(PRONE), "water restrictions preserve all held-key latches");
+        check(!state.constrainMode(Mode.STAND), "unchanged depth authorization is idempotent");
+        state.press(PRONE); state.press(SPRINT);
+        check(state.mode() == Mode.STAND, "old held prone or sprint cannot reassert after a restriction is relaxed");
+        state.release(PRONE); state.press(PRONE);
+        check(state.mode() == Mode.PRONE, "a fresh allowed posture press works after the depth changes");
+
+        state.reset(); state.press(CROUCH);
+        check(!state.constrainMode(Mode.CROUCH) && state.mode() == Mode.CROUCH && state.held(CROUCH),
+                "a legal shallow-water crouch survives depth rechecks without reset");
+        state.release(CROUCH); state.press(STAND);
+        check(state.consumeJump() && !state.constrainMode(Mode.STAND) && state.consumeJump(),
+                "same-mode authorization preserves Space's stand-up jump suppression");
+        check(state.constrainMode(Mode.WALK) && !state.consumeJump() && state.held(STAND),
+                "an actual restriction change clears old jump suppression without releasing Space");
+
+        state.reset(); state.press(WALK);
+        check(!state.constrainMode(Mode.WALK) && state.held(WALK),
+                "explicitly held walking remains legal without automatic standing or a synthetic key press");
+        check(state.constrainMode(Mode.STAND) && state.held(WALK), "forcing standing preserves the held walk edge");
+        state.press(WALK);
+        check(state.mode() == Mode.STAND, "an older walk hold cannot override the restricted posture");
+        state.release(WALK); state.press(WALK);
+        check(state.mode() == Mode.WALK, "fresh manual walking remains available after restrictions clear");
+    }
+
     private static void check(boolean condition, String message) { checks++; if (!condition) throw new AssertionError(message); }
 }

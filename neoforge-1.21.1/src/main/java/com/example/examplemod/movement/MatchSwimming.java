@@ -2,6 +2,7 @@ package com.example.examplemod.movement;
 
 import com.example.examplemod.combat.CombatService;
 import com.example.examplemod.inventory.InventoryConfig;
+import com.example.examplemod.movement.MovementState.Mode;
 import com.example.examplemod.zones.match.MatchService;
 import com.example.examplemod.zones.match.flight.MatchFlightService;
 import com.example.examplemod.zones.match.flight.ParachuteItem;
@@ -22,6 +23,7 @@ public final class MatchSwimming {
     private static final double EPSILON = 1.0E-6;
     public static final double SWIMMING_DEPTH = 1.5;
     private static final double SURFACE_RETENTION = .25;
+    public enum DepthBand { DRY, ANKLE, KNEE, WAIST, DEEP }
     private record Segment(int blockY, double bottom, double top) { }
     private MatchSwimming() { }
 
@@ -49,7 +51,33 @@ public final class MatchSwimming {
     }
 
     public static boolean swimming(Player player) {
-        return controls(player) && hasSwimmingDepth(player);
+        return depthBand(player) == DepthBand.DEEP;
+    }
+
+    /** Match-only bands: (0,.5], (.5,1], (1,1.5], then swimming. */
+    public static DepthBand depthBand(Player player) {
+        if (!controls(player)) return DepthBand.DRY;
+        return depthBand(columnDepth(player, seed(player, player.getX(), player.getZ()),
+                player.getX(), player.getZ(), SWIMMING_DEPTH));
+    }
+
+    public static DepthBand depthBand(double depth) {
+        if (!Double.isFinite(depth) || depth <= 0) return DepthBand.DRY;
+        if (depth <= .5) return DepthBand.ANKLE;
+        if (depth <= 1) return DepthBand.KNEE;
+        if (depth <= SWIMMING_DEPTH) return DepthBand.WAIST;
+        return DepthBand.DEEP;
+    }
+
+    /** Illegal requests return standing; no automatic crouch or walking substitution. */
+    public static Mode legalGroundMode(Player player, Mode requested) {
+        return switch (depthBand(player)) {
+            case DRY, ANKLE -> requested;
+            case KNEE -> requested == Mode.SPRINT || requested == Mode.PRONE ? Mode.STAND : requested;
+            case WAIST -> requested == Mode.SPRINT || requested == Mode.PRONE || requested == Mode.CROUCH
+                    ? Mode.STAND : requested;
+            case DEEP -> Mode.STAND;
+        };
     }
 
     /** Actual shallow-water contact, never the brief air gap retained for an existing swimmer. */
@@ -60,16 +88,17 @@ public final class MatchSwimming {
                 && !hasSwimmingDepth(player);
     }
 
-    /** Shallow water retains ground controls only while the feet are supported. */
+    /** Shallow water keeps ground stance controls, including during a jump into it. */
     public static boolean waterAllowsGround(Player player) {
         if (CombatService.rescuing(player)) return !player.isUnderWater();
-        if (inMatch(player) && controls(player)) return player.onGround() && !hasSwimmingDepth(player);
+        if (inMatch(player) && controls(player)) return !hasSwimmingDepth(player);
         return !player.isSwimming() && !player.isInWater() && !player.isUnderWater();
     }
 
     public static boolean hasSwimmingDepth(Player player) {
         // Strictly greater than 1.5 blocks; pose, scale and touching the floor do not alter this boundary.
-        return depthAtLeast(player, SWIMMING_DEPTH + 2 * EPSILON);
+        return columnDepth(player, seed(player, player.getX(), player.getZ()),
+                player.getX(), player.getZ(), SWIMMING_DEPTH) > SWIMMING_DEPTH;
     }
 
     /**
@@ -81,7 +110,7 @@ public final class MatchSwimming {
         if (movement.y <= 0 || !swimming(player)) return movement;
         double x = player.getX() + movement.x, z = player.getZ() + movement.z;
         Segment destination = seed(player, x, z);
-        if (!depthAtLeast(player, destination, x, z, SWIMMING_DEPTH + 2 * EPSILON)) return movement;
+        if (columnDepth(player, destination, x, z, SWIMMING_DEPTH) <= SWIMMING_DEPTH) return movement;
         // Keep the body below the surface while the eyes can clear it to breathe.
         double immersion = Math.max(player.getDimensions(Pose.SWIMMING).height() * .1,
                 player.getEyeHeight(Pose.SWIMMING) - .04);
@@ -131,7 +160,7 @@ public final class MatchSwimming {
                             x + halfWidth, top + standing.height(), z + halfWidth);
                     if (!player.level().noCollision(player, landing)) continue;
                     Segment water = bodySeed(player, x, z, top, top + standing.height());
-                    if (!depthAtLeast(player, water, x, z, SWIMMING_DEPTH + 2 * EPSILON)) return true;
+                    if (columnDepth(player, water, x, z, SWIMMING_DEPTH) <= SWIMMING_DEPTH) return true;
                 }
             }
         }
@@ -196,23 +225,27 @@ public final class MatchSwimming {
     }
 
     private static boolean depthAtLeast(Player player, Segment seed, double x, double z, double requiredDepth) {
-        if (seed == null) return false;
+        return columnDepth(player, seed, x, z, requiredDepth) + EPSILON >= requiredDepth;
+    }
+
+    private static double columnDepth(Player player, Segment seed, double x, double z, double stopAfter) {
+        if (seed == null) return 0;
         double bottom = seed.bottom(), top = seed.top();
-        if (top - bottom + EPSILON >= requiredDepth) return true;
+        if (top - bottom > stopAfter) return top - bottom;
 
         for (int y = seed.blockY() + 1; y < player.level().getMaxBuildHeight() && Math.abs(top - y) < EPSILON; y++) {
             Segment next = touching(waterSegments(player, x, z, y), top, true);
             if (next == null) break;
             top = next.top();
-            if (top - bottom + EPSILON >= requiredDepth) return true;
+            if (top - bottom > stopAfter) return top - bottom;
         }
         for (int y = seed.blockY() - 1; y >= player.level().getMinBuildHeight() && Math.abs(bottom - (y + 1)) < EPSILON; y--) {
             Segment next = touching(waterSegments(player, x, z, y), bottom, false);
             if (next == null) break;
             bottom = next.bottom();
-            if (top - bottom + EPSILON >= requiredDepth) return true;
+            if (top - bottom > stopAfter) return top - bottom;
         }
-        return false;
+        return top - bottom;
     }
 
     private static Segment touching(List<Segment> segments, double boundary, boolean upward) {

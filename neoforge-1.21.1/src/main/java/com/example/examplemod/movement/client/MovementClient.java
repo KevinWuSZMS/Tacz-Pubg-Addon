@@ -39,7 +39,7 @@ public final class MovementClient {
     private static final MovementState STATE = new MovementState();
     private static final EnumMap<Action, KeyMapping> KEYS = new EnumMap<>(Action.class);
     private static Mode sentMode = Mode.STAND;
-    private static boolean sentActive, clearNativeCrawl, pendingStandFrame, wasFlying, wasRescuing, wasSwimming, wasWading;
+    private static boolean sentActive, clearNativeCrawl, pendingStandFrame, wasFlying, wasRescuing, wasSwimming;
     private static Object playerIdentity;
     private static BindingProfile profile;
     static {
@@ -79,8 +79,16 @@ public final class MovementClient {
         }
         var mc = Minecraft.getInstance();
         if (event != GLFW.GLFW_PRESS || !groundContext() || mc.screen != null || !mc.isWindowActive() || mc.getOverlay() != null) return;
-        if (wadingContext()) return;
         var player = mc.player;
+        enforceWaterMode();
+        Mode requested = switch (action) {
+            case STAND -> Mode.STAND;
+            case SPRINT -> Mode.SPRINT;
+            case CROUCH -> Mode.CROUCH;
+            case PRONE -> Mode.PRONE;
+            case WALK -> Mode.WALK;
+        };
+        if (MatchSwimming.legalGroundMode(player, requested) != requested) return;
         boolean lowered = player.isCrouching() || player.getPose() == Pose.CROUCHING
                 || IClientPlayerGunOperator.fromLocalPlayer(player).isCrawl();
         STATE.press(action, lowered);
@@ -98,7 +106,7 @@ public final class MovementClient {
     private static void tick() {
         var mc = Minecraft.getInstance();
         if (mc.player != playerIdentity) {
-            STATE.reset(); sentMode = Mode.STAND; sentActive = false; clearNativeCrawl = false; pendingStandFrame = false; wasRescuing = false; wasSwimming = false; wasWading = false;
+            STATE.reset(); sentMode = Mode.STAND; sentActive = false; clearNativeCrawl = false; pendingStandFrame = false; wasRescuing = false; wasSwimming = false;
             playerIdentity = mc.player;
         }
         BindingProfile current = BindingProfiles.get().activeProfile();
@@ -121,35 +129,21 @@ public final class MovementClient {
             var gun = IClientPlayerGunOperator.fromLocalPlayer(mc.player);
             if (gun.isCrawl()) gun.crawl(false);
             wasSwimming = true;
-            wasWading = false;
             return;
         }
-        if (wadingContext()) {
-            STATE.reset();
-            STATE.press(Action.WALK);
-            clearNativeCrawl = false;
-            pendingStandFrame = false;
-            clearNativeMovementToggles();
-            var gun = IClientPlayerGunOperator.fromLocalPlayer(mc.player);
-            if (gun.isCrawl()) gun.crawl(false);
-            mc.player.setSprinting(false);
-            wasWading = true;
+        if (wasSwimming) {
             wasSwimming = false;
-            sync();
-            return;
-        }
-        if (wasSwimming || wasWading) {
-            wasSwimming = false;
-            wasWading = false;
             reset(true);
             clearNativeMovementToggles();
             mc.player.setSprinting(false);
             mc.player.input.shiftKeyDown = false;
             // Sprint is a hold in both environments; landing must not require releasing/repressing it.
-            if (groundContext() && acceptsSwimmingInput() && BindingInput.physicallyHeld(KEYS.get(Action.SPRINT)))
+            if (groundContext() && acceptsSwimmingInput() && BindingInput.physicallyHeld(KEYS.get(Action.SPRINT))
+                    && MatchSwimming.legalGroundMode(mc.player, Mode.SPRINT) == Mode.SPRINT)
                 STATE.press(Action.SPRINT);
         }
         if (!groundContext()) { reset(true); return; }
+        enforceWaterMode();
         if (!mc.isWindowActive() || mc.screen != null) {
             STATE.release(Action.SPRINT); STATE.release(Action.WALK); STATE.release(Action.STAND);
         }
@@ -197,15 +191,22 @@ public final class MovementClient {
         input.leftImpulse = !acceptsSwimmingInput() || input.left == input.right ? 0 : input.left ? 1 : -1;
         clearNativeMovementToggles();
     }
-    private static void wadingInput(Input input) {
+    private static void wadingJump(Input input) {
         var mc = Minecraft.getInstance();
-        boolean accepts = acceptsSwimmingInput();
-        float scale = accepts ? (float) mc.player.getAttributeValue(Attributes.SNEAKING_SPEED) : 0;
-        input.forwardImpulse = (input.up == input.down ? 0 : input.up ? 1 : -1) * scale;
-        input.leftImpulse = (input.left == input.right ? 0 : input.left ? 1 : -1) * scale;
-        input.shiftKeyDown = false;
         // No hopping through open water. Space still permits climbing onto a reachable bank.
-        input.jumping = accepts && BindingInput.physicallyHeld(mc.options.keyJump) && MatchSwimming.canClimbOut(mc.player);
+        input.jumping = !consumesJump() && acceptsSwimmingInput()
+                && BindingInput.physicallyHeld(mc.options.keyJump) && MatchSwimming.canClimbOut(mc.player);
+    }
+    /** Crossing a depth boundary releases only an illegal stance, never forces a slower one. */
+    private static void enforceWaterMode() {
+        var player = Minecraft.getInstance().player;
+        if (player == null) return;
+        Mode previous = STATE.mode();
+        if (!STATE.constrainMode(MatchSwimming.legalGroundMode(player, previous))) return;
+        if (previous == Mode.PRONE) clearNativeCrawl = true;
+        pendingStandFrame = false;
+        player.input.shiftKeyDown = false;
+        player.setSprinting(false);
         clearNativeMovementToggles();
     }
     private static void adoptRescueStance() {
@@ -246,10 +247,11 @@ public final class MovementClient {
             player.setDeltaMovement(motion.x, retained, motion.z);
             return;
         }
-        if (wadingContext()) { wadingInput(player.input); return; }
+        enforceWaterMode();
         if (ownsGround()) {
             player.input.shiftKeyDown = STATE.mode() == Mode.CROUCH;
             if (consumesJump()) player.input.jumping = false;
+            if (wadingContext()) wadingJump(player.input);
         }
     }
 
@@ -268,11 +270,12 @@ public final class MovementClient {
             swimmingInput(input);
             return;
         }
-        if (wadingContext()) { wadingInput(input); return; }
+        enforceWaterMode();
         if (!ownsGround()) return;
         clearNativeMovementToggles();
         input.shiftKeyDown = STATE.mode() == Mode.CROUCH;
         if (consumesJump()) input.jumping = false;
+        if (wadingContext()) wadingJump(input);
         float scale = switch (STATE.mode()) {
             case CROUCH, PRONE, WALK -> (float) mc.player.getAttributeValue(Attributes.SNEAKING_SPEED);
             default -> mc.player.isCrouching() || mc.player.isVisuallyCrawling()
@@ -290,21 +293,31 @@ public final class MovementClient {
     }
 
     public static boolean nativeSprint(KeyMapping mapping) {
-        if (mapping == Minecraft.getInstance().options.keySprint && wadingContext()) return false;
         if (mapping == Minecraft.getInstance().options.keySprint && swimmingContext()) return swimmingInput().fast();
+        if (mapping == Minecraft.getInstance().options.keySprint && wadingContext()
+                && MatchSwimming.legalGroundMode(Minecraft.getInstance().player, Mode.SPRINT) != Mode.SPRINT) return false;
         if (mapping != Minecraft.getInstance().options.keySprint || !ownsGround()) return mapping.isDown();
         return STATE.mode() == Mode.SPRINT && BindingInput.physicallyHeld(KEYS.get(Action.SPRINT));
     }
     public static boolean canStartSprint() {
-        if (wadingContext()) return false;
+        if (wadingContext() && MatchSwimming.legalGroundMode(Minecraft.getInstance().player, Mode.SPRINT) != Mode.SPRINT) return false;
         return swimmingContext() ? swimmingInput().fast() : !ownsGround() || STATE.mode() == Mode.SPRINT;
     }
     /** Run after vanilla sprint decisions and before LivingEntity applies water movement this tick. */
     public static void beforeTravel(LocalPlayer player) {
         if (player != Minecraft.getInstance().player) return;
         if (wadingContext()) {
-            wadingInput(player.input);
-            player.setSprinting(false);
+            enforceWaterMode();
+            wadingJump(player.input);
+            // Vanilla cancels sprint above the waterline. Restore it only in the permitted
+            // ankle-deep band, with the normal forward input, food and collision gates.
+            boolean sprint = STATE.mode() == Mode.SPRINT && acceptsSwimmingInput()
+                    && BindingInput.physicallyHeld(KEYS.get(Action.SPRINT)) && player.input.forwardImpulse >= .8F
+                    && MatchSwimming.legalGroundMode(player, Mode.SPRINT) == Mode.SPRINT
+                    && !player.isUsingItem() && !player.hasEffect(net.minecraft.world.effect.MobEffects.BLINDNESS)
+                    && (player.getFoodData().getFoodLevel() > 6 || player.mayFly())
+                    && (!player.horizontalCollision || player.minorHorizontalCollision);
+            player.setSprinting(sprint);
             return;
         }
         if (!swimmingContext()) return;
@@ -337,6 +350,6 @@ public final class MovementClient {
             if (send && sentActive && mc.getConnection() != null) PacketDistributor.sendToServer(new MovementPayloads.Input(Mode.STAND, false));
         }
         sentMode = Mode.STAND; sentActive = false;
-        if (mc.player == null) { wasRescuing = false; wasSwimming = false; wasWading = false; }
+        if (mc.player == null) { wasRescuing = false; wasSwimming = false; }
     }
 }

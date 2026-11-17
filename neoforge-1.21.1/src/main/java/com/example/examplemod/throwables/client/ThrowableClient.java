@@ -2,6 +2,7 @@ package com.example.examplemod.throwables.client;
 
 import com.example.examplemod.localization.Texts;
 import com.example.examplemod.keybindings.BindingInput;
+import com.example.examplemod.movement.SwimmingGunRestrictions;
 import com.example.examplemod.throwables.PubgThrowableEntity;
 import com.example.examplemod.throwables.PubgThrowableItem;
 import com.example.examplemod.throwables.ThrowableSettingsService;
@@ -47,6 +48,7 @@ public final class ThrowableClient {
     private static int fuse = -1, quickTicks, quickSlot = -1;
     private static boolean quickStarted;
     private static boolean cookedHeld, cookedReleaseSent;
+    private static boolean wasSwimming;
     private static ItemStack cookedVisual = ItemStack.EMPTY;
     private static ItemStack animationVisual = ItemStack.EMPTY;
     private static int animationTicks, animationSlot = -1;
@@ -115,6 +117,7 @@ public final class ThrowableClient {
     private static void clear() {
         ThrowableTrajectoryClient.clear();
         fuse = -1;
+        wasSwimming = false;
         cookedHeld = cookedReleaseSent = false; cookedVisual = ItemStack.EMPTY;
         animationVisual = ItemStack.EMPTY; animationTicks = 0; animationSlot = -1;
         cancelQuick(); wheelTrigger = null;
@@ -173,6 +176,7 @@ public final class ThrowableClient {
     }
     private static void requestCook() {
         var mc = Minecraft.getInstance();
+        if (mc.player != null && SwimmingGunRestrictions.blocked(mc.player)) return;
         if (mc.player != null && mc.player.isUsingItem() && mc.player.getUsedItemHand() == InteractionHand.MAIN_HAND
                 && mc.player.getUseItem().getItem() instanceof PubgThrowableItem) {
             cookedVisual = mc.player.getUseItem().copyWithCount(1);
@@ -223,6 +227,7 @@ public final class ThrowableClient {
         var mc = Minecraft.getInstance();
         if (mc.player == null || !mc.player.isAlive() || mc.player.isSpectator() || mc.screen != null
                 || mc.options.hideGui || !mc.options.keyUse.isDown() || MatchVitalsHud.paused()) return null;
+        if (SwimmingGunRestrictions.blocked(mc.player)) return null;
         if (cookedHeld && !cookedReleaseSent && cookedVisual.getItem() instanceof PubgThrowableItem item)
             return new Aim(item.kind, Math.max(1, fuse));
         if (mc.player.isUsingItem() && mc.player.getUseItem().getItem() instanceof PubgThrowableItem item)
@@ -236,6 +241,7 @@ public final class ThrowableClient {
         releaseWheelTrigger();
         if (quickTicks > 0 && mc.screen != null) requestCancel();
         if (mc.isPaused() || MatchVitalsHud.paused()) return;
+        cancelSwimmingThrowable();
         if (fuse > 0) fuse--;
         if (animationTicks > 0 && --animationTicks == 0) animationVisual = ItemStack.EMPTY;
         if (!mc.player.isAlive() || mc.player.isSpectator()) cancelQuick();
@@ -277,6 +283,29 @@ public final class ThrowableClient {
     }
     private static boolean wheelDown(KeyMapping mapping) {
         return mapping.isDown() && BindingInput.physicallyHeld(mapping);
+    }
+
+    private static void cancelSwimmingThrowable() {
+        var mc = Minecraft.getInstance();
+        boolean swimming = SwimmingGunRestrictions.blocked(mc.player);
+        boolean using = mc.player.isUsingItem() && SwimmingGunRestrictions.throwable(mc.player.getUseItem());
+        if (swimming && (!wasSwimming || using || cookedHeld)) {
+            ItemStack visual = !cookedVisual.isEmpty() ? cookedVisual.copy()
+                    : using ? mc.player.getUseItem().copy() : mc.player.getMainHandItem().copy();
+            if (cookedHeld || using && mc.player.getUseItem().getItem() instanceof PubgThrowableItem)
+                PacketDistributor.sendToServer(new ThrowablePayloads.Action(1));
+            if (using) mc.player.stopUsingItem();
+            // An automatic drop must not leave the escrow hand or a delayed throw animation.
+            cookedHeld = cookedReleaseSent = false;
+            cookedVisual = animationVisual = ItemStack.EMPTY;
+            animationTicks = 0;
+            fuse = -1;
+            if (SwimmingGunRestrictions.throwable(visual)
+                    && IClientItemExtensions.of(visual.getItem()).getCustomRenderer() instanceof ThrowableItemRendererWrapper renderer) {
+                renderer.tryInit(visual, mc.player, 0);
+            }
+        }
+        wasSwimming = swimming;
     }
     private static void render(GuiGraphics graphics) {
         var mc = Minecraft.getInstance();
