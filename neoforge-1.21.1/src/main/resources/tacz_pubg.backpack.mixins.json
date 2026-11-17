@@ -3,6 +3,6 @@
   "minVersion": "0.8.5",
   "package": "com.example.examplemod.backpack.mixin",
   "compatibilityLevel": "JAVA_21",
-  "mixins": ["BackpackInventoryMixin", "BackpackMenuMixin", "PlayerListSaveAccess"],
+  "mixins": ["BackpackMenuMixin", "PlayerListSaveAccess"],
   "injectors": {"defaultRequire": 1}
 }

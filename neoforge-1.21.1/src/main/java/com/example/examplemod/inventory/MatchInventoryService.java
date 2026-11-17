@@ -59,6 +59,7 @@ public final class MatchInventoryService {
             return type.equalsIgnoreCase("pistol") || type.equalsIgnoreCase("handgun") ? "handgun" : "long_gun";
         }
         if (stack.getItem() instanceof CrossbowItem) return "long_gun";
+        if (stack.getItem() instanceof me.xjqsh.lrtactical.api.item.IMeleeWeapon) return "melee";
         if (stack.getItem() instanceof com.example.examplemod.throwables.PubgThrowableItem
                 || stack.getItem() instanceof me.xjqsh.lrtactical.api.item.IThrowable) return "throwable";
         String id = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();

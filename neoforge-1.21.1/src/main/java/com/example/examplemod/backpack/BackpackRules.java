@@ -1,6 +1,6 @@
 package com.example.examplemod.backpack;
 
-/** Integer thousandths avoid boundary drift for e.g. 9 mm ammunition (0.375). */
+/** Integer thousandths avoid boundary drift for ammunition and administrator overrides. */
 public final class BackpackRules {
     public static final int UNIT = 1000;
     public static final int BASE = 70 * UNIT;

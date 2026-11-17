@@ -11,6 +11,22 @@ public final class BackpackChecks {
         check(BackpackRules.capacity(1, false) == 220_000, "level one adds 150");
         check(BackpackRules.capacity(2, false) == 270_000, "level two adds 200");
         check(BackpackRules.capacity(3, true) == 370_000, "level three and vest bonuses are independent");
+        // A normal PC loadout: 200 rifle rounds, 3 first aids, 5 bandages,
+        // 4 drinks, 2 frags and 2 smokes leave 32 capacity in a level-one pack + vest.
+        int loadout = 200 * BackpackWeights.ammoWeight("ammo_556") + 3 * 10_000
+                + 5 * 2_000 + 4 * 4_000 + 2 * 27_000 + 2 * 14_000;
+        check(loadout == 238_000, "mixed loadout uses per-item space, not per-stack space");
+        int remaining = BackpackRules.capacity(1, true) - loadout;
+        check(BackpackRules.accepted(loadout, 270_000, BackpackWeights.ammoWeight("ammo_9mm"), 999) == 106,
+                "9mm partial pickup stops at the actual 0.3 boundary");
+        check(BackpackRules.accepted(0, remaining, BackpackWeights.ammoWeight("ammo_762"), 999) == 53,
+                "7.62 partial pickup uses 0.6 per round");
+        check(BackpackRules.accepted(19_650, 20_000, BackpackWeights.ammoWeight("ammo_57mm"), 2) == 1,
+                "one 5.7mm round exactly fills the remaining 0.35");
+        check(BackpackWeights.ammoWeight("57x28") == BackpackWeights.ammoWeight("ammo_57mm"),
+                "native and unified 5.7mm ammunition share capacity");
+        check(BackpackWeights.ammoWeight("308") == BackpackWeights.ammoWeight("ammo_762"),
+                "native .308 and unified 7.62mm ammunition share capacity");
         check(BackpackRules.accepted(69_625, 70_000, 375, 30) == 1, "one fractional round fits exactly");
         check(BackpackRules.accepted(69_626, 70_000, 375, 30) == 0, "one thousandth over boundary is rejected");
         check(BackpackRules.accepted(100_000, 70_000, 1_000, 64) == 0, "existing overload accepts no extra items");

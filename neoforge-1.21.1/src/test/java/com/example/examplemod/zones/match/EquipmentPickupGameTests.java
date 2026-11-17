@@ -61,8 +61,14 @@ public final class EquipmentPickupGameTests {
             helper.assertTrue(!player.getInventory().add(extra) && extra.getCount() == 1,
                     "An empty inventory accepted a second helmet despite an already worn helmet of a different tier");
             ItemStack otherCategory = new ItemStack(BackpackRegistration.LEVEL_1.get());
-            helper.assertTrue(player.getInventory().add(otherCategory) && otherCategory.isEmpty(),
+            helper.assertTrue(EquipmentInventoryRules.allowed(player, otherCategory) == 1,
                     "An equipped helmet incorrectly blocked the separate backpack category");
+            GroundLootEntity firstPack = f.ground(otherCategory, 1);
+            firstPack.pickup(player);
+            helper.assertTrue(firstPack.isRemoved()
+                    && player.getItemBySlot(EquipmentSlot.LEGS).is(BackpackRegistration.LEVEL_1.get())
+                    && ItemStack.matches(player.getItemBySlot(EquipmentSlot.HEAD), incoming),
+                    "Picking up the first pack failed to equip it alongside the worn helmet");
             for (int i = 0; i < 36; i++) player.getInventory().setItem(i, ItemStack.EMPTY);
 
             var chestItems = new SimpleContainer(9);

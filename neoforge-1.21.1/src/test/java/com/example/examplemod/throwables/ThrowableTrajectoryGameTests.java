@@ -5,6 +5,7 @@ import com.mojang.authlib.GameProfile;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
+import me.xjqsh.lrtactical.entity.ThrowableItemEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -38,7 +39,8 @@ public final class ThrowableTrajectoryGameTests {
             helper.assertTrue((Object) probe instanceof ProjectilePreviewAccessor,
                     "COMMON-side preview accessor was not applied to Projectile");
             // Each kind uses the same real shootFromRotation, including its unusual pitch offset
-            // and getKnownMovement inheritance. A legacy launch is an independent comparison.
+            // and getKnownMovement inheritance. Call vanilla directly as the comparison,
+            // with the current per-kind profile (smoke/stun have a lower high-throw speed).
             for (boolean low : new boolean[]{false, true}) for (boolean grounded : new boolean[]{false, true}) {
                 player.setPos(base.getX() + .5, base.getY(), base.getZ() + .5);
                 player.setXRot(-25); player.setYRot(0);
@@ -48,11 +50,12 @@ public final class ThrowableTrajectoryGameTests {
                     if (kind == ThrowableKind.C4) continue;
                     var real = actual(helper, player, kind);
                     var legacy = actual(helper, player, kind);
-                    legacy.shootFromRotation(player, player.getXRot(), player.getYRot(), low ? 0 : -10,
-                            low ? .55F : 1.3F, 0);
-                    ThrowableBallistics.launch(real, player, false);
-                    same(helper, real.getDeltaMovement(), legacy.getDeltaMovement(), "Shared launch changed existing velocity");
-                    probe.reset(kind, player, kind.fuse, entity -> true);
+                    var profile = ThrowableSettingsService.profile(kind);
+                    legacy.shootFromRotation(player, player.getXRot(), player.getYRot(), low ? 0 : (float) profile.pitchOffset(),
+                            (float) (low ? profile.lowSpeed() : profile.speed()), 0);
+                    ThrowableBallistics.launch(real, player, false, kind);
+                    same(helper, legacy.getDeltaMovement(), real.getDeltaMovement(), "Shared launch differs from configured vanilla velocity");
+                    probe.reset(kind, player, profile.fuseTicks(), entity -> true);
                     for (int tick = 0; tick < 8; tick++) compareStep(helper, real, probe, kind + " open air " + tick);
                     real.discard(); legacy.discard();
                 }
@@ -65,9 +68,14 @@ public final class ThrowableTrajectoryGameTests {
             for (ThrowableKind kind : new ThrowableKind[]{ThrowableKind.FRAG, ThrowableKind.STUN, ThrowableKind.SMOKE,
                     ThrowableKind.STICKY, ThrowableKind.MOLOTOV, ThrowableKind.BLUE_ZONE}) {
                 var real = actual(helper, player, kind);
-                ThrowableBallistics.launch(real, player, false);
-                probe.reset(kind, player, kind.fuse, entity -> true);
-                compareStep(helper, real, probe, kind + " first wall impact");
+                ThrowableBallistics.launch(real, player, false, kind);
+                int fuse = ThrowableSettingsService.profile(kind).fuseTicks();
+                probe.reset(kind, player, fuse, entity -> true);
+                int impactSteps = 0;
+                do {
+                    compareStep(helper, real, probe, kind + " wall approach " + impactSteps);
+                    impactSteps++;
+                } while (impactSteps < 3 && real.getDeltaMovement().z >= 0 && probe.end() == null);
                 if (kind == ThrowableKind.STICKY || kind == ThrowableKind.MOLOTOV) {
                     helper.assertTrue(probe.end() == (kind == ThrowableKind.STICKY
                             ? ThrowableTrajectoryProbe.End.ATTACHED : ThrowableTrajectoryProbe.End.IMPACT),
@@ -75,7 +83,7 @@ public final class ThrowableTrajectoryGameTests {
                 } else {
                     helper.assertTrue(real.getDeltaMovement().z < 0, "Fixture did not exercise LR reflection");
                     if (kind == ThrowableKind.STUN)
-                        helper.assertTrue(real.remainingFuse() == kind.fuse - 1 && probe.remainingFuse() == kind.fuse - 1,
+                        helper.assertTrue(remainingFuse(real) == fuse - impactSteps && probe.remainingFuse() == fuse - impactSteps,
                                 "An LR stun impact must not shorten its timed fuse");
                     int steps = 4;
                     for (int tick = 0; tick < steps; tick++) compareStep(helper, real, probe, kind + " rebound " + tick);
@@ -158,21 +166,35 @@ public final class ThrowableTrajectoryGameTests {
             probe.discard(); player.discard();
         }
     }
-    private static PubgThrowableEntity actual(GameTestHelper helper, FakePlayer owner, ThrowableKind kind) {
+    private static ThrowableItemEntity actual(GameTestHelper helper, FakePlayer owner, ThrowableKind kind) {
+        int fuse = Math.max(1, ThrowableSettingsService.profile(kind).fuseTicks());
+        if (kind == ThrowableKind.SMOKE) {
+            var smoke = new PubgSmokeGrenadeEntity(ThrowableRegistration.SMOKE.get(), helper.getLevel());
+            smoke.initialize(owner, new ItemStack(ThrowableRegistration.ITEMS.get(kind).get()), fuse, null, 0);
+            return smoke;
+        }
         var entity = new PubgThrowableEntity(ThrowableRegistration.THROWABLE.get(), helper.getLevel());
         entity.initialize(kind, owner, new ItemStack(ThrowableRegistration.ITEMS.get(kind).get()),
-                Math.max(1, kind.fuse), null, 0);
+                fuse, null, 0);
         return entity;
     }
-    private static void compareStep(GameTestHelper helper, PubgThrowableEntity real,
+    private static int remainingFuse(ThrowableItemEntity entity) {
+        // LR SmokeGrenadeEntity releases at age 40; PubgSmokeGrenadeEntity.initialize
+        // offsets that age by the configured fuse, so this is its native remaining delay.
+        return entity instanceof PubgSmokeGrenadeEntity ? 40 - entity.tickCount
+                : ((PubgThrowableEntity) entity).remainingFuse();
+    }
+    private static void compareStep(GameTestHelper helper, ThrowableItemEntity real,
             ThrowableTrajectoryProbe probe, String label) {
         probe.advance();
-        real.tick();
+        // ServerLevel owns tickCount++ before Entity.tick; native smoke uses that age.
+        // Drive the real caller so the fixture includes its normal age and event handling.
+        helper.getLevel().tickNonPassenger(real);
         same(helper, real.position(), probe.position(), label + " position");
         if (probe.end() != ThrowableTrajectoryProbe.End.IMPACT && probe.end() != ThrowableTrajectoryProbe.End.ATTACHED)
             same(helper, real.getDeltaMovement(), probe.getDeltaMovement(), label + " velocity");
-        if (real.kind() != ThrowableKind.MOLOTOV)
-            helper.assertTrue(real.remainingFuse() == probe.remainingFuse(), label + " fuse");
+        if (!(real instanceof PubgThrowableEntity throwable) || throwable.kind() != ThrowableKind.MOLOTOV)
+            helper.assertTrue(remainingFuse(real) == probe.remainingFuse(), label + " fuse");
     }
     private static void same(GameTestHelper helper, Vec3 expected, Vec3 actual, String label) {
         helper.assertTrue(expected.distanceToSqr(actual) < 1e-14, label + ": expected " + expected + ", got " + actual);

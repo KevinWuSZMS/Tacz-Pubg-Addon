@@ -13,7 +13,15 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @PrefixGameTestTemplate(false)
 public final class ThrowableLifecycleGameTests {
     @GameTest(template = "empty", templateNamespace = "tacz_pubg")
-    public static void cookedGrenadeSurvivesInventoryTransferExactlyOnce(GameTestHelper helper) {
+    @SuppressWarnings("unchecked")
+    public static void cookedGrenadeSurvivesInventoryTransferExactlyOnce(GameTestHelper helper) throws Exception {
+        // Keep this synchronous FakePlayer fixture: a real server tick would remove an
+        // unconnected player's held state. Advance only the test's ordinary-use clock.
+        var clockField = ThrowableService.class.getDeclaredField("CLOCKS");
+        clockField.setAccessible(true);
+        var clocks = (java.util.Map<net.minecraft.server.MinecraftServer, Long>) clockField.get(null);
+        var server = helper.getLevel().getServer();
+        Long previousClock = clocks.get(server);
         var player = new net.neoforged.neoforge.common.util.FakePlayer(helper.getLevel(),
                 new com.mojang.authlib.GameProfile(java.util.UUID.randomUUID(), "throwable-test"));
         var origin = helper.absolutePos(BlockPos.ZERO);
@@ -26,6 +34,13 @@ public final class ThrowableLifecycleGameTests {
             player.setItemInHand(InteractionHand.MAIN_HAND, stack);
             helper.assertTrue(ThrowableService.begin(player, item, InteractionHand.MAIN_HAND), "Could not prepare grenade");
             player.startUsingItem(InteractionHand.MAIN_HAND);
+            var profile = ThrowableSettingsService.profile(ThrowableKind.FRAG);
+            if (profile.prepareTicks() > 0) {
+                ThrowableService.cook(player);
+                helper.assertTrue(stack.getCount() == 2 && !ThrowableService.cooking(player),
+                        "Cooking bypassed the preparation delay");
+            }
+            clocks.put(server, clocks.getOrDefault(server, 0L) + profile.prepareTicks());
             ThrowableService.cook(player);
             helper.assertTrue(stack.getCount() == 1 && ThrowableService.cooking(player), "Cooking did not escrow exactly one");
             ThrowableService.cook(player);
@@ -42,7 +57,7 @@ public final class ThrowableLifecycleGameTests {
             for (var grenade : helper.getLevel().getEntitiesOfClass(PubgThrowableEntity.class,
                     player.getBoundingBox().inflate(6), e -> e.getOwner() == player)) {
                 live++;
-                helper.assertTrue(grenade.kind() == ThrowableKind.FRAG && grenade.remainingFuse() == 100,
+                helper.assertTrue(grenade.kind() == ThrowableKind.FRAG && grenade.remainingFuse() == profile.cookedFuseTicks(),
                         "Committed grenade identity or fuse changed");
                 grenade.discard();
             }
@@ -54,6 +69,7 @@ public final class ThrowableLifecycleGameTests {
             player.containerMenu.setCarried(ItemStack.EMPTY);
             player.getInventory().clearContent();
             player.discard();
+            if (previousClock == null) clocks.remove(server); else clocks.put(server, previousClock);
         }
     }
 }

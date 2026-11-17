@@ -24,7 +24,6 @@ import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -36,7 +35,9 @@ public final class BackpackClient {
     private BackpackClient() {}
     public static int tier(UUID player) { return TIERS.getOrDefault(player, 0); }
     public static BackpackPayloads.State current() { return current; }
-    public static String units(int value) { return String.format(Locale.ROOT, "%.1f", value / 1000.0); }
+    public static String units(int value) {
+        return java.math.BigDecimal.valueOf(value, 3).stripTrailingZeros().toPlainString();
+    }
 
     public static void register(IEventBus modBus) {
         BackpackPayloads.setClient(state -> {
