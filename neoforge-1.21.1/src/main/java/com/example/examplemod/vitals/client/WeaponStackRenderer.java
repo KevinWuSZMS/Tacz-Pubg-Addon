@@ -85,7 +85,7 @@ public final class WeaponStackRenderer {
             boolean chosen = slot == mc.player.getInventory().selected;
             float alpha = chosen ? 1 : (float) PubgSettingsService.client().number("hud.icon_inactive_alpha");
             var gun = WeaponHudData.read(mc.player, item);
-            boolean empty = chosen && gun.present() && gun.loaded() == 0;
+            boolean empty = gun.present() && gun.loaded() == 0;
             int color = empty ? 0xFFFF5555 : ((int) (alpha * 255) << 24) | 0xFFFFFF;
             CombatHudNumbers.draw(g, Integer.toString(slot + 1), bounds.x() + bounds.width() - 7, y + 6, color);
             if (item.getItem() instanceof IThrowable) {

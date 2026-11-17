@@ -2505,7 +2505,7 @@
   "screen.tacz_pubg.throwable.throw_hint": "Hold use to prepare and release to throw. Sneak for an underhand throw.",
   "screen.tacz_pubg.throwable.throwable_wheel": "Throwables",
   "screen.tacz_pubg.throwable.underhand": "Underhand",
-  "screen.tacz_pubg.throwable.wheel_hint": "Point and release the key or left-click to select · Right-click to cancel",
+  "screen.tacz_pubg.throwable.wheel_hint": "Hold the key and move to select · Release to confirm · Right-click to cancel",
   "screen.tacz_pubg.throwable_settings.back": "Back to settings",
   "screen.tacz_pubg.throwable_settings.complete_json": "Complete property JSON",
   "screen.tacz_pubg.throwable_settings.discard": "Discard unsaved throwable settings?",
