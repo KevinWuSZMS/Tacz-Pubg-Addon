@@ -58,7 +58,7 @@ public final class BotAbiChecks {
         System.out.println("BotAbiChecks: " + checks + " installed Carpet / TaCZ r7 / MC 1.21.1 signatures passed");
     }
     private static Path mod(String name) {
-        Path local = Path.of("run", "mods", name); return Files.isRegularFile(local) ? local : Path.of("neoforge-1.21.1", "run", "mods", name);
+        return Path.of("libs", name);
     }
     private static Info from(JarFile jar, String name) throws IOException {
         var entry = jar.getJarEntry(name + ".class"); if (entry == null) throw new IOException("Missing actual mod class " + name);

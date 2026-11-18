@@ -61,8 +61,8 @@ public final class XaeroMinimapReflectionChecks {
 
     private static Path installedJar() throws IOException {
         String jar = "xaerominimap-neoforge-1.21.1-26.6.0.jar";
-        for (Path candidate : new Path[]{Path.of("neoforge-1.21.1", "run", "mods", jar), Path.of("run", "mods", jar)})
-            if (Files.isRegularFile(candidate)) return candidate;
+        Path candidate = Path.of("libs", jar);
+        if (Files.isRegularFile(candidate)) return candidate;
         throw new IOException("Installed Xaero 26.6.0 jar is required for its offline API contract check");
     }
 

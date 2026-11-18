@@ -30,29 +30,27 @@
 !/neoforge-1.21.1/gradle/wrapper/gradle-wrapper.jar
 !/neoforge-1.21.1/gradle/wrapper/gradle-wrapper.properties
 
-# Visual assets stay local pending a separate publication/source review.
-# JSON meshes are assets too. Do not admit them solely by file extension.
-/neoforge-1.21.1/src/main/resources/assets/*
-!/neoforge-1.21.1/src/main/resources/assets/tacz_pubg/
-!/neoforge-1.21.1/src/main/resources/assets/cbrg/
-/neoforge-1.21.1/src/main/resources/assets/cbrg/*
-!/neoforge-1.21.1/src/main/resources/assets/cbrg/lang/
-/neoforge-1.21.1/src/main/resources/assets/tacz_pubg/meshes/
-/neoforge-1.21.1/src/main/resources/assets/tacz_pubg/textures/*
-!/neoforge-1.21.1/src/main/resources/assets/tacz_pubg/textures/pubg_original/
-/neoforge-1.21.1/src/main/resources/assets/tacz_pubg/textures/pubg_original/*
-!/neoforge-1.21.1/src/main/resources/assets/tacz_pubg/textures/pubg_original/sources.json
-!/neoforge-1.21.1/src/main/resources/assets/tacz_pubg/textures/gui/
-/neoforge-1.21.1/src/main/resources/assets/tacz_pubg/textures/gui/*
-!/neoforge-1.21.1/src/main/resources/assets/tacz_pubg/textures/gui/equipment/
-!/neoforge-1.21.1/src/main/resources/assets/tacz_pubg/textures/gui/hud/
-/neoforge-1.21.1/src/main/resources/assets/tacz_pubg/textures/gui/equipment/*
-!/neoforge-1.21.1/src/main/resources/assets/tacz_pubg/textures/gui/equipment/sources.json
-/neoforge-1.21.1/src/main/resources/assets/tacz_pubg/models/*
-!/neoforge-1.21.1/src/main/resources/assets/tacz_pubg/models/item/
-/neoforge-1.21.1/src/main/resources/assets/tacz_pubg/models/item/*
-!/neoforge-1.21.1/src/main/resources/assets/tacz_pubg/models/item/item_spawn_*.json
-!/neoforge-1.21.1/src/main/resources/assets/tacz_pubg/models/item/pubg_config_map.json
+# Commit final resources. Keep editable art projects and datagen caches local.
+/neoforge-1.21.1/src/**/*.bbmodel
+!/neoforge-1.21.1/scripts/
+/neoforge-1.21.1/scripts/*
+!/neoforge-1.21.1/scripts/create-client-snapshot.ps1
+!/neoforge-1.21.1/libs/
+/neoforge-1.21.1/libs/*
+!/neoforge-1.21.1/libs/tacz-neoforge-1.21.1-1.1.8-hotfix-r7.jar
+!/neoforge-1.21.1/libs/LesRaisins-Tactical-Equipements-1.21.1-0.4.3.jar
+!/neoforge-1.21.1/libs/neoforge-carpet-1.21.1-1.0.8+v251027.jar
+!/neoforge-1.21.1/libs/commons-math3-3.6.1.jar
+!/neoforge-1.21.1/libs/luaj-core-3.0.8-figura.jar
+!/neoforge-1.21.1/libs/simplebedrockmodel-2.2.1-neoforge+mc1.21.1.jar
+!/neoforge-1.21.1/libs/xaerominimap-neoforge-1.21.1-26.6.0.jar
+!/neoforge-1.21.1/libs/xaeroworldmap-neoforge-1.21.1-1.47.0.jar
+!/neoforge-1.21.1/libs/xaerolib-neoforge-1.21.1-1.7.3.jar
+!/.github/
+/.github/*
+!/.github/workflows/
+/.github/workflows/*
+!/.github/workflows/mod-jar.yml
 
 # Offline tools are source; downloaded tools, outputs and backup copies are not.
 /model-workflows/*

@@ -6,10 +6,9 @@ param(
 $ErrorActionPreference = 'Stop'
 $taskUtf8 = New-Object System.Text.UTF8Encoding($false)
 $taskProject = [IO.Path]::GetFullPath($ProjectRoot).TrimEnd('\', '/')
-$taskWorkspace = [IO.Directory]::GetParent($taskProject).FullName
 $taskBuild = Join-Path $taskProject 'build'
-$taskSnapshotRoot = Join-Path $taskWorkspace '.runtime/client-snapshots'
-$taskSnapshotId = [DateTime]::UtcNow.ToString('yyyyMMddTHHmmssfffffffZ') + '-' + [Guid]::NewGuid().ToString('N').Substring(0, 8)
+$taskSnapshotRoot = Join-Path $taskProject '.runtime/clients'
+$taskSnapshotId = [DateTime]::UtcNow.ToString('yyyyMMddTHHmmssZ') + '-' + [Guid]::NewGuid().ToString('N').Substring(0, 8)
 $taskSnapshot = Join-Path $taskSnapshotRoot $taskSnapshotId
 $taskSnapshotBuild = Join-Path $taskSnapshot 'build'
 $taskPointer = [IO.Path]::GetFullPath($PointerFile)
@@ -27,7 +26,10 @@ function Get-TaskHash([string]$Path) {
     }
 }
 
-if (-not $taskSnapshot.StartsWith($taskWorkspace + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+if (-not $taskPointer.StartsWith($taskProject + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+    throw 'Client snapshot pointer must stay inside the mod project.'
+}
+if (-not $taskSnapshot.StartsWith($taskProject + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
     throw 'Client snapshot must stay inside the workspace.'
 }
 if (Test-Path -LiteralPath $taskSnapshot) { throw 'Snapshot IDs must never overwrite an existing client.' }

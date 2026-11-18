@@ -44,8 +44,8 @@ public final class HeavyWeaponProfilesChecks {
         var catalog = HeavyWeaponProfiles.parse(exported);
         require(catalog.byGun().size() == 13 && catalog.byData().size() == 13
                 && HeavyWeaponProfiles.activeProfileCount() == 13, "All thirteen approved gun/data identities loaded atomically");
-        Path root = Files.exists(Path.of("docs/gun-balance/gun-assets.json")) ? Path.of("") : Path.of("..");
-        JsonObject assets = JsonParser.parseString(Files.readString(root.resolve("docs/gun-balance/gun-assets.json"))).getAsJsonObject();
+        Path root = Path.of("test-inputs");
+        JsonObject assets = JsonParser.parseString(Files.readString(root.resolve("gun-assets.json"))).getAsJsonObject();
         Map<String, JsonObject> sources = new HashMap<>();
         for (JsonElement element : assets.getAsJsonArray("guns")) {
             JsonObject row = element.getAsJsonObject(); sources.put(row.get("id").getAsString(), row);

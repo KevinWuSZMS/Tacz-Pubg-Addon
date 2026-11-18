@@ -239,8 +239,7 @@ public final class PubgMedicineChecks {
         near(com.example.examplemod.vitals.client.ActionCircleRenderer.progress(120,120),0,"Circle begins empty at twelve o'clock");
         near(com.example.examplemod.vitals.client.ActionCircleRenderer.progress(30,120),.75,"Circle uses elapsed action duration");
         near(com.example.examplemod.vitals.client.ActionCircleRenderer.progress(0,120),1,"Circle completes at full sweep");
-        try (var zip = new java.util.zip.ZipFile(java.nio.file.Files.isDirectory(java.nio.file.Path.of("run/mods"))
-                ? "run/mods/tacz-neoforge-1.21.1-1.1.8-hotfix-r7.jar" : "neoforge-1.21.1/run/mods/tacz-neoforge-1.21.1-1.1.8-hotfix-r7.jar")) {
+        try (var zip = new java.util.zip.ZipFile("libs/tacz-neoforge-1.21.1-1.1.8-hotfix-r7.jar")) {
             for (var mode : List.of(com.tacz.guns.api.item.gun.FireMode.SEMI,com.tacz.guns.api.item.gun.FireMode.BURST,com.tacz.guns.api.item.gun.FireMode.AUTO)) {
                 var texture = com.example.examplemod.vitals.client.WeaponHudData.fireModeTexture(mode);
                 var entry = zip.getEntry("assets/"+texture.getNamespace()+"/"+texture.getPath());

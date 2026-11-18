@@ -19,11 +19,10 @@ import com.google.gson.JsonParser;
 public final class GunBalanceChecks {
     public static void main(String[] args) throws Exception {
         Path project = Path.of("").toAbsolutePath();
-        if (!Files.isDirectory(project.resolve("src"))) project = project.resolve("neoforge-1.21.1");
-        Path root = project.getParent();
-        Path candidateFile = root.resolve("docs/gun-balance/proposed-gun-data.json");
+        Path root = project.resolve("test-inputs");
+        Path candidateFile = root.resolve("proposed-gun-data.json");
         JsonObject candidates = read(candidateFile);
-        JsonObject assets = read(root.resolve("docs/gun-balance/gun-assets.json"));
+        JsonObject assets = read(root.resolve("gun-assets.json"));
         JsonObject factors = read(project.resolve("src/main/resources/data/tacz_pubg/gun_balance/researched.json"));
         String hash = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(candidateFile)));
         require(hash.equals(factors.get("sourceSha256").getAsString()), "Factor snapshot hash differs from reviewed data");
@@ -69,7 +68,7 @@ public final class GunBalanceChecks {
         require(!factorByGun.containsKey("cib:error"), "Zero-damage debug gun must not receive damage/control factors");
         require(PubgScopeRules.SCOPE_IDS.size() == 9, "Expected all nine catalog scopes including historical canted");
         require(PubgScopePolicy.RULES.size() == byGun.size(), "Every current gun needs a reviewed policy row");
-        JsonObject inventory = read(root.resolve("docs/compatibility/compatibility-inventory.json"));
+        JsonObject inventory = read(root.resolve("compatibility-inventory.json"));
         Map<String, Set<String>> tags = new HashMap<>();
         inventory.getAsJsonObject("tag_union").asMap().forEach((id, values) -> {
             Set<String> members = new HashSet<>();

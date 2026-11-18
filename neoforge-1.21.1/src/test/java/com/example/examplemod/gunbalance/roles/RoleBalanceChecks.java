@@ -26,8 +26,8 @@ public final class RoleBalanceChecks {
         RoleBalanceCatalog catalog = RoleBalanceCatalog.parse(exported);
         require(catalog.byGun().size() == 424, "All installed guns represented");
         require(catalog.byGun().values().stream().filter(g -> g.target() != null).count() == 386, "All approved role targets represented");
-        Path root = Files.exists(Path.of("docs/gun-balance/gun-assets.json")) ? Path.of("") : Path.of("..");
-        JsonObject assets = JsonParser.parseString(Files.readString(root.resolve("docs/gun-balance/gun-assets.json"))).getAsJsonObject();
+        Path root = Path.of("test-inputs");
+        JsonObject assets = JsonParser.parseString(Files.readString(root.resolve("gun-assets.json"))).getAsJsonObject();
         Map<String, JsonObject> sources = new HashMap<>();
         for (JsonElement element : assets.getAsJsonArray("guns")) sources.put(element.getAsJsonObject().get("id").getAsString(), element.getAsJsonObject());
         for (RoleBalanceCatalog.Entry entry : catalog.byGun().values()) {

@@ -38,8 +38,7 @@ for %%i in ("%APP_HOME%") do set APP_HOME=%%~fi
 @rem Use a project-local socket directory: this machine's default TEMP breaks JDK UNIX sockets.
 @rem setlocal keeps this setting limited to this wrapper and its child processes.
 if not exist "%APP_HOME%\.jdk-tmp" mkdir "%APP_HOME%\.jdk-tmp"
-@rem Reuse this machine's existing local Windows HTTP proxy for dependency downloads.
-set JAVA_TOOL_OPTIONS=%JAVA_TOOL_OPTIONS% "-Djdk.net.unixdomain.tmpdir=%APP_HOME%\.jdk-tmp" "-Dhttp.proxyHost=127.0.0.1" "-Dhttp.proxyPort=9674" "-Dhttps.proxyHost=127.0.0.1" "-Dhttps.proxyPort=9674"
+set JAVA_TOOL_OPTIONS=%JAVA_TOOL_OPTIONS% "-Djdk.net.unixdomain.tmpdir=%APP_HOME%\.jdk-tmp"
 
 @rem Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this script.
 set DEFAULT_JVM_OPTS="-Xmx64m" "-Xms64m"

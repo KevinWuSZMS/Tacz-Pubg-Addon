@@ -5,7 +5,7 @@ $taskUtf8 = New-Object System.Text.UTF8Encoding($false)
 $taskFixture = Join-Path $WorkspaceRoot ('logs/client-runtime-snapshot-checks/' + [Guid]::NewGuid().ToString('N'))
 $taskProject = Join-Path $taskFixture 'project'
 $taskBuild = Join-Path $taskProject 'build'
-$taskHelper = Join-Path $WorkspaceRoot 'scripts/create-client-snapshot.ps1'
+$taskHelper = Join-Path $WorkspaceRoot 'neoforge-1.21.1/scripts/create-client-snapshot.ps1'
 $taskSourceClasses = Join-Path $taskBuild 'classes/java/main/com/example/examplemod'
 $taskClassState = Join-Path $taskSourceClasses 'zones/match/MatchSpectatorService$State.class'
 $taskCheckCount = 0
@@ -32,7 +32,7 @@ Write-TaskText (Join-Path $taskBuild 'moddev/clientRunVmArgs.txt') $taskVmArgs
 Write-TaskText (Join-Path $taskBuild 'moddev/clientLegacyClasspath.txt') (Join-Path $taskBuild 'moddev/artifacts/fixture.jar')
 Write-TaskText (Join-Path $taskBuild 'moddev/runClient.cmd') ('@echo off' + "`r`n" + 'java.exe @"' + (Join-Path $taskBuild 'moddev/clientRunVmArgs.txt') + '" -Dfml.modFolders=examplemod%%%%' + (Join-Path $taskBuild 'classes/java/main') + ';examplemod%%%%' + (Join-Path $taskBuild 'resources/main') + ' fixture.NeverExecuted')
 
-$taskPointer = Join-Path $taskFixture 'request/one.json'
+$taskPointer = Join-Path $taskProject 'request/one.json'
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $taskHelper -ProjectRoot $taskProject -PointerFile $taskPointer
 Assert-Task ($LASTEXITCODE -eq 0) 'A complete prepared fixture should freeze successfully.'
 $taskSnapshot = Get-Content -LiteralPath $taskPointer -Raw | ConvertFrom-Json
@@ -65,7 +65,7 @@ $taskMissingState = Join-Path $taskMissingProject 'build/classes/java/main/com/e
 # Keep all operations in this verified fixture tree and use one PowerShell filesystem API.
 Assert-Task ([IO.Path]::GetFullPath($taskMissingState).StartsWith([IO.Path]::GetFullPath($taskFixture) + '\', [StringComparison]::OrdinalIgnoreCase)) 'Negative fixture deletion must stay inside its named test directory.'
 Remove-Item -LiteralPath $taskMissingState
-$taskMissingPointer = Join-Path $taskFixture 'request/missing.json'
+$taskMissingPointer = Join-Path $taskMissingProject 'request/missing.json'
 $taskOriginalErrorPreference = $ErrorActionPreference
 try {
     $ErrorActionPreference = 'Continue'

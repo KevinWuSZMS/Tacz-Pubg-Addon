@@ -252,8 +252,7 @@ public final class HeavyWeaponExplosionChecks {
         }
     }
     private static Path installedJar() throws Exception {
-        Path root = Files.isDirectory(Path.of("neoforge-1.21.1/run/mods")) ? Path.of("") : Path.of("..");
-        try (var files = Files.list(root.resolve("neoforge-1.21.1/run/mods"))) {
+        try (var files = Files.list(Path.of("libs"))) {
             return files.filter(path -> path.getFileName().toString().startsWith("tacz-neoforge-")
                     && path.getFileName().toString().endsWith(".jar")).findFirst().orElseThrow();
         }

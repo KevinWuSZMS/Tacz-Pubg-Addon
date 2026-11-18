@@ -75,8 +75,8 @@ public final class PubgMagazinePolicyChecks {
         JsonObject fuel = sample.deepCopy(); fuel.getAsJsonObject("reload").addProperty("type", "fuel");
         require(!PubgMagazineRules.supportsNativeMagazineLevels(fuel), "Fuel feed not a conventional magazine");
 
-        Path root = Files.isRegularFile(Path.of("docs/compatibility/compatibility-inventory.json")) ? Path.of("") : Path.of("..");
-        JsonObject inventory = JsonParser.parseString(Files.readString(root.resolve("docs/compatibility/compatibility-inventory.json"))).getAsJsonObject();
+        Path root = Path.of("test-inputs");
+        JsonObject inventory = JsonParser.parseString(Files.readString(root.resolve("compatibility-inventory.json"))).getAsJsonObject();
         int count = 0, eligible = 0;
         for (var value : inventory.getAsJsonArray("guns")) {
             JsonObject gun = value.getAsJsonObject();

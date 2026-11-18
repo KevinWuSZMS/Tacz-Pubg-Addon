@@ -156,8 +156,7 @@ public final class GunAmmoConfigChecks {
             corrupt.writeVarInt(30);
             rejects(() -> LootConfigPayloads.readAmmoSupply(corrupt), "Catalog decoder rejects nonfinite metadata");
         } finally { corrupt.release(); }
-        Path auditInput = args.length > 0 ? Path.of(args[0]) : Path.of("logs/per-gun-ammo-defaults-audit-input.json");
-        if (args.length == 0 && !Files.isRegularFile(auditInput)) auditInput = Path.of("../logs/per-gun-ammo-defaults-audit-input.json");
+        Path auditInput = args.length > 0 ? Path.of(args[0]) : Path.of("test-inputs/per-gun-ammo-defaults-audit-input.json");
         if (args.length > 0 || Files.isRegularFile(auditInput)) verifyLocalGunAudit(auditInput);
         System.out.println("Per-gun ammo configuration checks passed: " + checks);
     }

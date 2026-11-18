@@ -59,7 +59,7 @@ public final class VisibilityAbiChecks {
         System.out.println("Visibility ABI checks: " + checks + " passed (real MC 1.21.1 / TaCZ r7 / Sodium 0.6.13 classfiles)");
     }
     private static Path mod(String suffix) throws IOException {
-        Path dir = Files.isDirectory(Path.of("run", "mods")) ? Path.of("run", "mods") : Path.of("neoforge-1.21.1", "run", "mods");
+        Path dir = Path.of("run", "mods");
         try (var paths = Files.list(dir)) { return paths.filter(path -> path.getFileName().toString().endsWith(suffix)).findFirst().orElseThrow(); }
     }
     private static ClassInfo nativeClass(String name) throws IOException {

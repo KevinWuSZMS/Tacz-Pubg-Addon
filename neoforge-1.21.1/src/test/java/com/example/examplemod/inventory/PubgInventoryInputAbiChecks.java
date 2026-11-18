@@ -18,8 +18,7 @@ public final class PubgInventoryInputAbiChecks {
     private static final String GAMEPLAY = "com/tacz/guns/client/gameplay/";
     private static final String MIXINS = "com/example/examplemod/inventory/mixin/";
     public static void main(String[] args) throws Exception {
-        Path installed = Path.of("run/mods/tacz-neoforge-1.21.1-1.1.8-hotfix-r7.jar");
-        if (!Files.isRegularFile(installed)) installed = Path.of("neoforge-1.21.1").resolve(installed);
+        Path installed = Path.of("libs/tacz-neoforge-1.21.1-1.1.8-hotfix-r7.jar");
         check(Files.isRegularFile(installed), "installed TaCZ r7 is present");
         try (var jar = new JarFile(installed.toFile())) {
             var shoot = read(jar, GAMEPLAY + "LocalPlayerShoot");

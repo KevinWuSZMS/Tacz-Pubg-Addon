@@ -23,8 +23,8 @@ public final class GunDataExperimentPipelineChecks {
     private static int checks;
 
     public static void main(String[] args) throws Exception {
-        Path workspace = Files.exists(Path.of("docs/gun-balance/gun-assets.json")) ? Path.of("") : Path.of("..");
-        JsonObject assets = JsonParser.parseString(Files.readString(workspace.resolve("docs/gun-balance/gun-assets.json"))).getAsJsonObject();
+        Path workspace = Path.of("test-inputs");
+        JsonObject assets = JsonParser.parseString(Files.readString(workspace.resolve("gun-assets.json"))).getAsJsonObject();
         Map<String, JsonObject> guns = new HashMap<>();
         for (JsonElement element : assets.getAsJsonArray("guns")) {
             JsonObject row = element.getAsJsonObject(); guns.put(row.get("id").getAsString(), row);

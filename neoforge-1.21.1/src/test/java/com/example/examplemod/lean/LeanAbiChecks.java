@@ -194,7 +194,7 @@ public final class LeanAbiChecks {
     }
     private static ClassNode load(String name) throws Exception {
         if (name.startsWith(TACZ)) {
-            Path mods = Files.isDirectory(Path.of("run/mods")) ? Path.of("run/mods") : Path.of("neoforge-1.21.1/run/mods");
+            Path mods = Path.of("libs");
             Path file;
             try (var files = Files.list(mods)) {
                 file = files.filter(p -> p.getFileName().toString().endsWith("tacz-neoforge-1.21.1-1.1.8-hotfix-r7.jar")).findFirst().orElseThrow();

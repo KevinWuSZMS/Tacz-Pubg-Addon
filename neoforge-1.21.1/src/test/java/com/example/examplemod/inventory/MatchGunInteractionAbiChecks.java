@@ -31,8 +31,7 @@ public final class MatchGunInteractionAbiChecks {
     public static void main(String[] args) throws Exception {
         ClassNode keyboard = type(KEYBOARD);
         target(keyboard, "keyPress", "(JIIII)V", false);
-        Path directory = Files.isDirectory(Path.of("run", "mods")) ? Path.of("run", "mods")
-                : Path.of("neoforge-1.21.1", "run", "mods");
+        Path directory = Path.of("libs");
         Path installed = directory.resolve("tacz-neoforge-1.21.1-1.1.8-hotfix-r7.jar");
         check(Files.isRegularFile(installed), "actual installed r7 jar exists");
         try (var jar = new JarFile(installed.toFile())) {

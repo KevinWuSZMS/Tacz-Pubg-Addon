@@ -3,7 +3,7 @@ param([switch]$PrepareOnly)
 $ErrorActionPreference = 'Stop'
 $taskWorkspace = [IO.Directory]::GetParent($PSScriptRoot).FullName
 $taskProject = Join-Path $taskWorkspace 'neoforge-1.21.1'
-$taskRequest = Join-Path $taskWorkspace ('.runtime/client-launch-requests/' + [Guid]::NewGuid().ToString('N') + '.json')
+$taskRequest = Join-Path $taskProject ('.runtime/client-launch-requests/' + [Guid]::NewGuid().ToString('N') + '.json')
 $taskExitCode = 0
 Push-Location -LiteralPath $taskProject
 try {

@@ -83,9 +83,8 @@ public final class BulletRangeChecks {
     }
 
     private static void classfileChecks() throws Exception {
-        Path root = Files.isDirectory(Path.of("neoforge-1.21.1/run/mods")) ? Path.of("") : Path.of("..");
         Path jar;
-        try (var jars = Files.list(root.resolve("neoforge-1.21.1/run/mods"))) {
+        try (var jars = Files.list(Path.of("libs"))) {
             jar = jars.filter(path -> path.getFileName().toString().startsWith("tacz-")
                     && path.getFileName().toString().endsWith(".jar")).findFirst().orElseThrow();
         }
