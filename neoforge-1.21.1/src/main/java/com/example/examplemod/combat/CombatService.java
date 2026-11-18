@@ -4,6 +4,7 @@ import com.example.examplemod.pubgsettings.PubgSettingsService;
 import com.example.examplemod.movement.MovementService;
 import com.example.examplemod.movement.MovementState.Mode;
 import com.example.examplemod.throwables.PubgThrowableEntity;
+import com.example.examplemod.throwables.PubgThrowableItem;
 import com.example.examplemod.throwables.ThrowableKind;
 import com.example.examplemod.throwables.ThrowableService;
 import com.example.examplemod.zones.match.MatchEngine;
@@ -14,6 +15,8 @@ import com.tacz.guns.api.event.common.EntityHurtByGunEvent;
 import com.tacz.guns.api.event.common.GunDamageSourcePart;
 import com.tacz.guns.api.event.common.GunFireEvent;
 import com.tacz.guns.api.event.common.GunShootEvent;
+import com.tacz.guns.api.item.IGun;
+import com.tacz.guns.entity.EntityKineticBullet;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -23,10 +26,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.WeakHashMap;
+import me.xjqsh.lrtactical.api.item.ICustomItem;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -70,7 +78,7 @@ public final class CombatService {
         final MinecraftServer server;
         final MatchEngine engine; final Map<UUID,Player> players=new LinkedHashMap<>(); final Map<UUID,Reviving> rescues=new HashMap<>();
         final Map<UUID,MatchEngine.Participant> identities=new HashMap<>();
-        final Map<UUID,Hit> forced=new HashMap<>(); final Map<UUID,String> forcedCauses=new HashMap<>();
+        final Map<UUID,Hit> forced=new HashMap<>();
         final Map<String,Integer> teams=new LinkedHashMap<>(); long sequence;
         Game(MinecraftServer server,MatchEngine engine) {
             this.server=server;
@@ -145,17 +153,40 @@ public final class CombatService {
         for(var part:GunDamageSourcePart.values()) { DamageSource source=e.getDamageSource(part);if(source!=null)GUN_HITS.put(source,hit); }
     }
     private static Hit hit(DamageSource source) {
-        Hit gun=GUN_HITS.get(source);if(gun!=null)return gun;
-        String weapon=source.getDirectEntity() instanceof PubgThrowableEntity t?"tacz_pubg:"+t.kind().id:"";
-        if(weapon.isEmpty()&&source.getDirectEntity() instanceof me.xjqsh.lrtactical.entity.ThrowableItemEntity entity) {
-            var stack=entity.getItem();
-            weapon=stack.getItem() instanceof me.xjqsh.lrtactical.api.item.IThrowable item?item.getId(stack).toString():net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
+        Hit gun = GUN_HITS.get(source);
+        if (gun != null) return gun;
+        var direct = source.getDirectEntity();
+        var owner = source.getEntity();
+        UUID attacker = owner == null ? null : owner.getUUID();
+        // TaCZ blast damage bypasses the gun-hit event but retains the projectile's launch-time gun ID.
+        if (direct instanceof EntityKineticBullet bullet && owner instanceof LivingEntity && bullet.getGunId() != null) {
+            return new Hit(attacker, bullet.getGunId().toString(), false, "gun_blast", "");
         }
-        if(weapon.isEmpty()&&source.getDirectEntity()==source.getEntity()&&source.getEntity() instanceof net.minecraft.world.entity.LivingEntity entity&&!entity.getMainHandItem().isEmpty()) {
-            var stack=entity.getMainHandItem();weapon=stack.getItem() instanceof com.tacz.guns.api.item.IGun gunItem?gunItem.getGunId(stack).toString():net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
+        if (direct instanceof PubgThrowableEntity projectile) {
+            return new Hit(attacker == null ? projectile.throwerId() : attacker, "tacz_pubg:" + projectile.kind().id, false, "throwable", "");
         }
-        if(weapon.isEmpty()&&source.getDirectEntity()!=null&&source.getDirectEntity()!=source.getEntity())weapon=net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(source.getDirectEntity().getType()).toString();
-        return new Hit(source.getEntity()==null?null:source.getEntity().getUUID(),weapon,false,weapon.isEmpty()?"environment":"item","");
+        if (direct instanceof me.xjqsh.lrtactical.entity.ThrowableItemEntity projectile) {
+            return new Hit(attacker, itemId(projectile.getItem()), false, "throwable", "");
+        }
+        if (direct != null && direct != owner) {
+            return new Hit(attacker, BuiltInRegistries.ENTITY_TYPE.getKey(direct.getType()).toString(), false, "item", "");
+        }
+        if (direct instanceof LivingEntity living && direct == owner) {
+            var stack = living.getMainHandItem();
+            if (stack.isEmpty() && source.is(DamageTypes.PLAYER_ATTACK)) {
+                return new Hit(attacker, "", false, "unarmed", "");
+            }
+            if (!stack.isEmpty()) return new Hit(attacker, itemId(stack), false, "item", "");
+        }
+        return new Hit(attacker, "", false, "environment", "");
+    }
+    private static String itemId(ItemStack stack) {
+        if (stack.isEmpty()) return "";
+        var item = stack.getItem();
+        if (item instanceof IGun gun) return gun.getGunId(stack).toString();
+        // A PUBG throwable can share LR's animation ID with a different explosive.
+        if (!(item instanceof PubgThrowableItem) && item instanceof ICustomItem custom) return custom.getId(stack).toString();
+        return BuiltInRegistries.ITEM.getKey(item).toString();
     }
     private static void damaged(LivingDamageEvent.Post e) {
         if(!(e.getEntity() instanceof ServerPlayer p)||e.getNewDamage()<=0||FINISHING.contains(p.getUUID()))return;
@@ -226,7 +257,7 @@ public final class CombatService {
         // Incoming damage is handled by the DBNO pool, so vanilla never reaches its hurt feedback.
         p.hurtDuration=10;p.hurtTime=p.hurtDuration;
         p.serverLevel().broadcastDamageEvent(p,e.getSource());
-        if(down.hp<=0)finish(p,g,h,h.cause);else {syncDownedHealth(p,down);pushAll(g,p.server);}
+        if(down.hp<=0)finish(p,g,h);else {syncDownedHealth(p,down);pushAll(g,p.server);}
     }
     private static void syncDownedHealth(ServerPlayer p,Down down) {
         // Keep the native entity, nameplate mods and the independent DBNO bar at the same fraction.
@@ -238,7 +269,6 @@ public final class CombatService {
         Game g=GAMES.computeIfAbsent(p.server,ignored->new LinkedHashMap<>()).computeIfAbsent(engine.session().sessionId(),ignored->new Game(p.server,engine));Player state=g.players.get(p.getUUID());
         if(state==null||state.eliminated)return null;
         Hit end=g.forced.remove(p.getUUID());if(end==null)end=hit(source);
-        String cause=g.forcedCauses.remove(p.getUUID());if(cause==null)cause=end.cause;
         Down down=state.down;
         var contributions=new ArrayList<CombatRules.Contributor>();
         for(var entry:state.contributors.entrySet())contributions.add(new CombatRules.Contributor(entry.getKey(),team(g,entry.getKey()),entry.getValue().amount,entry.getValue().tick));
@@ -247,15 +277,18 @@ public final class CombatService {
         state.eliminated=true;state.down=null;state.contributors.clear();cancelRescues(g,p.getUUID());restorePose(p);
         if(credit.killer()!=null&&g.players.containsKey(credit.killer()))g.players.get(credit.killer()).kills++;
         for(UUID assister:credit.assistants())if(g.players.containsKey(assister))g.players.get(assister).assists++;
-        // Environmental completion retains the actual downing weapon; a new enemy finisher uses its own.
-        Hit displayed=end.weapon.isEmpty()&&down!=null?new Hit(down.hit.attacker,down.hit.weapon,false,cause,down.hit.gunType):end;
-        publish(g,p.server,"elimination",credit.killer(),p.getUUID(),displayed,cause,null);
-        for(UUID assister:credit.assistants()) {ServerPlayer recipient=p.server.getPlayerList().getPlayer(assister);if(recipient!=null)publish(g,p.server,"assist",assister,p.getUUID(),displayed,cause,recipient);}
+        // A teammate finishing the enemy's down awards the downer a kill and the finisher an assist.
+        // Friendly damage has no credit but the HUD still needs the responsible player's identity.
+        UUID attacker = credit.killer();
+        if (attacker == null) attacker = end.attacker;
+        if (attacker == null && down != null && end.cause.equals("bleedout")) attacker = down.hit.attacker;
+        publish(g,p.server,"elimination",attacker,p.getUUID(),end,end.cause,null);
+        for(UUID assister:credit.assistants()) {ServerPlayer recipient=p.server.getPlayerList().getPlayer(assister);if(recipient!=null)publish(g,p.server,"assist",assister,p.getUUID(),end,end.cause,recipient);}
         pushAll(g,p.server);return credit.killer();
     }
-    private static void finish(ServerPlayer p,Game g,Hit hit,String cause) {
+    private static void finish(ServerPlayer p,Game g,Hit hit) {
         if(!p.isAlive()||g.players.get(p.getUUID()).eliminated)return;
-        g.forced.put(p.getUUID(),hit);g.forcedCauses.put(p.getUUID(),cause);FINISHING.add(p.getUUID());
+        g.forced.put(p.getUUID(),hit);FINISHING.add(p.getUUID());
         try {p.setHealth(0);p.die(p.damageSources().genericKill());}finally{FINISHING.remove(p.getUUID());}
     }
     private static void leave(ServerPlayer p,String cause) {
@@ -267,10 +300,10 @@ public final class CombatService {
                 if(cause.equals("boundary")) {
                     // This event is emitted after arrival. Do not drop the arena inventory in
                     // another dimension or create a death-spectator anchor in that destination.
-                    g.forced.put(p.getUUID(),end);g.forcedCauses.put(p.getUUID(),cause);
+                    g.forced.put(p.getUUID(),end);
                     finalDeath(p,g.engine,p.damageSources().genericKill());
                     MatchService.eliminate(p);
-                } else finish(p,g,end,cause);
+                } else finish(p,g,end);
             }
         }
         // An end/respawn can already have removed the active engine before this callback.
@@ -321,7 +354,7 @@ public final class CombatService {
         for(var entry:g.players.entrySet())if(!g.engine.alive(entry.getKey())&&!entry.getValue().eliminated) {
             ServerPlayer p=g.server.getPlayerList().getPlayer(entry.getKey());
             String cause=p==null?"disconnect":"boundary";
-            if(p!=null) {g.forced.put(p.getUUID(),new Hit(null,"",false,cause,""));g.forcedCauses.put(p.getUUID(),cause);finalDeath(p,g.engine,p.damageSources().genericKill());}
+            if(p!=null) {g.forced.put(p.getUUID(),new Hit(null,"",false,cause,""));finalDeath(p,g.engine,p.damageSources().genericKill());}
             else {entry.getValue().eliminated=true;entry.getValue().down=null;entry.getValue().contributors.clear();cancelRescues(g,entry.getKey());publish(g,g.server,"elimination",null,entry.getKey(),new Hit(null,"",false,cause,""),cause,null);}
         }
     }
@@ -357,7 +390,7 @@ public final class CombatService {
                 Player state=entry.getValue();if(state.down==null||state.eliminated)continue;
                 ServerPlayer p=server.getPlayerList().getPlayer(entry.getKey());if(p==null)continue;
                 if(!g.engine.alive(entry.getKey())) {state.down=null;restorePose(p);continue;}
-                if(refreshDirectDeath(g,p)){finish(p,g,new Hit(null,"",false,"team_wipe",""),"team_wipe");continue;}
+                if(refreshDirectDeath(g,p)){finish(p,g,new Hit(null,"",false,"team_wipe",""));continue;}
                 Down down=state.down;setPose(p);p.stopUsingItem();
                 Vec3 position=p.position();double horizontal=position.subtract(down.position).horizontalDistance();
                 double limit=.215*number(server,p.isInWater()?"dbno.swim_multiplier":"dbno.crawl_multiplier")+.012;
@@ -366,7 +399,8 @@ public final class CombatService {
                 if(p.isUnderWater())down.underwater++;else down.underwater=0;
                 boolean healing=enabled(server,"rescue.pause_bleeding")&&g.rescues.values().stream().anyMatch(r->r.target.equals(p.getUUID()));
                 down.hp=CombatRules.bleed(down.hp,down.max,bleedSeconds(server,state.downs,moving),healing);
-                if(down.underwater>=number(server,"dbno.underwater_seconds")*20||down.hp<=0)finish(p,g,new Hit(null,"",false,"bleedout",""),"bleedout");
+                if(down.underwater>=number(server,"dbno.underwater_seconds")*20)finish(p,g,new Hit(null,"",false,"drown",""));
+                else if(down.hp<=0)finish(p,g,new Hit(null,"",false,"bleedout",""));
                 else syncDownedHealth(p,down);
             }
             if(server.getTickCount()%2==0)pushAll(g,server);
@@ -385,6 +419,6 @@ public final class CombatService {
         CombatPayloads.Rescue rescue=CombatPayloads.Rescue.NONE;
         for(Reviving r:g.rescues.values())if(r.rescuer.equals(viewer.getUUID())||r.target.equals(viewer.getUUID()))rescue=new CombatPayloads.Rescue(r.target,actor(g,r.target).name(),r.rescuer,actor(g,r.rescuer).name(),(int)Math.clamp(g.engine.combatTicks()-r.started,0,r.duration),r.duration,true);
         Down down=own.down;
-        PacketDistributor.sendToPlayer(viewer,new CombatPayloads.Snapshot(g.engine.session().sessionId(),++g.sequence,own.kills,own.assists,own.knocks,down!=null,down==null?0:Math.max(0,down.hp),down==null?0:down.max,own.downs,rescue,players));
+        PacketDistributor.sendToPlayer(viewer,new CombatPayloads.Snapshot(g.engine.session().sessionId(),++g.sequence,own.kills,own.assists,own.knocks,down!=null,down==null?0:Math.max(0,down.hp),down==null?0:down.max,own.downs,rescue,players,g.teams.get(team(g,viewer.getUUID()))));
     }
 }

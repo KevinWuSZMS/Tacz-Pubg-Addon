@@ -146,7 +146,7 @@ public record PubgSettings(Map<String, Double> values) {
         n(f,"combat.feed_row_height",13,10,24,true); n(f,"combat.right_margin",8,0,48,true);
         n(f,"combat.top_number_scale",1.5,1,2.5,false); n(f,"combat.top_height",22,16,36,true);
         n(f,"combat.center_row_height",14,10,30,true);
-        c(f,"combat.kill_color",0xFFFF6B3DL); c(f,"combat.assist_color",0xFFFFB526L);
+        c(f,"combat.kill_color",0xFFF35B42L); c(f,"combat.assist_color",0xFFFFB526L);
         c(f,"combat.own_color",0xFF57BDD8L); c(f,"combat.text_color",0xFFF1F1EEL);
         c(f,"combat.older_color",0xFFADB3B8L);
         n(f,"lean.body_penetration_tolerance",.06,0,.15,false);

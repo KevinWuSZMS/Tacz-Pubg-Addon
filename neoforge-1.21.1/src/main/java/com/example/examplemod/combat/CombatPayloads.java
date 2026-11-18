@@ -28,12 +28,13 @@ public final class CombatPayloads {
         public DownedPlayer { if (id == null || !Float.isFinite(health) || !Float.isFinite(maxHealth) || health < 0 || maxHealth < health || maxHealth > 10000) throw new IllegalArgumentException("Invalid downed player"); }
     }
     public record Snapshot(UUID session, long sequence, int kills, int assists, int knocks, boolean downed,
-            float downedHealth, float downedMaxHealth, int downCount, Rescue rescue, List<DownedPlayer> players) implements CustomPacketPayload {
+            float downedHealth, float downedMaxHealth, int downCount, Rescue rescue, List<DownedPlayer> players,
+            int viewerTeam) implements CustomPacketPayload {
         public static final Type<Snapshot> TYPE = CombatPayloads.type("combat_snapshot");
-        public static final Snapshot EMPTY = new Snapshot(NO_SESSION, 0, 0, 0, 0, false, 0, 0, 0, Rescue.NONE, List.of());
+        public static final Snapshot EMPTY = new Snapshot(NO_SESSION, 0, 0, 0, 0, false, 0, 0, 0, Rescue.NONE, List.of(), 0);
         public Snapshot {
             players = List.copyOf(players);
-            if (session == null || sequence < 0 || kills < 0 || assists < 0 || knocks < 0 || downCount < 0 || rescue == null || players.size() > 100
+            if (session == null || sequence < 0 || kills < 0 || assists < 0 || knocks < 0 || downCount < 0 || rescue == null || players.size() > 100 || viewerTeam < 0 || viewerTeam > 100
                     || !Float.isFinite(downedHealth) || !Float.isFinite(downedMaxHealth) || downedHealth < 0 || downedMaxHealth < downedHealth || downedMaxHealth > 10000) throw new IllegalArgumentException("Invalid combat snapshot");
         }
         public static final StreamCodec<RegistryFriendlyByteBuf, Snapshot> CODEC = new StreamCodec<>() {
@@ -43,18 +44,27 @@ public final class CombatPayloads {
                 int size = b.readVarInt(); if (size < 0 || size > 100) throw new IllegalArgumentException("Too many combat identities");
                 var players = new ArrayList<DownedPlayer>(size);
                 for (int i = 0; i < size; i++) players.add(new DownedPlayer(b.readUUID(), b.readFloat(), b.readFloat(), b.readBoolean()));
-                return new Snapshot(session, sequence, kills, assists, knocks, down, hp, max, count, rescue, players);
+                return new Snapshot(session, sequence, kills, assists, knocks, down, hp, max, count, rescue, players, b.readVarInt());
             }
             public void encode(RegistryFriendlyByteBuf b, Snapshot p) {
                 b.writeUUID(p.session); b.writeVarLong(p.sequence); b.writeVarInt(p.kills); b.writeVarInt(p.assists); b.writeVarInt(p.knocks);
                 b.writeBoolean(p.downed); b.writeFloat(p.downedHealth); b.writeFloat(p.downedMaxHealth); b.writeVarInt(p.downCount); writeRescue(b, p.rescue);
                 b.writeVarInt(p.players.size()); for (var player : p.players) { b.writeUUID(player.id); b.writeFloat(player.health); b.writeFloat(player.maxHealth); b.writeBoolean(player.downed); }
+                b.writeVarInt(p.viewerTeam);
             }
         };
         public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
     public record Event(UUID session, long sequence, String type, Actor attacker, Actor victim, String weaponId,
             boolean headshot, String cause, int kills, int assists) {
+        public boolean firearm() { return (cause.equals("gun") || cause.equals("gun_blast")) && !weaponId.isEmpty(); }
+        public boolean unarmed() { return cause.equals("unarmed"); }
+        public boolean throwable() { return cause.equals("throwable"); }
+        public boolean bleedout() { return type.equals("elimination") && cause.equals("bleedout"); }
+        public boolean friendlyFire() {
+            return (type.equals("knock") || type.equals("elimination")) && attacker.team > 0
+                    && attacker.team == victim.team && !attacker.id.equals(victim.id);
+        }
         public Event { if (session == null || sequence < 0 || !List.of("knock", "elimination", "assist", "revive").contains(type) || attacker == null || victim == null || weaponId.length() > 256 || cause.length() > 64 || kills < 0 || assists < 0) throw new IllegalArgumentException("Invalid combat event"); }
         public static final StreamCodec<RegistryFriendlyByteBuf, Event> CODEC = new StreamCodec<>() {
             public Event decode(RegistryFriendlyByteBuf b) { return new Event(b.readUUID(), b.readVarLong(), b.readUtf(16), readActor(b), readActor(b), b.readUtf(256), b.readBoolean(), b.readUtf(64), b.readVarInt(), b.readVarInt()); }
@@ -94,7 +104,7 @@ public final class CombatPayloads {
     public static void setClientRescueHandler(Consumer<Rescue> handler) { rescueUpdates = handler; }
     public static void setClientSessionGate(BiPredicate<UUID,Connection> gate) { clientGate=gate; }
     public static void register(RegisterPayloadHandlersEvent event) {
-        var registrar = event.registrar("1-combat");
+        var registrar = event.registrar("2-combat");
         registrar.playToClient(Snapshot.TYPE, Snapshot.CODEC, (p,c) -> {
             Connection connection=c.connection();
             c.enqueueWork(() -> {

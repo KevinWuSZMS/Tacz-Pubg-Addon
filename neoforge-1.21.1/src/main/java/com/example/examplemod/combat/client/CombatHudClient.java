@@ -1,5 +1,7 @@
 package com.example.examplemod.combat.client;
 
+import static com.example.examplemod.combat.client.CombatMessageRenderer.text;
+
 import com.example.examplemod.combat.CombatPayloads;
 import com.example.examplemod.combat.CombatPayloads.Event;
 import com.example.examplemod.combat.CombatPayloads.Actor;
@@ -12,9 +14,7 @@ import com.example.examplemod.hud.client.HudLayoutModel;
 import com.example.examplemod.pubgsettings.PubgSettings;
 import com.example.examplemod.pubgsettings.PubgSettingsService;
 import com.example.examplemod.vitals.client.MatchVitalsHud;
-import com.example.examplemod.vitals.client.WeaponStackRenderer;
 import com.example.examplemod.zones.match.client.MatchHudClient;
-import com.tacz.guns.api.TimelessAPI;
 import java.util.UUID;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -36,6 +36,7 @@ public final class CombatHudClient {
     public static Snapshot snapshot() { return current; }
     public static boolean hasStats(UUID session) { return session.equals(current.session())&&!CombatPayloads.NO_SESSION.equals(session); }
     public static void register(IEventBus modBus) {
+        KillFeedWeaponIcons.register(modBus);
         CombatPayloads.setClientHandlers(CombatHudClient::accept,CombatHudClient::event);
         NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingIn e)->clear());
         NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut e)->clear());
@@ -47,14 +48,26 @@ public final class CombatHudClient {
                 ResourceLocation.fromNamespaceAndPath("tacz_pubg","combat_hud"),(g,d)->render(g)));
         HudLayoutClient.registerPreview("combat_messages",(w,h)->new HudLayoutModel.Rect(Math.max(0,w/2-140),(int)(h*.72)-48,280,70),
                 (g,r,s)-> {
-                    centered(g,text("elimination","AKM","Player"),r.x()+r.width()/2,r.y()+8,0xFFF1F1EE,1);
-                    centered(g,text("kills",2),r.x()+r.width()/2,r.y()+32,0xFFFF6B3D,1.4F);
+                    var settings = PubgSettingsService.client();
+                    CombatMessageRenderer.draw(g, sample(false), false, r.x()+r.width()/2, r.y()+8, r.width(),
+                            settings.color("combat.text_color"), settings.color("combat.kill_color"), 1);
+                    centered(g,text("kills",2),r.x()+r.width()/2,r.y()+32,settings.color("combat.kill_color"),1.4F);
                 });
         HudLayoutClient.registerPreview("combat_feed",(w,h)->new HudLayoutModel.Rect(Math.max(0,w-190),33,182,72),
-                (g,r,s)-> {for(int i=0;i<3;i++) {
-                    g.fill(r.x(),r.y()+i*18,r.x()+r.width(),r.y()+i*18+15,0x66212427);
-                    g.drawString(Minecraft.getInstance().font,"21 Player  >  Player 23",r.x()+4,r.y()+i*18+3,0xFF57BDD8);
-                }});
+                (g,r,s)-> {
+                    g.pose().pushPose();
+                    g.pose().translate(r.x(), r.y(), 0);
+                    var settings = PubgSettingsService.client();
+                    CombatFeedRow.draw(g, sample(true), 3, r.width(), 0, 14, settings, 1);
+                    CombatFeedRow.draw(g, sample(false), 2, r.width(), 17, 14, settings, 1);
+                    g.pose().popPose();
+                });
+    }
+    private static Event sample(boolean knock) {
+        var attacker = new Actor(new UUID(0, 1), "Player", 3, TeamPalette.color(3));
+        var victim = new Actor(new UUID(0, 2), "Player", 6, TeamPalette.color(6));
+        return new Event(CombatPayloads.NO_SESSION, 0, knock ? "knock" : "elimination", attacker, victim,
+                "tacz:m4a1", knock, "gun", 2, 0);
     }
     private static void clear() { current=Snapshot.EMPTY; timeline.reset(CombatPayloads.NO_SESSION); counterNotice.reset(CombatPayloads.NO_SESSION,0,0); CombatPayloads.clearClient(); }
     private static void accept(Snapshot next) {
@@ -68,7 +81,9 @@ public final class CombatHudClient {
         if(mc.player==null||!value.session().equals(current.session())) return;
         boolean own=value.attacker().id().equals(mc.player.getUUID());
         if(value.type().equals("assist")&&!own) return;
-        if(timeline.offer(value.session(),value.sequence(),value,own,!value.type().equals("assist"))&&own)
+        boolean friendlyVictim = value.friendlyFire() && value.victim().id().equals(mc.player.getUUID());
+        boolean accepted = timeline.offer(value.session(), value.sequence(), value, own || friendlyVictim, !value.type().equals("assist"));
+        if (accepted && own && !value.friendlyFire())
             counterNotice.event(value.session(),value.type(),value.kills(),value.assists(),timeline.time());
     }
     private static void render(GuiGraphics g) {
@@ -111,30 +126,25 @@ public final class CombatHudClient {
                 var entry=rows.get(i);double age=time()-entry.born();
                 double a=CombatTimeline.alpha(age,lifetime,s.number("combat.fade_in_seconds")*20,s.number("combat.fade_out_seconds")*20);
                 double slide=i==0?0:row*(1-CombatTimeline.smooth(time()-rows.get(0).born(),s.number("combat.move_seconds")*20));
-                centered(g,message(entry.value()),x+width/2,y+height-25-i*row+(int)slide,
-                        alpha(s.color(entry.value().type().equals("assist")?"combat.assist_color":i>0?"combat.older_color":"combat.text_color"),a),(float)s.number("combat.message_scale"));
+                Event event = entry.value();
+                String textColor = event.friendlyFire() ? "combat.kill_color" : event.type().equals("assist")
+                        ? "combat.assist_color" : i > 0 ? "combat.older_color" : "combat.text_color";
+                int red = alpha(s.color("combat.kill_color"), a);
+                boolean receiving = event.victim().id().equals(Minecraft.getInstance().player.getUUID());
+                CombatMessageRenderer.draw(g, event, receiving, x + width/2, y + height - 25 - i*row + (int)slide,
+                        width, alpha(s.color(textColor), a), red, (float)s.number("combat.message_scale"));
+                if (i == 0 && event.friendlyFire()) {
+                    centered(g, text("friendly_fire"), x + width/2, y + height - 10, red,
+                            (float)s.number("combat.counter_scale"));
+                }
             }
+            if (!rows.isEmpty() && rows.get(0).value().friendlyFire()) return;
             double a=CombatTimeline.alpha(counterNotice.age(time()),s.number("combat.counter_seconds")*20,s.number("combat.fade_in_seconds")*20,s.number("combat.fade_out_seconds")*20);
             boolean assistCounter=counterNotice.assist();
             int amount=counterNotice.amount();
             if(amount>0&&a>0) centered(g,text(assistCounter?"assists":"kills",amount),x+width/2,y+height-10,
                     alpha(s.color(assistCounter?"combat.assist_color":"combat.kill_color"),a),(float)s.number("combat.counter_scale"));
         }
-    }
-    private static Component message(Event e) {
-        if(e.type().equals("revive")) return text("revive",e.victim().name());
-        if(e.type().equals("assist")) return text("assist",e.victim().name());
-        return text(e.type().equals("knock")?"knock":e.headshot()?"headshot":"elimination",weaponName(e.weaponId()),e.victim().name());
-    }
-    private static String weaponName(String key) {
-        var id=ResourceLocation.tryParse(key);
-        if(id!=null) {
-            var gun=TimelessAPI.getClientGunIndex(id);
-            if(gun.isPresent()) return Component.translatable(gun.get().getName()).getString();
-            var item=net.minecraft.core.registries.BuiltInRegistries.ITEM.getOptional(id);
-            if(item.isPresent()) return item.get().getDescription().getString();
-        }
-        return text("environment").getString();
     }
     private static void feed(GuiGraphics g,PubgSettings s) {
         double lifetime=s.number("combat.feed_seconds")*20;
@@ -151,40 +161,12 @@ public final class CombatHudClient {
                 double a=CombatTimeline.alpha(age,lifetime,s.number("combat.fade_in_seconds")*20,s.number("combat.fade_out_seconds")*20);
                 if(a<.02)continue;
                 int top=i*row-(i==0?0:(int)(row*(1-CombatTimeline.smooth(time()-rows.get(0).born(),s.number("combat.move_seconds")*20))));
-                g.fill(0,top,width,top+row-1,alpha(s.color("hud.panel_color"),a));
-                int tint=event.attacker().id().equals(Minecraft.getInstance().player.getUUID())?s.color("combat.own_color"):s.color("combat.text_color");
-                int nameWidth=Math.max(20,(width-79)/2);actor(g,event.attacker(),2,top+2,nameWidth,a,tint);
-                int middle=nameWidth+4;var gun=ResourceLocation.tryParse(event.weaponId());
-                boolean rendered=gun!=null&&WeaponStackRenderer.drawGunSilhouette(g,gun,middle,top+1,38,row-3,alpha(tint,a));
-                if(!rendered) {
-                    var item=gun==null?java.util.Optional.<net.minecraft.world.item.Item>empty():net.minecraft.core.registries.BuiltInRegistries.ITEM.getOptional(gun);
-                    if(item.isPresent()) {
-                        g.pose().pushPose();g.pose().translate(middle+12,top,0);g.pose().scale(.65F,.65F,1);
-                        com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1,1,1,(float)a);
-                        g.renderItem(item.get().getDefaultInstance(),0,0);
-                        com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1,1,1,1);g.pose().popPose();
-                    } else {g.fill(middle+12,top+5,middle+28,top+6,alpha(tint,a));}
-                }
-                glyph(g,middle+43,top+4,event.type(),alpha(tint,a));
-                if(event.headshot()) {g.fill(middle+55,top+3,middle+59,top+7,alpha(tint,a));g.fill(middle+56,top+2,middle+58,top+8,alpha(tint,a));}
-                actor(g,event.victim(),middle+64,top+2,nameWidth,a,tint);
+                CombatFeedRow.draw(g,event,current.viewerTeam(),width,top,row,s,a);
             }
             g.pose().popPose();
         }
     }
-    private static void actor(GuiGraphics g,Actor actor,int x,int y,int width,double opacity,int textColor) {
-        var font=Minecraft.getInstance().font;String number=actor.team()>0?Integer.toString(actor.team()):"–";
-        int badge=Math.max(10,font.width(number)+4);g.fill(x,y,x+badge,y+9,alpha(actor.color(),opacity));
-        g.drawString(font,number,x+2,y,alpha(TeamPalette.contrastText(actor.color()),opacity),false);
-        String name=font.plainSubstrByWidth(actor.name(),Math.max(4,width-badge-3));g.drawString(font,name,x+badge+3,y,alpha(textColor,opacity));
-    }
-    private static void glyph(GuiGraphics g,int x,int y,String type,int color) {
-        if(type.equals("revive")) {g.fill(x+3,y-1,x+5,y+7,color);g.fill(x,y+2,x+8,y+4,color);}
-        else if(type.equals("knock")) {g.fill(x,y+1,x+2,y+3,color);g.fill(x+2,y+3,x+7,y+5,color);g.fill(x+5,y+5,x+9,y+6,color);}
-        else for(int i=0;i<7;i++) {g.fill(x+i,y+i,x+i+2,y+i+1,color);g.fill(x+6-i,y+i,x+8-i,y+i+1,color);}
-    }
-    private static Component text(String key,Object... args) {return Component.translatable("screen.tacz_pubg.combat."+key,args);}
-    private static int alpha(int color,double amount) {return (color&0xFFFFFF)|((int)Math.clamp(Math.round((color>>>24)*amount),0,255)<<24);}
+    static int alpha(int color,double amount) {return (color&0xFFFFFF)|((int)Math.clamp(Math.round((color>>>24)*amount),0,255)<<24);}
     private static void centered(GuiGraphics g,Component message,int x,int y,int color,float scale) {
         if((color>>>24)<4)return;var font=Minecraft.getInstance().font;
         String value=font.plainSubstrByWidth(message.getString(),Math.max(20,(int)((g.guiWidth()-20)/scale)));

@@ -1,0 +1,43 @@
+{
+  "database": "PUBG Database",
+  "build": 26563649,
+  "updated": "2026-11-11",
+  "conversion": "Suppressed the baked drop shadow by linearly remapping source alpha 90..235 to 0..255; cropped, fitted to 94 by 94, centered on transparent 96 by 96 and filled white.",
+  "items": {
+    "frag_grenade": {
+      "page": "https://pubg.gs/throwables/frag-grenade/",
+      "image": "https://cdn.source.gs/pubg/img/item-weapon-grenade-c-437569.webp",
+      "sha256": "12967ed1ea731b3e8f1f3bd6775fb0351981269db6fabf55c07ca879e887f456"
+    },
+    "smoke_grenade": {
+      "page": "https://pubg.gs/throwables/smoke-grenade/",
+      "image": "https://cdn.source.gs/pubg/img/item-weapon-smokebomb-c-47c591.webp",
+      "sha256": "9b3c32c35595ba99da5efd189b322ca9487706ada32fd4e1ea0f6deeba45538d"
+    },
+    "stun_grenade": {
+      "page": "https://pubg.gs/throwables/stun-grenade/",
+      "image": "https://cdn.source.gs/pubg/img/item-weapon-flashbang-c-24670d.webp",
+      "sha256": "87b7f148a2aedbc1076ac782baa58ca38aa74d234e0d05ac7917dfd93f21fecb"
+    },
+    "molotov": {
+      "page": "https://pubg.gs/throwables/molotov-cocktail/",
+      "image": "https://cdn.source.gs/pubg/img/item-weapon-molotov-c-61382d.webp",
+      "sha256": "408f4e0d4d050afc640c2516b0b774c940ec25891becb5d9b5cb575d12fa9e4d"
+    },
+    "c4": {
+      "page": "https://pubg.gs/throwables/c4/",
+      "image": "https://cdn.source.gs/pubg/img/item-weapon-c4-creative-c-a83a11.webp",
+      "sha256": "e0a6fccafedff7cab75b1a7250a521e21c52d573b042f771e46e5766cca21eef"
+    },
+    "sticky_bomb": {
+      "page": "https://pubg.gs/throwables/sticky-bomb/",
+      "image": "https://cdn.source.gs/pubg/img/item-weapon-stickygrenade-c-841985.webp",
+      "sha256": "b769db23742e7699eff27bc3fb3d07e2661e422ef26189416463b636063f65a2"
+    },
+    "blue_zone_grenade": {
+      "page": "https://pubg.gs/throwables/bz-grenade/",
+      "image": "https://cdn.source.gs/pubg/img/item-weapon-bluezonegrenade-c-5a55af.webp",
+      "sha256": "975b2dde4d71304e1a45bc0d4004f317b7f1555295cd56c448a99918b1eff340"
+    }
+  }
+}

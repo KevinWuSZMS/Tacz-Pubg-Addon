@@ -10,6 +10,9 @@ public final class CombatRules {
     public record Credit(UUID killer, List<UUID> assistants) {}
     public static Credit credit(UUID victim, String victimTeam, UUID downer, String downerTeam,
             UUID finisher, String finisherTeam, List<Contributor> contributors, long now, long window, double minimum) {
+        if (finisher != null && !finisher.equals(victim) && victimTeam.equals(finisherTeam)) {
+            return new Credit(null, List.of());
+        }
         UUID killer = finisher != null && !finisher.equals(victim) && !victimTeam.equals(finisherTeam) ? finisher : null;
         boolean validDowner = downer != null && !downer.equals(victim) && !victimTeam.equals(downerTeam);
         if (validDowner && (killer == null || downerTeam.equals(finisherTeam))) killer = downer;
