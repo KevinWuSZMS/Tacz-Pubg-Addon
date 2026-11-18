@@ -12,7 +12,7 @@ import net.neoforged.fml.loading.FMLPaths;
 
 /** Shared placement for all addon HUD renderers. Optional positions do not change default layouts. */
 public final class HudLayoutClient {
-    public static final List<String> IDS = List.of("vitals", "equipment", "medicine_progress", "throwable_status",
+    public static final List<String> IDS = List.of("vitals", "equipment", "medicine_progress", "medicine_complete", "throwable_status",
             "throwable_wheel", "medicine_wheel", "match_phase", "alive_counter", "compass", "match_alert",
             "match_result", "squad", "map_preview", "spectator", "flight", "loot_pickup", "area_selection", "xaero_minimap", "weapon_stack",
             "combat_messages", "combat_feed");

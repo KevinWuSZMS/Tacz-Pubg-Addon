@@ -6,7 +6,7 @@ import java.util.Map;
 
 /** Pure document migration: preserves general controls and separates the match locomotion actions. */
 public final class BindingProfileMigration {
-    public static final int VERSION = 3;
+    public static final int VERSION = 4;
     public static final Map<String, String> MATCH_ACTION_DEFAULTS = Map.of(
             "key.tacz_pubg.stand", "Space", "key.tacz_pubg.match_sprint", "ShiftLeft",
             "key.tacz_pubg.match_crouch", "C", "key.tacz_pubg.match_prone", "Z",
@@ -20,7 +20,8 @@ public final class BindingProfileMigration {
         if (version < 1 || version > VERSION) throw new IllegalArgumentException("Unknown keybinding profile version: " + version);
         JsonObject result = source.deepCopy();
         if (version == VERSION) return result;
-        if (version == 2) return addLean(result);
+        if (version == 3) return updateCancelDefault(result);
+        if (version == 2) return updateCancelDefault(addLean(result));
         JsonObject profiles = result.getAsJsonObject("profiles");
         JsonObject general = profiles.getAsJsonObject("GENERAL"), match = profiles.getAsJsonObject("MATCH");
         if (general == null || match == null) throw new IllegalArgumentException("Missing keybinding profile");
@@ -43,7 +44,7 @@ public final class BindingProfileMigration {
             JsonObject value = profile.getValue().getAsJsonObject();
             value.remove("behavior"); value.remove("behaviorDefaults");
         }
-        return addLean(result);
+        return updateCancelDefault(addLean(result));
     }
 
     private static JsonObject addLean(JsonObject result) {
@@ -63,6 +64,22 @@ public final class BindingProfileMigration {
                 inventory.getAsJsonArray("keys").add("I");
                 inventory.addProperty("mode", "ANY");
                 matchKeys.add("key.inventory", inventory);
+            }
+        }
+        result.addProperty("version", 3);
+        return result;
+    }
+
+    private static JsonObject updateCancelDefault(JsonObject result) {
+        String id = "key.tacz_pubg.cancel_use";
+        for (var entry : result.getAsJsonObject("profiles").entrySet()) {
+            JsonObject profile = entry.getValue().getAsJsonObject();
+            JsonObject defaults = profile.getAsJsonObject("defaults"), bindings = profile.getAsJsonObject("bindings");
+            if (defaults == null || bindings == null) throw new IllegalArgumentException("Missing keybinding entries");
+            // An old factory X can migrate; personal replacements, chords and unbound values remain exact.
+            if (binding("X").equals(defaults.get(id))) {
+                if (binding("X").equals(bindings.get(id))) bindings.add(id, binding("F"));
+                defaults.add(id, binding("F"));
             }
         }
         result.addProperty("version", VERSION);

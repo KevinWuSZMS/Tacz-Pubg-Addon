@@ -62,6 +62,18 @@ public final class MatchVitalsChecks {
         }
         check(new MatchVitalsPayloads.MedicineStarted(0, 1, 1200).duration() == 1200, "Configurable one-minute treatment duration remains within wire safety bounds");
         rejects(() -> new MatchVitalsPayloads.MedicineStarted(0, 1, 1201));
+        for (var session : new UUID[]{id, MatchVitalsPayloads.NO_SESSION}) {
+            for (var kind : PubgMedicineModel.Kind.values()) {
+                var completed = new MatchVitalsPayloads.MedicineCompleted(session, kind);
+                var buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), RegistryAccess.EMPTY);
+                try {
+                    MatchVitalsPayloads.MedicineCompleted.CODEC.encode(buffer, completed);
+                    check(MatchVitalsPayloads.MedicineCompleted.CODEC.decode(buffer).equals(completed),
+                            "Successful-use notification preserves each medicine and its match or ordinary-world identity");
+                    check(buffer.readableBytes() == 0, "Completion codec leaves no trailing data");
+                } finally { buffer.release(); }
+            }
+        }
         // The same vanilla NBT mechanism used by the lifecycle service preserves all four food fields.
         var food = new FoodData();
         var original = new CompoundTag();

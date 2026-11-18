@@ -17,6 +17,7 @@ public final class MatchVitalsPayloads {
     public static final UUID ORDINARY_SESSION = new UUID(0, 1);
     private static Consumer<Snapshot> clientHandler = ignored -> {};
     private static Consumer<MedicineStarted> medicineHandler = ignored -> {};
+    private static Consumer<MedicineCompleted> medicineCompletedHandler = ignored -> {};
     private static Consumer<RecoveryState> recoveryHandler = ignored -> {};
     private MatchVitalsPayloads() {}
 
@@ -36,6 +37,16 @@ public final class MatchVitalsPayloads {
             @Override public void encode(RegistryFriendlyByteBuf b, MedicineStarted p) { b.writeVarInt(p.slot()); b.writeVarInt(p.request()); b.writeVarInt(p.duration()); }
         };
         public MedicineStarted { if (slot < 0 || slot > 8 || request <= 0 || duration < 0 || duration > 1200) throw new IllegalArgumentException("Invalid medicine response"); }
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    }
+    /** A completion is emitted only after the server has granted the treatment and consumed the item. */
+    public record MedicineCompleted(UUID session, PubgMedicineModel.Kind kind) implements CustomPacketPayload {
+        public static final Type<MedicineCompleted> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("tacz_pubg", "medicine_completed"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, MedicineCompleted> CODEC = new StreamCodec<>() {
+            @Override public MedicineCompleted decode(RegistryFriendlyByteBuf b) { return new MedicineCompleted(b.readUUID(), b.readEnum(PubgMedicineModel.Kind.class)); }
+            @Override public void encode(RegistryFriendlyByteBuf b, MedicineCompleted p) { b.writeUUID(p.session()); b.writeEnum(p.kind()); }
+        };
+        public MedicineCompleted { Objects.requireNonNull(session); Objects.requireNonNull(kind); }
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
     public record CancelMedicine(int request) implements CustomPacketPayload {
@@ -91,15 +102,17 @@ public final class MatchVitalsPayloads {
     }
     public static void setClientHandler(Consumer<Snapshot> handler) { clientHandler = Objects.requireNonNull(handler); }
     public static void setMedicineClientHandler(Consumer<MedicineStarted> handler) { medicineHandler = Objects.requireNonNull(handler); }
+    public static void setMedicineCompletedClientHandler(Consumer<MedicineCompleted> handler) { medicineCompletedHandler = Objects.requireNonNull(handler); }
     public static void setRecoveryClientHandler(Consumer<RecoveryState> handler) { recoveryHandler = Objects.requireNonNull(handler); }
     public static void register(RegisterPayloadHandlersEvent event) {
-        var registrar = event.registrar("3-match-vitals");
+        var registrar = event.registrar("4-match-vitals");
         registrar.playToClient(Snapshot.TYPE, Snapshot.CODEC,
                 (packet, context) -> context.enqueueWork(() -> clientHandler.accept(packet)));
         registrar.playToServer(StartMedicine.TYPE, StartMedicine.CODEC, (packet, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) PubgMedicineService.startHeld(player, packet.slot(), packet.request());
         }));
         registrar.playToClient(MedicineStarted.TYPE, MedicineStarted.CODEC, (packet, context) -> context.enqueueWork(() -> medicineHandler.accept(packet)));
+        registrar.playToClient(MedicineCompleted.TYPE, MedicineCompleted.CODEC, (packet, context) -> context.enqueueWork(() -> medicineCompletedHandler.accept(packet)));
         registrar.playToClient(RecoveryState.TYPE, RecoveryState.CODEC, (packet, context) -> context.enqueueWork(() -> recoveryHandler.accept(packet)));
         registrar.playToServer(CancelMedicine.TYPE, CancelMedicine.CODEC, (packet, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) PubgMedicineService.cancelRequest(player, packet.request());

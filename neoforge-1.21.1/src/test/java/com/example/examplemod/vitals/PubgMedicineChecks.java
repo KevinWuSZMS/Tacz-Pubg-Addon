@@ -240,12 +240,20 @@ public final class PubgMedicineChecks {
         check(calls(method(client, "captureKey"), "com/example/examplemod/lootspawn/client/GroundLootClient", "pickupKey")
                 && calls(method(client, "captureKey"), "net/minecraft/client/KeyMapping", "matches")
                 && calls(method(client, "captureMouse"), "net/minecraft/client/KeyMapping", "matchesMouse"), "Medicine input ignores a rebound shared binding");
+        check(calls(method(client, "captureKey"), "com/example/examplemod/keybindings/BindingInput", "freshPress")
+                && calls(method(client, "captureMouse"), "com/example/examplemod/keybindings/BindingInput", "freshPress"),
+                "A second chord member or already-held alternative can cancel the first medicine press");
         check(!calls(method(client, "active"), "com/example/examplemod/inventory/InventoryConfig", "active")
                 && !calls(method(client, "active"), "com/example/examplemod/vitals/client/MatchVitalsHud", "active"), "Ordinary-world treatment is gated to a match");
         check(field(method(client, "accept"), "pending") && calls(method(client, "accept"), clientName, "sameHeld")
                 && calls(method(client, "accept"), clientName, "cancelPending") && !field(method(client, "accept"), "selected"),
                 "Late acknowledgements can switch back to an old hotbar slot or revive cancelled input");
         var throwable = node("com/example/examplemod/throwables/client/ThrowableClient");
+        check(calls(method(client, "tryUseHeld"), throwable.name, "consumeSharedCancelClick")
+                && calls(method(client, "tryUseHeld"), throwable.name, "cancelMedicineUse")
+                && calls(method(throwable, "cancelMedicineUse"), throwable.name, "requestCancel")
+                && calls(method(throwable, "requestCancel"), throwable.name, "cancelQuick"),
+                "Shared medicine interaction cannot cancel or leaves automatic use running");
         var sustain = method(throwable, "sustainingMedicineUse");
         check(field(sustain, "quickSlot") && field(sustain, "quickStarted") && calls(sustain, "net/minecraft/client/player/LocalPlayer", "isUsingItem")
                 && calls(sustain, "net/minecraft/client/player/LocalPlayer", "getUsedItemHand")
@@ -267,7 +275,7 @@ public final class PubgMedicineChecks {
                     "Single-press medicine hold mixin is not registered");
         }
         var packets = node("com/example/examplemod/vitals/MatchVitalsPayloads");
-        check(Arrays.stream(method(packets, "register").instructions.toArray()).anyMatch(i -> i instanceof LdcInsnNode text && text.cst.equals("3-match-vitals")),
+        check(Arrays.stream(method(packets, "register").instructions.toArray()).anyMatch(i -> i instanceof LdcInsnNode text && text.cst.equals("4-match-vitals")),
                 "Changed medical input wire registration must reject incompatible clients");
     }
     private static ClassNode node(String name) throws IOException {

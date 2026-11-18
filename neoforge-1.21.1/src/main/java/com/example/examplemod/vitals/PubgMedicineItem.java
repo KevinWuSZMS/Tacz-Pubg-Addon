@@ -67,6 +67,10 @@ public class PubgMedicineItem extends Item {
             player.awardStat(Stats.ITEM_USED.get(this));
             stack.consume(1, player);
             player.gameEvent(kind.isBoost() ? GameEvent.DRINK : GameEvent.ITEM_INTERACT_FINISH);
+            var game = MatchVitalsService.activeGame(player);
+            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
+                    new MatchVitalsPayloads.MedicineCompleted(game == null ? MatchVitalsPayloads.NO_SESSION
+                            : game.session().sessionId(), kind));
         }
         return stack;
     }

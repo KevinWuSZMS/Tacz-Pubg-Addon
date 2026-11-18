@@ -66,14 +66,25 @@ public final class PubgMedicineHud {
                 && (target(mc.player.getHealth(), mc.player.getMaxHealth()).total() > mc.player.getHealth() + 1e-6 || MatchVitalsHud.currentBoost() > 0);
     }
     public static HudLayoutModel.Rect previewBounds(int width, int height) {
-        return ActionCircleRenderer.bounds(width, height, Texts.of("screen.tacz_pubg.medicine.action_using", Component.translatable("item.tacz_pubg.first_aid_kit")));
+        return ActionCircleRenderer.bounds(width, height, actionLabel(PubgMedicineModel.Kind.FIRST_AID_KIT),
+                Component.keybind("key.tacz_pubg.cancel_use"), false);
+    }
+    public static Component actionLabel(PubgMedicineModel.Kind kind) {
+        return Texts.of(switch (kind) {
+            case BANDAGE -> "screen.tacz_pubg.medicine.action_bandage";
+            case FIRST_AID_KIT -> "screen.tacz_pubg.medicine.action_first_aid";
+            case MED_KIT -> "screen.tacz_pubg.medicine.action_med_kit";
+            case ENERGY_DRINK -> "screen.tacz_pubg.medicine.action_energy_drink";
+            case PAINKILLER -> "screen.tacz_pubg.medicine.action_painkiller";
+            case ADRENALINE_SYRINGE -> "screen.tacz_pubg.medicine.action_adrenaline";
+        });
     }
     public static void preview(GuiGraphics g, HudLayoutModel.Rect bounds) {
         var stack = new ItemStack(com.example.examplemod.vitals.PubgMedicineItems.FIRST_AID_KIT.get());
         int duration = stack.getUseDuration(Minecraft.getInstance().player);
         ActionCircleRenderer.draw(g, bounds, stack, false,
-                (int) Math.round(duration * .78), duration, Texts.of("screen.tacz_pubg.medicine.action_using", Component.translatable("item.tacz_pubg.first_aid_kit")),
-                Texts.of("screen.tacz_pubg.medicine.action_cancel", Component.keybind("key.tacz_pubg.cancel_use")));
+                (int) Math.round(duration * .78), duration, actionLabel(PubgMedicineModel.Kind.FIRST_AID_KIT),
+                Component.keybind("key.tacz_pubg.cancel_use"));
     }
     static void render(GuiGraphics graphics) {
         var mc = Minecraft.getInstance();
@@ -89,10 +100,9 @@ public final class PubgMedicineHud {
         Component label = rescue ? Texts.of(combat.rescue().rescuer().equals(player.getUUID())
                 ? "screen.tacz_pubg.medicine.action_rescuing" : "screen.tacz_pubg.medicine.action_being_rescued",
                 combat.rescue().rescuer().equals(player.getUUID()) ? combat.rescue().targetName() : combat.rescue().rescuerName())
-                : Texts.of("screen.tacz_pubg.medicine.action_using", player.getUseItem().getHoverName());
-        Component cancel = Texts.of("screen.tacz_pubg.medicine.action_cancel", Component.keybind(rescue
-                ? "key.tacz_pubg.pickup_loot" : "key.tacz_pubg.cancel_use"));
-        var bounds = ActionCircleRenderer.bounds(graphics.guiWidth(), graphics.guiHeight(), label);
+                : actionLabel(medicine.kind());
+        Component cancel = Component.keybind(rescue ? "key.tacz_pubg.pickup_loot" : "key.tacz_pubg.cancel_use");
+        var bounds = ActionCircleRenderer.bounds(graphics.guiWidth(), graphics.guiHeight(), label, cancel, rescue);
         try (var ignored = HudLayoutClient.apply(graphics, "medicine_progress", bounds.x(), bounds.y(), bounds.width(), bounds.height())) {
             ActionCircleRenderer.draw(graphics, bounds, rescue ? ItemStack.EMPTY : player.getUseItem(), rescue, remaining, duration, label, cancel);
         }

@@ -2787,5 +2787,14 @@
   "key.tacz_pubg.match_prone": "卧倒",
   "key.tacz_pubg.match_walk": "行走",
   "key.tacz_pubg.lean_left": "向左探头",
-  "key.tacz_pubg.lean_right": "向右探头"
+  "key.tacz_pubg.lean_right": "向右探头",
+  "message.tacz_pubg.medicine.used": "使用了%s",
+  "screen.tacz_pubg.hud_layout.component.medicine_complete": "药品使用完成提示",
+  "screen.tacz_pubg.medicine.action_adrenaline": "正在注射肾上腺素",
+  "screen.tacz_pubg.medicine.action_bandage": "正在包扎伤口",
+  "screen.tacz_pubg.medicine.action_energy_drink": "正在饮用能量饮料",
+  "screen.tacz_pubg.medicine.action_first_aid": "正在使用急救包",
+  "screen.tacz_pubg.medicine.action_med_kit": "正在使用医疗箱",
+  "screen.tacz_pubg.medicine.action_painkiller": "正在服用止痛药",
+  "screen.tacz_pubg.medicine.cancel": "取消"
 }

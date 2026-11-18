@@ -80,11 +80,35 @@ public final class BindingProfileMigrationChecks {
         previous.addProperty("version", 2);
         keys(previous, "MATCH", "bindings").add("key.inventory", JsonParser.parseString("{\"keys\":[\"ControlAny\",\"E\"],\"mode\":\"CHORD\"}"));
         check(keys(BindingProfileMigration.upgrade(previous), "MATCH", "bindings").get("key.inventory").equals(keys(previous, "MATCH", "bindings").get("key.inventory")), "Personal inventory chord is preserved");
+        medicineCancelChecks(updated);
         JsonObject future = updated.deepCopy(); future.addProperty("version", 999);
         boolean rejected = false;
         try { BindingProfileMigration.upgrade(future); } catch (IllegalArgumentException expected) { rejected = true; }
         check(rejected, "Unknown future versions are not silently rewritten");
         System.out.println("BindingProfileMigrationChecks: " + checks + " document migration checks passed; no game config touched.");
+    }
+
+    private static void medicineCancelChecks(JsonObject current) {
+        String cancel = "key.tacz_pubg.cancel_use";
+        var oldDefault = JsonParser.parseString("{\"keys\":[\"X\"],\"mode\":\"CHORD\"}");
+        var newDefault = JsonParser.parseString("{\"keys\":[\"F\"],\"mode\":\"CHORD\"}");
+        for (String custom : new String[]{"{\"keys\":[\"Mouse4\"],\"mode\":\"CHORD\"}",
+                "{\"keys\":[\"ControlAny\",\"X\"],\"mode\":\"CHORD\"}",
+                "{\"keys\":[\"X\",\"Mouse4\"],\"mode\":\"ANY\"}", "{\"keys\":[],\"mode\":\"CHORD\"}"}) {
+            JsonObject previous = current.deepCopy(); previous.addProperty("version", 3);
+            var personal = JsonParser.parseString(custom);
+            for (String name : new String[]{"GENERAL", "MATCH"}) {
+                keys(previous, name, "defaults").add(cancel, oldDefault.deepCopy());
+                keys(previous, name, "bindings").add(cancel, (name.equals("GENERAL") ? oldDefault : personal).deepCopy());
+            }
+            JsonObject original = previous.deepCopy(), upgraded = BindingProfileMigration.upgrade(previous);
+            check(previous.equals(original), "Cancel migration leaves the original document available for backup");
+            check(keys(upgraded, "GENERAL", "bindings").get(cancel).equals(newDefault), "Untouched cancel X becomes F");
+            check(keys(upgraded, "MATCH", "bindings").get(cancel).equals(personal), "Custom cancellation binding remains exact");
+            for (String name : new String[]{"GENERAL", "MATCH"})
+                check(keys(upgraded, name, "defaults").get(cancel).equals(newDefault), "Reset uses F in both profiles");
+            check(BindingProfileMigration.upgrade(upgraded).equals(upgraded), "Cancel migration is idempotent");
+        }
     }
 
     private static JsonObject profile(JsonObject document, String profile) { return document.getAsJsonObject("profiles").getAsJsonObject(profile); }

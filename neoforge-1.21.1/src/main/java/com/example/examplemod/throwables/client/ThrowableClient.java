@@ -37,7 +37,7 @@ import org.lwjgl.glfw.GLFW;
 
 public final class ThrowableClient {
     private static final String CATEGORY = "key.categories.tacz_pubg";
-    static final KeyMapping COOK = key("cook", GLFW.GLFW_KEY_R), CANCEL = key("cancel_use", GLFW.GLFW_KEY_X);
+    static final KeyMapping COOK = key("cook", GLFW.GLFW_KEY_R), CANCEL = key("cancel_use", GLFW.GLFW_KEY_F);
     static final KeyMapping THROWABLE = key("throwable", GLFW.GLFW_KEY_5), WHEEL = key("throwable_wheel", GLFW.GLFW_KEY_G);
     static final KeyMapping WHEEL_ALT = key("throwable_wheel_alt", GLFW.GLFW_KEY_F1);
     static final KeyMapping MED_WHEEL = key("medicine_wheel", GLFW.GLFW_KEY_GRAVE_ACCENT),
@@ -198,10 +198,23 @@ public final class ThrowableClient {
     private static void requestCancel() {
         var mc = Minecraft.getInstance();
         if (mc.player == null) return;
+        boolean activeUse = mc.player.isUsingItem() || cookedHeld;
         com.example.examplemod.vitals.client.MedicineClient.cancelPending();
-        cancelQuick(); PacketDistributor.sendToServer(new ThrowablePayloads.Action(1));
+        cancelQuick();
+        // Pending medicine requests already have a scoped cancellation; do not cancel a later use.
+        if (activeUse) PacketDistributor.sendToServer(new ThrowablePayloads.Action(1));
         cookedReleaseSent = true;
         mc.player.stopUsingItem();
+    }
+    /** Shared interaction and cancel may be the same trigger, including a queued scroll impulse. */
+    public static void consumeSharedCancelClick() {
+        if (BindingInput.overlaps(CANCEL, com.example.examplemod.lootspawn.client.GroundLootClient.pickupKey()))
+            while (CANCEL.consumeClick()) {}
+    }
+    public static void cancelMedicineUse() {
+        var player = Minecraft.getInstance().player;
+        if (player != null && player.isUsingItem() && player.getUseItem().getItem() instanceof PubgMedicineItem)
+            requestCancel();
     }
     private static void cancelQuick() {
         quickTicks = 0; quickSlot = -1; quickStarted = false;
@@ -270,7 +283,8 @@ public final class ThrowableClient {
         }
         if (mc.screen != null) return;
         while (COOK.consumeClick()) requestCook();
-        while (CANCEL.consumeClick()) if (mc.player.isUsingItem() || cookedHeld) requestCancel();
+        while (CANCEL.consumeClick()) if (mc.player.isUsingItem() || cookedHeld
+                || com.example.examplemod.vitals.client.MedicineClient.pending()) requestCancel();
         boolean active = mc.player.isAlive() && !mc.player.isSpectator();
         if (!active) {
             while (THROWABLE.consumeClick()) {}

@@ -28,6 +28,7 @@ public final class MatchVitalsHud {
 
     public static void register(IEventBus modBus) {
         MedicineClient.register();
+        MedicineUseToast.register(modBus);
         MatchVitalsPayloads.setClientHandler(MatchVitalsHud::accept);
         MatchVitalsPayloads.setRecoveryClientHandler(PubgMedicineHud::acceptRecovery);
         NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut event) -> { clear(); PubgMedicineHud.clear(); });

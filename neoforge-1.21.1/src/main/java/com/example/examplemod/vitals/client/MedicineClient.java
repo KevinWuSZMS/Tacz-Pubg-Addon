@@ -1,6 +1,7 @@
 package com.example.examplemod.vitals.client;
 
 import com.example.examplemod.lootspawn.client.GroundLootClient;
+import com.example.examplemod.keybindings.BindingInput;
 import com.example.examplemod.throwables.client.ThrowableClient;
 import com.example.examplemod.vitals.MatchVitalsPayloads;
 import com.example.examplemod.vitals.PubgMedicineItem;
@@ -62,8 +63,14 @@ public final class MedicineClient {
         if (!active()) return false;
         var mc = Minecraft.getInstance();
         suppressOffhandSwap();
-        if (pending() && !sameHeld()) cancelPending();
-        if (!pending() && !mc.isPaused() && !MatchVitalsHud.paused() && !mc.player.isUsingItem() && !mc.player.isHandsBusy()) {
+        ThrowableClient.consumeSharedCancelClick();
+        // The next complete interaction press cancels; it cannot become a new use or a pickup.
+        if (pending()) { cancelPending(); return true; }
+        if (mc.player.isUsingItem() && mc.player.getUseItem().getItem() instanceof PubgMedicineItem) {
+            ThrowableClient.cancelMedicineUse();
+            return true;
+        }
+        if (!mc.isPaused() && !MatchVitalsHud.paused() && !mc.player.isUsingItem() && !mc.player.isHandsBusy()) {
             pending = nextRequest = nextRequest == Integer.MAX_VALUE ? 1 : nextRequest + 1;
             pendingSlot = mc.player.getInventory().selected; requestedTick = mc.player.tickCount;
             expectedItem = mc.player.getMainHandItem().getItem();
@@ -84,7 +91,7 @@ public final class MedicineClient {
             interaction.setDown(true);
             if (action == GLFW.GLFW_PRESS) {
                 while (interaction.consumeClick()) {}
-                GroundLootClient.tryPickupOrInteract();
+                if (BindingInput.freshPress(interaction, BindingInput.keyboardId(key, scan))) GroundLootClient.tryPickupOrInteract();
             }
         }
         return true;
@@ -98,7 +105,7 @@ public final class MedicineClient {
         } else if (event.getAction() == GLFW.GLFW_PRESS) {
             interaction.setDown(true);
             while (interaction.consumeClick()) {}
-            GroundLootClient.tryPickupOrInteract();
+            if (BindingInput.freshPress(interaction, BindingInput.mouseId(event.getButton()))) GroundLootClient.tryPickupOrInteract();
         }
         return true;
     }

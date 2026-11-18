@@ -385,6 +385,7 @@ tasks.named('check').configure { dependsOn droppedLootTransitionChecks }
         matchConfigChecks: 'com.example.examplemod.zones.match.MatchConfigChecks',
         matchDropChecks: 'com.example.examplemod.zones.match.MatchDropChecks',
         pubgMedicineChecks: 'com.example.examplemod.vitals.PubgMedicineChecks',
+        medicinePresentationChecks: 'com.example.examplemod.vitals.MedicinePresentationChecks',
         originalIconChecks: 'com.example.examplemod.originalicons.OriginalIconChecks',
         detailedItemGeometryChecks: 'com.example.examplemod.originalicons.client.DetailedItemGeometryChecks',
         seamlessPixelGeometryChecks: 'com.example.examplemod.originalicons.client.SeamlessPixelGeometryChecks',
