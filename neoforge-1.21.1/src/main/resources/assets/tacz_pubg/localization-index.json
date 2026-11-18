@@ -2644,6 +2644,7 @@
   "8596bb7d1789": "screen.tacz_pubg.medicine.action_adrenaline",
   "125c540c6ff9": "screen.tacz_pubg.medicine.cancel",
   "15e853c3e3e0": "message.tacz_pubg.medicine.used",
+  "976ba87767b0": "message.tacz_pubg.medicine.interrupted",
   "5b662f2c4842": "screen.tacz_pubg.hud_layout.component.medicine_complete",
   "af5a04043f10": "screen.tacz_pubg.combat.friendly_fire",
   "d6be2aac908b": "screen.tacz_pubg.combat.fists",

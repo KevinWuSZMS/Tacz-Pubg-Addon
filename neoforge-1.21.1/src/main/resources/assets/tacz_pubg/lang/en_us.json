@@ -2789,6 +2789,7 @@
   "key.tacz_pubg.lean_left": "Lean left",
   "key.tacz_pubg.lean_right": "Lean right",
   "message.tacz_pubg.medicine.used": "Used %s",
+  "message.tacz_pubg.medicine.interrupted": "Item use interrupted",
   "screen.tacz_pubg.hud_layout.component.medicine_complete": "Medicine completion message",
   "screen.tacz_pubg.medicine.action_adrenaline": "Injecting adrenaline",
   "screen.tacz_pubg.medicine.action_bandage": "Bandaging wounds",

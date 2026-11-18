@@ -56,9 +56,115 @@ public final class PubgMedicineGameTests {
         new Fixture(helper, PubgMedicineItems.MED_KIT.get(), 3, 120, 0, 17).run();
     }
 
+    @GameTest(template = "empty", templateNamespace = "combat_dbno", batch = "combat_dbno", timeoutTicks = 350)
+    public static void bandageChainInterruptsAtCapWithoutConsumingNextBandage(GameTestHelper helper) throws Exception {
+        var fixture = new Fixture(helper, PubgMedicineItems.BANDAGE.get(), 14, 60, 58, 1);
+        fixture.later(65, () -> {
+            fixture.start(2);
+            fixture.later(63, () -> {
+                helper.assertTrue(fixture.completions.size() == 1 && fixture.player.isUsingItem(),
+                        "Finishing one bandage below the cap did not immediately start the next");
+                helper.assertTrue(fixture.capture.continued.size() == 1 && fixture.player.getMainHandItem().getCount() == 1,
+                        "Continuation must acknowledge exactly one next cast without consuming it early");
+            });
+            fixture.later(123, () -> {
+                fixture.near(fixture.player.getHealth(), 15, "The chain did not stop at seventy-five percent");
+                helper.assertTrue(!fixture.player.isUsingItem() && fixture.completions.size() == 1
+                                && fixture.player.getMainHandItem().getCount() == 1,
+                        "The partially used second bandage was consumed or remained active at the cap");
+                helper.assertTrue(fixture.capture.interrupted.size() == 1
+                                && fixture.capture.interrupted.getFirst().clock == fixture.heals.getLast().clock,
+                        "The interruption toast must be emitted on the exact healing tick that reaches the cap");
+                fixture.player.setHealth(14);
+                fixture.later(65, () -> {
+                    helper.assertTrue(!fixture.player.isUsingItem() && fixture.completions.size() == 1
+                                    && fixture.player.getMainHandItem().getCount() == 1,
+                            "Taking later damage unexpectedly restarted the completed bandage chain");
+                    fixture.close(); helper.succeed();
+                });
+            });
+        });
+    }
+
+    @GameTest(template = "empty", templateNamespace = "combat_dbno", batch = "combat_dbno", timeoutTicks = 350)
+    public static void bandageChainRefillsFromMainInventoryAndPreservesUnfinishedItem(GameTestHelper helper) throws Exception {
+        var fixture = new Fixture(helper, PubgMedicineItems.BANDAGE.get(), 12, 60, 58, 2.4);
+        fixture.later(65, () -> {
+            fixture.player.getInventory().setItem(9, new ItemStack(fixture.medicine, 2));
+            fixture.start(1);
+            fixture.later(63, () -> {
+                helper.assertTrue(fixture.player.isUsingItem() && fixture.player.getMainHandItem().getItem() == fixture.medicine
+                                && fixture.player.getMainHandItem().getCount() == 2 && fixture.player.getInventory().getItem(9).isEmpty(),
+                        "An exhausted held stack did not refill from main inventory into the original hand");
+                helper.assertTrue(fixture.capture.continued.size() == 1,
+                        "Inventory refill must send one authoritative continuation to the client");
+            });
+            fixture.later(185, () -> {
+                fixture.near(fixture.player.getHealth(), 15, "Inventory-backed bandage chain ended at the wrong health");
+                helper.assertTrue(fixture.completions.size() == 2 && fixture.capture.continued.size() == 2,
+                        "Exactly two bandages should finish before the third cast reaches the health cap");
+                helper.assertTrue(!fixture.player.isUsingItem() && fixture.player.getMainHandItem().getCount() == 1
+                                && fixture.player.getInventory().getItem(9).isEmpty(),
+                        "Refill duplicated bandages or consumed the unfinished third one");
+                helper.assertTrue(fixture.capture.interrupted.size() == 1,
+                        "The inventory-backed chain did not emit one interruption at the cap");
+                fixture.close(); helper.succeed();
+            });
+        });
+    }
+
+    @GameTest(template = "empty", templateNamespace = "combat_dbno", batch = "combat_dbno", timeoutTicks = 350)
+    public static void manuallyCancelledBandageChainNeverRestartsFromPendingRecovery(GameTestHelper helper) throws Exception {
+        var fixture = new Fixture(helper, PubgMedicineItems.BANDAGE.get(), 5, 60, 58, 2.4);
+        fixture.later(65, () -> {
+            fixture.start(3);
+            fixture.later(65, () -> {
+                helper.assertTrue(fixture.player.isUsingItem() && fixture.capture.continued.size() == 1,
+                        "No second cast was active before cancelling the chain");
+                // The cancel-key server handler releases the real use, invoking the item's cancellation callback.
+                fixture.player.releaseUsingItem();
+                helper.assertTrue(!fixture.player.isUsingItem(), "Manual cancellation did not release the next cast");
+            });
+            fixture.later(190, () -> {
+                fixture.near(fixture.player.getHealth(), 7.4, "Cancellation should retain only the already completed healing budget");
+                helper.assertTrue(!fixture.player.isUsingItem() && fixture.completions.size() == 1
+                                && fixture.capture.continued.size() == 1 && fixture.player.getMainHandItem().getCount() == 2,
+                        "Pending recovery resumed a cancelled chain or consumed another bandage");
+                fixture.close(); helper.succeed();
+            });
+        });
+    }
+
+    @GameTest(template = "empty", templateNamespace = "combat_dbno", batch = "combat_dbno", timeoutTicks = 350)
+    public static void changingSlotsCancelsBandageContinuationWithoutOverwritingTheNewItem(GameTestHelper helper) throws Exception {
+        var fixture = new Fixture(helper, PubgMedicineItems.BANDAGE.get(), 5, 60, 58, 2.4);
+        fixture.later(65, () -> {
+            fixture.start(3);
+            int bandageSlot = fixture.player.getInventory().selected;
+            int otherSlot = (bandageSlot + 1) % 9;
+            fixture.player.getInventory().setItem(otherSlot, new ItemStack(net.minecraft.world.item.Items.STONE, 7));
+            fixture.later(65, () -> fixture.player.getInventory().selected = otherSlot);
+            fixture.later(70, () -> {
+                helper.assertTrue(!fixture.player.isUsingItem()
+                                && fixture.player.getMainHandItem().is(net.minecraft.world.item.Items.STONE)
+                                && fixture.player.getMainHandItem().getCount() == 7,
+                        "Slot switching did not cancel the chain or it overwrote the newly selected item");
+                fixture.player.getInventory().selected = bandageSlot;
+            });
+            fixture.later(190, () -> {
+                helper.assertTrue(!fixture.player.isUsingItem() && fixture.completions.size() == 1
+                                && fixture.capture.continued.size() == 1 && fixture.player.getMainHandItem().getCount() == 2,
+                        "Returning to the original slot unexpectedly resumed the cancelled chain");
+                fixture.close(); helper.succeed();
+            });
+        });
+    }
+
     private record Heal(long clock, float amount, float before, int usingTicks) {}
-    private record Finished(long clock, int usingTicks) {}
+    private record Finished(long clock, int usingTicks, int observedTicks, int lastRemaining) {}
     private record Forecast(long clock, MatchVitalsPayloads.RecoveryState state, float health, long healthClock) {}
+    private record Continued(long clock, MatchVitalsPayloads.BandageContinued packet) {}
+    private record Interrupted(long clock, MatchVitalsPayloads.MedicineInterrupted packet) {}
 
     private static final class Fixture implements AutoCloseable {
         final GameTestHelper helper;
@@ -73,8 +179,10 @@ public final class PubgMedicineGameTests {
         final List<Heal> heals = new ArrayList<>();
         final List<Finished> completions = new ArrayList<>();
         final Consumer<LivingHealEvent> healListener;
+        final Consumer<LivingEntityUseItemEvent.Tick> useTickListener;
         final Consumer<LivingEntityUseItemEvent.Finish> finishListener;
         boolean observing, closed;
+        int observedUseTicks, lastUseRemaining;
         long started;
 
         @SuppressWarnings("unchecked")
@@ -104,29 +212,47 @@ public final class PubgMedicineGameTests {
                 if (observing && event.getEntity() == player)
                     heals.add(new Heal(clock(), event.getAmount(), player.getHealth(), player.getTicksUsingItem()));
             };
+            useTickListener = event -> {
+                if (observing && event.getEntity() == player) {
+                    observedUseTicks++;
+                    lastUseRemaining = event.getDuration();
+                }
+            };
             finishListener = event -> {
-                if (observing && event.getEntity() == player)
-                    completions.add(new Finished(clock(), player.getTicksUsingItem()));
+                if (observing && event.getEntity() == player) {
+                    // Finish fires after consumption, when the last-item live stack is already empty.
+                    // Its pre-consumption copy and remaining duration still identify the full cast.
+                    completions.add(new Finished(clock(), event.getItem().getUseDuration(player) - event.getDuration(),
+                            observedUseTicks, lastUseRemaining));
+                    observedUseTicks = 0;
+                }
             };
             NeoForge.EVENT_BUS.addListener(healListener);
+            NeoForge.EVENT_BUS.addListener(useTickListener);
             NeoForge.EVENT_BUS.addListener(finishListener);
         }
 
         long clock() { return clocks.getOrDefault(server, 0L); }
 
+        void start(int count) {
+            player.setHealth(initialHealth);
+            player.getFoodData().setFoodLevel(10); player.getFoodData().setSaturation(0);
+            player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(medicine, count));
+            helper.assertTrue(medicine.getUseDuration(player.getMainHandItem(), player) == useTicks,
+                    "Server item duration does not match the requested PUBG 42.1 cast time");
+            started = clock(); observing = true;
+            PubgMedicineService.startHeld(player, player.getInventory().selected, 1);
+            helper.assertTrue(player.isUsingItem() && capture.started != null && capture.started.duration() == useTicks,
+                    "Real medicine request failed or acknowledged the wrong duration");
+        }
+
+        int baselineCount() { return medicine.kind() == PubgMedicineModel.Kind.BANDAGE ? 1 : 2; }
+
         void run() {
             later(65, () -> {
-                player.setHealth(initialHealth);
-                player.getFoodData().setFoodLevel(10); player.getFoodData().setSaturation(0);
-                player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(medicine, 2));
-                helper.assertTrue(medicine.getUseDuration(player.getMainHandItem(), player) == useTicks,
-                        "Server item duration does not match the requested PUBG 42.1 cast time");
-                started = clock(); observing = true;
-                PubgMedicineService.startHeld(player, player.getInventory().selected, 1);
-                helper.assertTrue(player.isUsingItem() && capture.started != null && capture.started.duration() == useTicks,
-                        "Real medicine request failed or acknowledged the wrong duration");
+                start(baselineCount());
                 later(useTicks - 2, () -> {
-                    helper.assertTrue(player.isUsingItem() && player.getMainHandItem().getCount() == 2,
+                    helper.assertTrue(player.isUsingItem() && player.getMainHandItem().getCount() == baselineCount(),
                             "Medicine finished or consumed before its full cast duration");
                     near(player.getHealth(), initialHealth, "Medicine healed during the cast");
                 });
@@ -141,12 +267,17 @@ public final class PubgMedicineGameTests {
             var finish = completions.getFirst();
             helper.assertTrue(finish.usingTicks == useTicks,
                     "Native use finished without all entity ticks: " + finish.usingTicks + " / " + useTicks);
+            helper.assertTrue(finish.observedTicks == useTicks && finish.lastRemaining == 1,
+                    "Native use must execute every countdown tick through the last remaining tick: "
+                            + finish.observedTicks + " observed, " + finish.lastRemaining + " remaining");
             // GameTestTicker starts this cast after entity ticking but before ServerTickEvent.Post;
             // that first post tick advances the clock before this player's first item-use tick.
             helper.assertTrue(finish.clock - started == useTicks,
                     "Server cast clock finished at " + (finish.clock - started) + " ticks instead of " + useTicks);
-            helper.assertTrue(!player.isUsingItem() && player.getMainHandItem().getCount() == 1,
+            helper.assertTrue(!player.isUsingItem() && player.getMainHandItem().getCount() == baselineCount() - 1,
                     "Completed medicine did not consume exactly one item");
+            helper.assertTrue(capture.continued.isEmpty(),
+                    "Exhausted bandages, first aid and med kits must not create a continuation");
             near(player.getHealth(), initialHealth + budget, "Treatment ended at the wrong Minecraft health");
             helper.assertTrue(heals.size() == (recoveryTicks == 0 ? 1 : 5),
                     "Expected discrete healing pulses; observed " + heals.size());
@@ -203,7 +334,8 @@ public final class PubgMedicineGameTests {
         @Override public void close() {
             if (closed) return;
             closed = true; observing = false;
-            NeoForge.EVENT_BUS.unregister(healListener); NeoForge.EVENT_BUS.unregister(finishListener);
+            NeoForge.EVENT_BUS.unregister(healListener); NeoForge.EVENT_BUS.unregister(useTickListener);
+            NeoForge.EVENT_BUS.unregister(finishListener);
             player.stopUsingItem(); PubgMedicineService.cancelUse(player);
             if (server.getPlayerList().getPlayer(player.getUUID()) == player) server.getPlayerList().remove(player);
             player.discard();
@@ -213,6 +345,8 @@ public final class PubgMedicineGameTests {
     private static final class CaptureConnection extends NetHandlerPlayServerFake {
         final Fixture fixture;
         final List<Forecast> forecasts = new ArrayList<>();
+        final List<Continued> continued = new ArrayList<>();
+        final List<Interrupted> interrupted = new ArrayList<>();
         MatchVitalsPayloads.MedicineStarted started;
         float health;
         long healthClock = -1;
@@ -227,6 +361,10 @@ public final class PubgMedicineGameTests {
                 if (custom.payload() instanceof MatchVitalsPayloads.MedicineStarted value) started = value;
                 if (fixture.observing && custom.payload() instanceof MatchVitalsPayloads.RecoveryState value)
                     forecasts.add(new Forecast(fixture.clock(), value, health, healthClock));
+                if (fixture.observing && custom.payload() instanceof MatchVitalsPayloads.BandageContinued value)
+                    continued.add(new Continued(fixture.clock(), value));
+                if (fixture.observing && custom.payload() instanceof MatchVitalsPayloads.MedicineInterrupted value)
+                    interrupted.add(new Interrupted(fixture.clock(), value));
             }
         }
     }

@@ -23,6 +23,7 @@ public final class PubgMedicineService {
     private static final UUID ORDINARY_WORLD = new UUID(0, 0);
     private static final Map<MinecraftServer, Map<UUID, State>> STATES = new WeakHashMap<>();
     private static final Map<MinecraftServer, Long> ORDINARY_CLOCKS = new WeakHashMap<>();
+    private static int nextContinuationToken;
     private record Context(UUID session, long clock, boolean running) {}
     private static final class Use {
         final PubgMedicineItem item;
@@ -31,6 +32,7 @@ public final class PubgMedicineService {
         final int selected;
         final long started;
         int inputRequest;
+        int continuationToken;
         Vec3 lastPosition;
         Use(ServerPlayer p, PubgMedicineItem item, InteractionHand hand, long started) {
             this.item = item; this.hand = hand; this.started = started;
@@ -40,6 +42,7 @@ public final class PubgMedicineService {
     private static final class State {
         final UUID session;
         Use use;
+        Use repeatBandage;
         final List<PubgMedicineModel.Recovery> recoveries = new ArrayList<>();
         State(UUID session) { this.session = session; }
     }
@@ -90,6 +93,11 @@ public final class PubgMedicineService {
         State state = state(p);
         if (state != null && state.use != null && state.use.inputRequest == request) stopUse(p);
     }
+    public static void cancelContinuation(ServerPlayer p, UUID session, int token) {
+        State state = state(p);
+        if (state != null && state.session.equals(session) && state.use != null
+                && state.use.continuationToken == token) stopUse(p);
+    }
     public static boolean begin(ServerPlayer p, PubgMedicineItem item, InteractionHand hand) {
         Context context = context(p);
         if (context == null || !context.running || unsafeMovement(p) || p.isUsingItem()
@@ -102,6 +110,7 @@ public final class PubgMedicineService {
         if (state == null || !state.session.equals(context.session)) {
             state = new State(context.session); states.put(p.getUUID(), state);
         }
+        state.repeatBandage = null;
         state.use = new Use(p, item, hand, context.clock);
         return true;
     }
@@ -127,11 +136,17 @@ public final class PubgMedicineService {
     }
     public static void cancelUse(ServerPlayer p) {
         State state = state(p);
-        if (state != null) state.use = null;
+        if (state != null) { state.use = null; state.repeatBandage = null; }
     }
     private static void stopUse(ServerPlayer p) {
+        State state = state(p);
+        Use use = state == null ? null : state.use != null ? state.use : state.repeatBandage;
+        boolean reachedLimit = use != null && use.item.kind() == PubgMedicineModel.Kind.BANDAGE
+                && p.isAlive() && p.getHealth() >= p.getMaxHealth() * .75 - 1.0e-6;
         cancelUse(p);
         if (p.isUsingItem() && p.getUseItem().getItem() instanceof PubgMedicineItem) p.stopUsingItem();
+        if (reachedLimit) net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(p,
+                new MatchVitalsPayloads.MedicineInterrupted(state.session));
     }
     private static void forget(ServerPlayer p) {
         stopUse(p);
@@ -153,6 +168,7 @@ public final class PubgMedicineService {
         if (kind.isBoost()) return MatchVitalsService.addBoost(p, kind.boost());
         double budget = kind.healingBudget(p.getHealth(), p.getMaxHealth());
         if (budget <= 0) return false;
+        if (kind == PubgMedicineModel.Kind.BANDAGE) state.repeatBandage = use;
         if (kind.recoveryTicks() == 0) p.heal((float) budget);
         else {
             var settings = com.example.examplemod.pubgsettings.PubgSettingsService.server(p.server);
@@ -163,6 +179,39 @@ public final class PubgMedicineService {
             syncRecovery(p, state, context);
         }
         return true;
+    }
+    /** Runs after vanilla consumes the completed stack and clears its old use state. */
+    private static void continueBandage(ServerPlayer p, State state, Context context) {
+        Use previous = state.repeatBandage;
+        if (previous == null) return;
+        state.repeatBandage = null;
+        if (!context.running || unsafeMovement(p) || com.example.examplemod.combat.CombatService.actionBlocked(p)
+                || p.isUsingItem() || p.getInventory().selected != previous.selected
+                || PubgMedicineModel.movedTooFar(p.position().distanceToSqr(previous.lastPosition))
+                || !PubgMedicineModel.Kind.BANDAGE.canUse(p.getHealth(), p.getMaxHealth(), 0)) return;
+        ItemStack held = p.getItemInHand(previous.hand);
+        if (!held.isEmpty() && held.getItem() != previous.item) return;
+        if (held.isEmpty()) {
+            for (int slot = 0; slot < p.getInventory().items.size(); slot++) {
+                ItemStack available = p.getInventory().getItem(slot);
+                if (available.isEmpty() || available.getItem() != previous.item) continue;
+                p.getInventory().setItem(slot, ItemStack.EMPTY);
+                p.setItemInHand(previous.hand, available);
+                break;
+            }
+        }
+        if (p.getItemInHand(previous.hand).isEmpty()) return;
+        previous.item.startTreatment(p.level(), p, previous.hand);
+        if (state.use == null || !p.isUsingItem()) return;
+        state.use.inputRequest = previous.inputRequest;
+        nextContinuationToken = nextContinuationToken == Integer.MAX_VALUE ? 1 : nextContinuationToken + 1;
+        state.use.continuationToken = nextContinuationToken;
+        p.getInventory().setChanged();
+        p.inventoryMenu.broadcastChanges();
+        if (p.containerMenu != p.inventoryMenu) p.containerMenu.broadcastChanges();
+        net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(p,
+                new MatchVitalsPayloads.BandageContinued(state.session, previous.selected, previous.hand,
+                        previous.item.getUseDuration(p.getItemInHand(previous.hand), p), nextContinuationToken));
     }
     private static void syncRecovery(ServerPlayer p, State state, Context context) {
         double remaining = 0, next = 0, ceiling = 0;
@@ -196,7 +245,7 @@ public final class PubgMedicineService {
                 if (!valid(p, state, context)) stopUse(p);
                 else state.use.lastPosition = p.position();
             }
-            if (!context.running) continue;
+            if (!context.running) { state.repeatBandage = null; continue; }
             boolean hadRecovery = !state.recoveries.isEmpty();
             boolean advancedPulse = false;
             float previousHealth = p.getHealth();
@@ -209,13 +258,18 @@ public final class PubgMedicineService {
                 if (step.recovery().finished()) recoveries.remove();
                 else recoveries.set(step.recovery());
             }
+            // A recovery pulse can reach 75% after this tick's ordinary use validation.
+            // Stop that new cast immediately, before it can consume another bandage.
+            if ((state.repeatBandage != null || state.use != null && state.use.item.kind() == PubgMedicineModel.Kind.BANDAGE)
+                    && p.getHealth() >= p.getMaxHealth() * .75 - 1.0e-6) stopUse(p);
+            continueBandage(p, state, context);
             // Publish the new health before reducing its forecast, so both HUD edges move together.
             if (p.getHealth() != previousHealth) p.connection.send(new net.minecraft.network.protocol.game.ClientboundSetHealthPacket(
                     p.getHealth(), p.getFoodData().getFoodLevel(), p.getFoodData().getSaturationLevel()));
             if (advancedPulse || !state.recoveries.isEmpty() && context.clock % 10 == 0 || hadRecovery && state.recoveries.isEmpty()
                     || state.use == null && state.recoveries.isEmpty())
                 syncRecovery(p, state, context);
-            if (state.use == null && state.recoveries.isEmpty()) iterator.remove();
+            if (state.use == null && state.repeatBandage == null && state.recoveries.isEmpty()) iterator.remove();
         }
     }
 }

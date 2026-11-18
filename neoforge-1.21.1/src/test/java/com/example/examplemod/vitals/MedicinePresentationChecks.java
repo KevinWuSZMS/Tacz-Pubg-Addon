@@ -33,11 +33,15 @@ public final class MedicinePresentationChecks {
             check(PubgMedicineHud.actionLabel(kinds[i]).getString().equals(actions[i]), "Exact screenshot action phrase for " + kinds[i]);
             check(MedicineUseToast.label(kinds[i]).getString().equals(used[i]), "Exact screenshot completion phrase for " + kinds[i]);
         }
+        check(MedicineUseToast.labelInterrupted().getString().equals("物品使用被中断"), "Exact interruption phrase shares the successful-use presentation");
+        check(MedicineUseToast.labelInterrupted().getStyle().isBold() == MedicineUseToast.label(PubgMedicineModel.Kind.BANDAGE).getStyle().isBold(),
+                "Interruption and completion use the same text emphasis");
         Language.inject(TestLanguages.language(TestLanguages.catalog("en_us")));
         for (var kind : kinds) {
             check(!PubgMedicineHud.actionLabel(kind).getString().contains("tacz_pubg"), "English action resolves");
             check(MedicineUseToast.label(kind).getString().startsWith("Used "), "English completion resolves");
         }
+        check(!MedicineUseToast.labelInterrupted().getString().contains("tacz_pubg"), "English interruption resolves");
         System.out.println("MedicinePresentationChecks: " + checks + " checks passed; no game launched.");
     }
     private static void check(boolean condition, String reason) {

@@ -5,6 +5,7 @@ import com.example.examplemod.hud.client.HudLayoutModel;
 import com.example.examplemod.localization.Texts;
 import com.example.examplemod.vitals.MatchVitalsPayloads;
 import com.example.examplemod.vitals.PubgMedicineModel;
+import java.util.UUID;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -18,7 +19,7 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.common.NeoForge;
 
-/** Dedicated successful-use message; local cast prediction must never show a success toast. */
+/** Shared server-authorized use result; local prediction never creates success or interruption messages. */
 public final class MedicineUseToast {
     public static final String HUD_ID = "medicine_complete";
     // The still references establish position and wording, not the display duration.
@@ -26,7 +27,8 @@ public final class MedicineUseToast {
     private static final int FADE_TICKS = 10;
     private static final float CENTER_Y = .793F;
     private static final float LINE_HEIGHT_FRACTION = .02F;
-    private static MatchVitalsPayloads.MedicineCompleted current;
+    private record Message(UUID session, Component label) {}
+    private static Message current;
     private static LocalPlayer owner;
     private static ClientLevel level;
     private static int remaining;
@@ -37,7 +39,9 @@ public final class MedicineUseToast {
     public static void register(IEventBus modBus) {
         if (registered) return;
         registered = true;
+        BandageChainClient.register();
         MatchVitalsPayloads.setMedicineCompletedClientHandler(MedicineUseToast::accept);
+        MatchVitalsPayloads.setMedicineInterruptedClientHandler(MedicineUseToast::acceptInterrupted);
         NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut event) -> clear());
         NeoForge.EVENT_BUS.addListener((ClientTickEvent.Post event) -> tick());
         modBus.addListener(MedicineUseToast::registerLayer);
@@ -51,9 +55,19 @@ public final class MedicineUseToast {
     }
 
     private static void accept(MatchVitalsPayloads.MedicineCompleted packet) {
+        show(packet.session(), label(packet.kind()));
+    }
+
+    private static void acceptInterrupted(MatchVitalsPayloads.MedicineInterrupted packet) {
+        if (!sessionMatches(packet.session())) return;
+        BandageChainClient.interrupted();
+        show(packet.session(), labelInterrupted());
+    }
+
+    private static void show(UUID session, Component label) {
         var mc = Minecraft.getInstance();
-        if (mc.player == null || mc.level == null || !mc.player.isAlive() || mc.player.isSpectator()) return;
-        current = packet;
+        if (mc.player == null || mc.level == null || !mc.player.isAlive() || mc.player.isSpectator() || !sessionMatches(session)) return;
+        current = new Message(session, label);
         owner = mc.player;
         level = mc.level;
         remaining = DISPLAY_TICKS;
@@ -70,8 +84,11 @@ public final class MedicineUseToast {
         var mc = Minecraft.getInstance();
         return current != null && remaining > 0 && owner != null && mc.player == owner && mc.level == level
                 && owner.isAlive() && !owner.isSpectator()
-                && (current.session().equals(MatchVitalsPayloads.NO_SESSION)
-                    ? !MatchVitalsHud.active() : MatchVitalsHud.activeSession(current.session()));
+                && sessionMatches(current.session());
+    }
+
+    private static boolean sessionMatches(UUID session) {
+        return session.equals(MatchVitalsPayloads.NO_SESSION) ? !MatchVitalsHud.active() : MatchVitalsHud.activeSession(session);
     }
 
     private static void tick() {
@@ -93,6 +110,10 @@ public final class MedicineUseToast {
                 .withStyle(ChatFormatting.BOLD);
     }
 
+    public static Component labelInterrupted() {
+        return Texts.of("message.tacz_pubg.medicine.interrupted").withStyle(ChatFormatting.BOLD);
+    }
+
     public static HudLayoutModel.Rect previewBounds(int width, int height) {
         return bounds(label(PubgMedicineModel.Kind.ADRENALINE_SYRINGE), width, height);
     }
@@ -104,7 +125,7 @@ public final class MedicineUseToast {
     private static void render(GuiGraphics graphics) {
         var mc = Minecraft.getInstance();
         if (!valid() || mc.options.hideGui || mc.getCameraEntity() != mc.player) return;
-        Component text = label(current.kind());
+        Component text = current.label();
         var bounds = bounds(text, graphics.guiWidth(), graphics.guiHeight());
         var placed = HudLayoutClient.resolveRect(graphics, HUD_ID,
                 bounds.x(), bounds.y(), bounds.width(), bounds.height());

@@ -196,13 +196,28 @@ public final class PubgMedicineChecks {
         for (int[] viewport : new int[][]{{220,160},{320,240},{640,360},{1920,1080}}) {
             var frame = com.example.examplemod.vitals.client.PubgVitalsLayout.frame(viewport[0], viewport[1], style);
             var rectangles = com.example.examplemod.vitals.client.PubgVitalsLayout.bars(viewport[0],viewport[1],7.6,20,7.6,45,0,
-                    aidTarget.total(),aidTarget.next(),style);
+                    aidTarget.total(),style);
             check(rectangles.stream().allMatch(r -> r.left() >= 0 && r.top() >= 0 && r.right() <= viewport[0] && r.bottom() <= viewport[1]), "Combat bars escaped a resized GUI");
             var target = rectangles.stream().filter(r -> r.color() == style.treatment()).findFirst().orElseThrow();
-            var next = rectangles.stream().filter(r -> r.color() == style.nextStep()).findFirst().orElseThrow();
-            check(target.right() == frame.left() + Math.round(frame.width() * .75)
-                    && next.right() == frame.left() + Math.round(frame.width() * .454), "Total and next-pulse grey targets lost their distinct reference endpoints");
+            check(target.right() == frame.left() + Math.round(frame.width() * .75), "Total first-aid preview still reaches the healing ceiling");
+            check(rectangles.stream().noneMatch(r -> r.color() == style.nextStep()), "The HUD no longer draws a separate next-pulse segment");
             check(rectangles.stream().filter(r -> r.color() == style.reference()).allMatch(r -> r.right() <= target.right()), "75% reference hatching leaks past the healing ceiling");
+            for (var kind : List.of(PubgMedicineModel.Kind.BANDAGE, PubgMedicineModel.Kind.FIRST_AID_KIT, PubgMedicineModel.Kind.MED_KIT)) {
+                var forecast = com.example.examplemod.vitals.client.PubgMedicineHud.forecast(5, 20, 0, 0, 0, kind);
+                var totalOnly = com.example.examplemod.vitals.client.PubgVitalsLayout.bars(viewport[0],viewport[1],5,20,5,45,0,
+                        forecast.total(),style);
+                var treatment = totalOnly.stream().filter(r -> r.color() == style.treatment()).toList();
+                check(treatment.size() == 1 && treatment.getFirst().left() == frame.left() + Math.round(frame.width() * .25)
+                                && treatment.getFirst().right() == frame.left() + Math.round(frame.width() * forecast.total() / 20),
+                        "Each healing medicine has exactly one total-budget preview from current health to its real target");
+                check(totalOnly.stream().noneMatch(r -> r.color() == style.nextStep())
+                                && totalOnly.stream().anyMatch(r -> r.color() == style.reference()),
+                        "Bandages, first aids and med kits keep reference hatching without the next-pulse overlay");
+                for (double next : new double[]{5, forecast.next(), 20, Double.NaN})
+                    check(totalOnly.equals(com.example.examplemod.vitals.client.PubgVitalsLayout.bars(viewport[0],viewport[1],5,20,5,45,0,
+                                    forecast.total(),next,style)),
+                            "Legacy next-pulse data cannot change visible treatment geometry");
+            }
         }
         check(com.example.examplemod.vitals.client.WeaponHudData.loaded(29, 95, false, true, false) == 30, "Closed bolt counts its chambered round");
         check(com.example.examplemod.vitals.client.WeaponHudData.loaded(30, 95, false, true, true) == 30, "Open bolt never duplicates a chambered round");
@@ -318,7 +333,7 @@ public final class PubgMedicineChecks {
                     "Single-press medicine hold mixin is not registered");
         }
         var packets = node("com/example/examplemod/vitals/MatchVitalsPayloads");
-        check(Arrays.stream(method(packets, "register").instructions.toArray()).anyMatch(i -> i instanceof LdcInsnNode text && text.cst.equals("4-match-vitals")),
+        check(Arrays.stream(method(packets, "register").instructions.toArray()).anyMatch(i -> i instanceof LdcInsnNode text && text.cst.equals("5-match-vitals")),
                 "Changed medical input wire registration must reject incompatible clients");
     }
     private static ClassNode node(String name) throws IOException {

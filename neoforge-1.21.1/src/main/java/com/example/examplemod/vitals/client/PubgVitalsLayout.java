@@ -54,14 +54,24 @@ public final class PubgVitalsLayout {
     }
     public static List<Rectangle> bars(int screenWidth, int screenHeight, double health, double maximum,
                                      double damageTrail, double boost, double absorption) {
-        return bars(screenWidth, screenHeight, health, maximum, damageTrail, boost, absorption, health, health, Style.defaults());
+        return bars(screenWidth, screenHeight, health, maximum, damageTrail, boost, absorption, health, Style.defaults());
     }
     public static List<Rectangle> bars(int screenWidth, int screenHeight, double health, double maximum,
+                                     double damageTrail, double boost, double absorption, double target, Style style) {
+        return bars(screenWidth, screenHeight, health, maximum, damageTrail, boost, absorption, target, style, 0);
+    }
+    /** Legacy next-pulse arguments remain compatible but no longer create a separate preview layer. */
+    public static List<Rectangle> bars(int screenWidth, int screenHeight, double health, double maximum,
                                      double damageTrail, double boost, double absorption, double target, double next, Style style) {
-        return bars(screenWidth, screenHeight, health, maximum, damageTrail, boost, absorption, target, next, style, 0);
+        return bars(screenWidth, screenHeight, health, maximum, damageTrail, boost, absorption, target, style, 0);
     }
     public static List<Rectangle> bars(int screenWidth, int screenHeight, double health, double maximum,
                                      double damageTrail, double boost, double absorption, double target, double next, Style style,
+                                     long animationTicks) {
+        return bars(screenWidth, screenHeight, health, maximum, damageTrail, boost, absorption, target, style, animationTicks);
+    }
+    public static List<Rectangle> bars(int screenWidth, int screenHeight, double health, double maximum,
+                                     double damageTrail, double boost, double absorption, double target, Style style,
                                      long animationTicks) {
         var f = frame(screenWidth, screenHeight, style);
         int left = f.left(), width = f.width(), top = f.healthTop(), bottom = top + style.healthHeight();
@@ -78,10 +88,8 @@ public final class PubgVitalsLayout {
                     left + Math.min(aid, x + 2), y + 1, style.reference());
         }
         int predicted = pixels(width, Math.max(ratio, fraction(target, maximum)));
-        int nextStep = Math.min(predicted, pixels(width, Math.max(ratio, fraction(next, maximum))));
+        // A single translucent total forecast retains the underlying 75% reference hatch.
         add(rectangles, left + actual, top, left + predicted, bottom, style.treatment());
-        // Two ordinary grey overlays retain the underlying hatch through alpha.
-        add(rectangles, left + actual, top, left + nextStep, bottom, style.nextStep());
         add(rectangles, left, top, left + actual, bottom, healthColor(ratio, style, animationTicks));
         if (absorption > 0) add(rectangles, left, top, left + pixels(width, fraction(absorption, maximum)), top + 2, ABSORPTION);
         addBoost(rectangles, f, boost, style);

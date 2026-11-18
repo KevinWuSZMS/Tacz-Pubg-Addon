@@ -2789,6 +2789,7 @@
   "key.tacz_pubg.lean_left": "向左探头",
   "key.tacz_pubg.lean_right": "向右探头",
   "message.tacz_pubg.medicine.used": "使用了%s",
+  "message.tacz_pubg.medicine.interrupted": "物品使用被中断",
   "screen.tacz_pubg.hud_layout.component.medicine_complete": "药品使用完成提示",
   "screen.tacz_pubg.medicine.action_adrenaline": "正在注射肾上腺素",
   "screen.tacz_pubg.medicine.action_bandage": "正在包扎伤口",

@@ -142,7 +142,7 @@ public final class ThrowableClient {
             if (mapping == COOK && !mapping.isDown() && !(mc.player.isUsingItem()
                     && mc.player.getUseItem().getItem() instanceof PubgThrowableItem)) return false;
             if (mapping == CANCEL && !mapping.isDown() && !mc.player.isUsingItem() && !cookedHeld
-                    && !com.example.examplemod.vitals.client.MedicineClient.pending()) return false;
+                    && !hasMedicineIntent()) return false;
             mapping.setDown(action != GLFW.GLFW_RELEASE);
             if (action == GLFW.GLFW_PRESS) {
                 if (BindingInput.freshPress(mapping, BindingInput.keyboardId(key, scan))) WHEEL_INPUT.pressed(mapping);
@@ -195,10 +195,15 @@ public final class ThrowableClient {
             PacketDistributor.sendToServer(new ThrowablePayloads.Action(0));
         }
     }
+    private static boolean hasMedicineIntent() {
+        return com.example.examplemod.vitals.client.MedicineClient.pending()
+                || com.example.examplemod.vitals.client.BandageChainClient.hasIntent();
+    }
     private static void requestCancel() {
         var mc = Minecraft.getInstance();
         if (mc.player == null) return;
-        boolean activeUse = mc.player.isUsingItem() || cookedHeld;
+        boolean activeUse = mc.player.isUsingItem() || cookedHeld || com.example.examplemod.vitals.client.BandageChainClient.hasIntent();
+        com.example.examplemod.vitals.client.BandageChainClient.cancel();
         com.example.examplemod.vitals.client.MedicineClient.cancelPending();
         cancelQuick();
         // Pending medicine requests already have a scoped cancellation; do not cancel a later use.
@@ -213,7 +218,8 @@ public final class ThrowableClient {
     }
     public static void cancelMedicineUse() {
         var player = Minecraft.getInstance().player;
-        if (player != null && player.isUsingItem() && player.getUseItem().getItem() instanceof PubgMedicineItem)
+        if (player != null && (com.example.examplemod.vitals.client.BandageChainClient.hasIntent()
+                || player.isUsingItem() && player.getUseItem().getItem() instanceof PubgMedicineItem))
             requestCancel();
     }
     private static void cancelQuick() {
@@ -238,6 +244,7 @@ public final class ThrowableClient {
         if (!mc.player.isUsingItem() || mc.player.getUsedItemHand() != InteractionHand.MAIN_HAND
                 || mc.player.getUseItem() != mc.player.getMainHandItem()) return false;
         quickTicks = duration + 5; quickSlot = slot; quickStarted = true;
+        com.example.examplemod.vitals.client.BandageChainClient.started(slot, InteractionHand.MAIN_HAND);
         return true;
     }
     public static void sendQuick(String action) {
@@ -284,7 +291,7 @@ public final class ThrowableClient {
         if (mc.screen != null) return;
         while (COOK.consumeClick()) requestCook();
         while (CANCEL.consumeClick()) if (mc.player.isUsingItem() || cookedHeld
-                || com.example.examplemod.vitals.client.MedicineClient.pending()) requestCancel();
+                || hasMedicineIntent()) requestCancel();
         boolean active = mc.player.isAlive() && !mc.player.isSpectator();
         if (!active) {
             while (THROWABLE.consumeClick()) {}

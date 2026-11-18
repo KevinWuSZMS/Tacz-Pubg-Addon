@@ -8,6 +8,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 /** Personal authoritative state: watching a map never opts a bystander into match vitals. */
@@ -18,6 +19,8 @@ public final class MatchVitalsPayloads {
     private static Consumer<Snapshot> clientHandler = ignored -> {};
     private static Consumer<MedicineStarted> medicineHandler = ignored -> {};
     private static Consumer<MedicineCompleted> medicineCompletedHandler = ignored -> {};
+    private static Consumer<MedicineInterrupted> medicineInterruptedHandler = ignored -> {};
+    private static Consumer<BandageContinued> bandageContinuedHandler = ignored -> {};
     private static Consumer<RecoveryState> recoveryHandler = ignored -> {};
     private MatchVitalsPayloads() {}
 
@@ -56,6 +59,45 @@ public final class MatchVitalsPayloads {
             @Override public void encode(RegistryFriendlyByteBuf b, CancelMedicine p) { b.writeVarInt(p.request()); }
         };
         public CancelMedicine { if (request <= 0) throw new IllegalArgumentException("Invalid medicine cancellation"); }
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    }
+    /** A server-authorized interruption uses the same HUD message channel as successful use. */
+    public record MedicineInterrupted(UUID session) implements CustomPacketPayload {
+        public static final Type<MedicineInterrupted> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("tacz_pubg", "medicine_interrupted"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, MedicineInterrupted> CODEC = new StreamCodec<>() {
+            @Override public MedicineInterrupted decode(RegistryFriendlyByteBuf b) { return new MedicineInterrupted(b.readUUID()); }
+            @Override public void encode(RegistryFriendlyByteBuf b, MedicineInterrupted p) { b.writeUUID(p.session()); }
+        };
+        public MedicineInterrupted { Objects.requireNonNull(session); }
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    }
+    public record BandageContinued(UUID session, int slot, InteractionHand hand, int duration, int token) implements CustomPacketPayload {
+        public static final Type<BandageContinued> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("tacz_pubg", "bandage_continued"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, BandageContinued> CODEC = new StreamCodec<>() {
+            @Override public BandageContinued decode(RegistryFriendlyByteBuf b) {
+                return new BandageContinued(b.readUUID(), b.readVarInt(), b.readEnum(InteractionHand.class), b.readVarInt(), b.readVarInt());
+            }
+            @Override public void encode(RegistryFriendlyByteBuf b, BandageContinued p) {
+                b.writeUUID(p.session()); b.writeVarInt(p.slot()); b.writeEnum(p.hand()); b.writeVarInt(p.duration()); b.writeVarInt(p.token());
+            }
+        };
+        public BandageContinued {
+            Objects.requireNonNull(session); Objects.requireNonNull(hand);
+            if (slot < 0 || slot > 8 || duration < 1 || duration > 1200 || token <= 0)
+                throw new IllegalArgumentException("Invalid bandage continuation");
+        }
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    }
+    public record CancelBandageContinuation(UUID session, int token) implements CustomPacketPayload {
+        public static final Type<CancelBandageContinuation> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("tacz_pubg", "cancel_bandage_continuation"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, CancelBandageContinuation> CODEC = new StreamCodec<>() {
+            @Override public CancelBandageContinuation decode(RegistryFriendlyByteBuf b) { return new CancelBandageContinuation(b.readUUID(), b.readVarInt()); }
+            @Override public void encode(RegistryFriendlyByteBuf b, CancelBandageContinuation p) { b.writeUUID(p.session()); b.writeVarInt(p.token()); }
+        };
+        public CancelBandageContinuation {
+            Objects.requireNonNull(session);
+            if (token <= 0) throw new IllegalArgumentException("Invalid bandage continuation cancellation");
+        }
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
     public record RecoveryState(UUID session, double remaining, double next, double ceiling, int remainingTicks) implements CustomPacketPayload {
@@ -103,9 +145,11 @@ public final class MatchVitalsPayloads {
     public static void setClientHandler(Consumer<Snapshot> handler) { clientHandler = Objects.requireNonNull(handler); }
     public static void setMedicineClientHandler(Consumer<MedicineStarted> handler) { medicineHandler = Objects.requireNonNull(handler); }
     public static void setMedicineCompletedClientHandler(Consumer<MedicineCompleted> handler) { medicineCompletedHandler = Objects.requireNonNull(handler); }
+    public static void setMedicineInterruptedClientHandler(Consumer<MedicineInterrupted> handler) { medicineInterruptedHandler = Objects.requireNonNull(handler); }
+    public static void setBandageContinuedClientHandler(Consumer<BandageContinued> handler) { bandageContinuedHandler = Objects.requireNonNull(handler); }
     public static void setRecoveryClientHandler(Consumer<RecoveryState> handler) { recoveryHandler = Objects.requireNonNull(handler); }
     public static void register(RegisterPayloadHandlersEvent event) {
-        var registrar = event.registrar("4-match-vitals");
+        var registrar = event.registrar("5-match-vitals");
         registrar.playToClient(Snapshot.TYPE, Snapshot.CODEC,
                 (packet, context) -> context.enqueueWork(() -> clientHandler.accept(packet)));
         registrar.playToServer(StartMedicine.TYPE, StartMedicine.CODEC, (packet, context) -> context.enqueueWork(() -> {
@@ -113,9 +157,14 @@ public final class MatchVitalsPayloads {
         }));
         registrar.playToClient(MedicineStarted.TYPE, MedicineStarted.CODEC, (packet, context) -> context.enqueueWork(() -> medicineHandler.accept(packet)));
         registrar.playToClient(MedicineCompleted.TYPE, MedicineCompleted.CODEC, (packet, context) -> context.enqueueWork(() -> medicineCompletedHandler.accept(packet)));
+        registrar.playToClient(MedicineInterrupted.TYPE, MedicineInterrupted.CODEC, (packet, context) -> context.enqueueWork(() -> medicineInterruptedHandler.accept(packet)));
+        registrar.playToClient(BandageContinued.TYPE, BandageContinued.CODEC, (packet, context) -> context.enqueueWork(() -> bandageContinuedHandler.accept(packet)));
         registrar.playToClient(RecoveryState.TYPE, RecoveryState.CODEC, (packet, context) -> context.enqueueWork(() -> recoveryHandler.accept(packet)));
         registrar.playToServer(CancelMedicine.TYPE, CancelMedicine.CODEC, (packet, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) PubgMedicineService.cancelRequest(player, packet.request());
+        }));
+        registrar.playToServer(CancelBandageContinuation.TYPE, CancelBandageContinuation.CODEC, (packet, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) PubgMedicineService.cancelContinuation(player, packet.session(), packet.token());
         }));
     }
 }

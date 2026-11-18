@@ -207,7 +207,7 @@ public final class MatchVitalsHud {
                     downedTrail.value(health, maximum, combat.downCount()), CombatHudStyle.vitals())
                 : PubgVitalsLayout.bars(graphics.guiWidth(), graphics.guiHeight(),
                     health, maximum, observing ? health : damageTrail, state.boost(),
-                    observing ? state.absorption() : mc.player.getAbsorptionAmount(), target.total(), target.next(), CombatHudStyle.vitals(), healthAnimationTicks);
+                    observing ? state.absorption() : mc.player.getAbsorptionAmount(), target.total(), CombatHudStyle.vitals(), healthAnimationTicks);
         for (var rectangle : rectangles)
             graphics.fill(rectangle.left(), rectangle.top(), rectangle.right(), rectangle.bottom(), rectangle.color());
         }
@@ -215,7 +215,7 @@ public final class MatchVitalsHud {
     private static void previewVitals(GuiGraphics graphics, com.example.examplemod.hud.client.HudLayoutModel.Rect rectangle) {
         var frame = CombatHudStyle.frame(graphics.guiWidth(), graphics.guiHeight());
         graphics.pose().pushPose(); graphics.pose().translate(rectangle.x() - frame.left(), rectangle.y() - frame.top(), 0);
-        for (var r : PubgVitalsLayout.bars(graphics.guiWidth(), graphics.guiHeight(), 7.6, 20, 7.6, 45, 0, 15, 10.6, CombatHudStyle.vitals()))
+        for (var r : PubgVitalsLayout.bars(graphics.guiWidth(), graphics.guiHeight(), 7.6, 20, 7.6, 45, 0, 15, CombatHudStyle.vitals()))
             graphics.fill(r.left(), r.top(), r.right(), r.bottom(), r.color());
         graphics.pose().popPose();
     }

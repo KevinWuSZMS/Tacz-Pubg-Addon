@@ -60,6 +60,12 @@ public final class MedicineClient {
     }
     /** Return true even on a refused treatment: this press must never fall through to ground loot. */
     public static boolean tryUseHeld() {
+        if (BandageChainClient.hasIntent()) {
+            suppressOffhandSwap();
+            ThrowableClient.consumeSharedCancelClick();
+            ThrowableClient.cancelMedicineUse();
+            return true;
+        }
         if (!active()) return false;
         var mc = Minecraft.getInstance();
         suppressOffhandSwap();
@@ -115,6 +121,7 @@ public final class MedicineClient {
     }
     /** A single interaction press keeps only its authorized medicine session using until completion/cancel. */
     public static boolean useKeyDown(KeyMapping mapping) {
-        return mapping == Minecraft.getInstance().options.keyUse && ThrowableClient.sustainingMedicineUse() || mapping.isDown();
+        return mapping == Minecraft.getInstance().options.keyUse
+                && (ThrowableClient.sustainingMedicineUse() || BandageChainClient.sustaining()) || mapping.isDown();
     }
 }

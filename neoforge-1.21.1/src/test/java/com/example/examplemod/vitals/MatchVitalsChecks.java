@@ -5,6 +5,9 @@ import java.util.UUID;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.food.FoodData;
 
 /** Personal activation and wire boundaries only; no live player, world or game is created. */
@@ -73,7 +76,28 @@ public final class MatchVitalsChecks {
                     check(buffer.readableBytes() == 0, "Completion codec leaves no trailing data");
                 } finally { buffer.release(); }
             }
+            roundtrip(MatchVitalsPayloads.MedicineInterrupted.CODEC, new MatchVitalsPayloads.MedicineInterrupted(session));
+            for (int token : new int[]{1, Integer.MAX_VALUE})
+                roundtrip(MatchVitalsPayloads.CancelBandageContinuation.CODEC,
+                        new MatchVitalsPayloads.CancelBandageContinuation(session, token));
+            for (var hand : InteractionHand.values()) for (int slot : new int[]{0, 8})
+                roundtrip(MatchVitalsPayloads.BandageContinued.CODEC,
+                        new MatchVitalsPayloads.BandageContinued(session, slot, hand, slot == 0 ? 1 : 1200, slot == 0 ? 1 : Integer.MAX_VALUE));
         }
+        for (int slot : new int[]{-1, 9})
+            rejects(() -> new MatchVitalsPayloads.BandageContinued(id, slot, InteractionHand.MAIN_HAND, 60, 1));
+        for (int duration : new int[]{0, -1, 1201})
+            rejects(() -> new MatchVitalsPayloads.BandageContinued(id, 0, InteractionHand.MAIN_HAND, duration, 1));
+        for (int token : new int[]{0, -1}) {
+            rejects(() -> new MatchVitalsPayloads.BandageContinued(id, 0, InteractionHand.MAIN_HAND, 60, token));
+            rejects(() -> new MatchVitalsPayloads.CancelBandageContinuation(id, token));
+        }
+        var invalidContinued = new RegistryFriendlyByteBuf(Unpooled.buffer(), RegistryAccess.EMPTY);
+        try {
+            invalidContinued.writeUUID(id); invalidContinued.writeVarInt(9); invalidContinued.writeEnum(InteractionHand.MAIN_HAND);
+            invalidContinued.writeVarInt(60); invalidContinued.writeVarInt(1);
+            rejects(() -> MatchVitalsPayloads.BandageContinued.CODEC.decode(invalidContinued));
+        } finally { invalidContinued.release(); }
         // The same vanilla NBT mechanism used by the lifecycle service preserves all four food fields.
         var food = new FoodData();
         var original = new CompoundTag();
@@ -90,6 +114,14 @@ public final class MatchVitalsChecks {
     private static void rejects(Runnable action) {
         try { action.run(); } catch (IllegalArgumentException expected) { checks++; return; }
         throw new AssertionError("Malformed vitals accepted");
+    }
+    private static <P extends CustomPacketPayload> void roundtrip(StreamCodec<RegistryFriendlyByteBuf, P> codec, P packet) {
+        var buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), RegistryAccess.EMPTY);
+        try {
+            codec.encode(buffer, packet);
+            check(codec.decode(buffer).equals(packet), "Bandage continuation/result packets preserve session, hand and cancellation token");
+            check(buffer.readableBytes() == 0, "Bandage continuation/result decoder consumes exactly its packet");
+        } finally { buffer.release(); }
     }
     private static void check(boolean condition, String message) {
         checks++; if (!condition) throw new AssertionError(message);
