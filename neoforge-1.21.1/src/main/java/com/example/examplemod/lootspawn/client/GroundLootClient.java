@@ -140,17 +140,19 @@ public final class GroundLootClient {
                 .map(hit -> mc.level.getEntity(hit.id()) instanceof GroundLootEntity loot ? loot : null).orElse(null);
     }
 
+    public static boolean hasVisibleTarget() {
+        return selected != null && !selected.isRemoved()
+                && com.example.examplemod.hud.client.InteractionPromptHud.worldInteractionVisible();
+    }
+
     private static void hud(RenderGuiEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
         if (selected == null || selected.isRemoved() || mc.player == null || mc.screen != null || mc.options.hideGui) return;
-        Component hint = mc.player.getMainHandItem().isEmpty() || com.example.examplemod.inventory.InventoryConfig.active(mc.player)
-                ? Component.translatable("gui.tacz_pubg.pickup_hint", PICKUP.getTranslatedKeyMessage(), selected.getItem().getHoverName(), selected.getQuantity())
-                : Component.translatable("gui.tacz_pubg.pickup_empty_hand", selected.getItem().getHoverName(), selected.getQuantity());
-        int x = (event.getGuiGraphics().guiWidth() - mc.font.width(Texts.resolve(hint))) / 2;
-        int y = event.getGuiGraphics().guiHeight() / 2 + 18;
-        try (var layout = com.example.examplemod.hud.client.HudLayoutClient.apply(event.getGuiGraphics(), "loot_pickup",
-                x, y, mc.font.width(Texts.resolve(hint)), mc.font.lineHeight)) {
-            event.getGuiGraphics().drawString(mc.font, Texts.resolve(hint), x, y, 0xFFFFFFFF);
-        }
+        if (!com.example.examplemod.hud.client.InteractionPromptHud.worldInteractionVisible()) return;
+        boolean available = mc.player.getMainHandItem().isEmpty() || com.example.examplemod.inventory.InventoryConfig.active(mc.player);
+        Component hint = Texts.of(available ? "gui.tacz_pubg.pickup_action" : "gui.tacz_pubg.pickup_empty_hand",
+                selected.getItem().getHoverName(), selected.getQuantity());
+        com.example.examplemod.hud.client.InteractionPromptHud.render(event.getGuiGraphics(),
+                available ? PICKUP.getTranslatedKeyMessage() : Component.empty(), hint);
     }
 }

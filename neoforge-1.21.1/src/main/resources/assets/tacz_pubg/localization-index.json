@@ -2694,5 +2694,8 @@
   "54f292efd4ce": "screen.tacz_pubg.inventory.pubg.click_refit",
   "1ddaed15e751": "screen.tacz_pubg.inventory.pubg.refit_weapon",
   "8431d94e7a50": "screen.tacz_pubg.inventory.pubg.release_attach",
-  "9b0f7162d57f": "screen.tacz_pubg.inventory.pubg.drop_here"
+  "9b0f7162d57f": "screen.tacz_pubg.inventory.pubg.drop_here",
+  "0d8d3ce04245": "message.tacz_pubg.flight.jump_action",
+  "882f83ab1a3d": "message.tacz_pubg.flight.deploy_action",
+  "252927c26d79": "screen.tacz_pubg.throwable.cook_control"
 }
