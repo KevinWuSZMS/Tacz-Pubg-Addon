@@ -1,0 +1,74 @@
+{
+  "author": "Codex",
+  "date": "2026-11-18",
+  "timezone": "Asia/Shanghai",
+  "method": "Built-in image_gen background-extraction using user-supplied screenshots. Reference-based silhouette reconstruction, not pixel-exact extraction. Original generated files preserved; no bitmap postprocessing.",
+  "mapping": "User explicitly confirmed screenshots in supplied order correspond to vest levels 1, 2, 3.",
+  "sampledSourceRed": "#DA0010",
+  "rendering": "Actual transparent alpha, square source canvas, blur:true and clamp:true. Bbox uses alpha>=128, left/top inclusive and right/bottom exclusive. Generated red differs slightly from source red.",
+  "assets": [
+    {
+      "tier": 1,
+      "file": "armor_broken_1.png",
+      "source": "C:/Users/Administrator/Pictures/Screenshots/屏幕截图 2026-11-18 132713.png",
+      "sourceSha256": "4a043d7b5d2391b92b1345b3e00b2d5f945b6c09462c6bbe5e435f3dcb582c76",
+      "generatedOriginal": "C:/Users/Administrator/.codex/generated_images/01a1ed29-592a-7fe1-87f0-543fa06c6fdc/exec-22975b17-ffa3-449f-8d67-45eacdaa95cc.png",
+      "outputSha256": "f1218714ebef1fb93a065925f2949750adfd653ef067cb37fbac85c0f5b3faed",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "mainAlphaBounds": [
+        305,
+        210,
+        931,
+        1050
+      ],
+      "maximumAlpha": 255,
+      "generatedDominantRgb": "#C7000C",
+      "prompt": "Use case: background-extraction. Asset: tiny PUBG-style broken vest HUD icon for a Minecraft mod. The attached screenshot is the sole edit target. Extract/reconstruct ONLY the red broken vest silhouette, preserving its distinctive shoulders, sides, bottom hem, small panel cutouts, and especially the wide jagged zigzag fracture that divides the garment down its center. The icon is a flat solid RGB(218,0,16) #DA0010 silhouette, with clean antialiased edges. Change only the background: remove ALL game scenery, HUD panel, edge shadows, clothing behind the icon, and any residual pixels outside the red vest. Do not redesign the silhouette, invent armor details, add outlines, badges, numbers, labels, letters, gradient, lighting, metallic surface, texture, drop shadow, border, or decorative marks. Do not include a person or helmet. Real transparent alpha background, not black or checkerboard. Output one centered isolated icon on a square canvas with equal margin; the visible vest maximum dimension occupies about 81% of canvas height or width. Red body area opaque; gaps and the large central jagged split fully transparent. Preserve the two broken halves and all visible source-derived red islands. This output is one icon only, not a screenshot or icon sheet.\nThis is LEVEL 1 per the user's explicit mapping. Match THIS screenshot's relatively narrow upright vest with blocky side pouches and short top shoulders. Do not substitute another level's shape."
+    },
+    {
+      "tier": 2,
+      "file": "armor_broken_2.png",
+      "source": "C:/Users/Administrator/Pictures/Screenshots/屏幕截图 2026-11-18 132618.png",
+      "sourceSha256": "82d29618daaf471667995f553a318500afd6c4f2b4d7ec80723e109f116d7d53",
+      "generatedOriginal": "C:/Users/Administrator/.codex/generated_images/01a1ed29-592a-7fe1-87f0-543fa06c6fdc/exec-21dc862c-b32c-4eeb-8569-7ea346d449a7.png",
+      "outputSha256": "497a4b3cf804a9e622fa47bb07a7e972be49843984179e9e0c192cc8cd02e92b",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "mainAlphaBounds": [
+        245,
+        191,
+        987,
+        1059
+      ],
+      "maximumAlpha": 255,
+      "generatedDominantRgb": "#C4010C",
+      "prompt": "Use case: background-extraction. Asset: tiny PUBG-style broken vest HUD icon for a Minecraft mod. The attached screenshot is the sole edit target. Extract/reconstruct ONLY the red broken vest silhouette, preserving its distinctive shoulders, sides, bottom hem, small panel cutouts, and especially the wide jagged zigzag fracture that divides the garment down its center. The icon is a flat solid RGB(218,0,16) #DA0010 silhouette, with clean antialiased edges. Change only the background: remove ALL game scenery, HUD panel, edge shadows, clothing behind the icon, and any residual pixels outside the red vest. Do not redesign the silhouette, invent armor details, add outlines, badges, numbers, labels, letters, gradient, lighting, metallic surface, texture, drop shadow, border, or decorative marks. Do not include a person or helmet. Real transparent alpha background, not black or checkerboard. Output one centered isolated icon on a square canvas with equal margin; the visible vest maximum dimension occupies about 81% of canvas height or width. Red body area opaque; gaps and the large central jagged split fully transparent. Preserve the two broken halves and all visible source-derived red islands. This output is one icon only, not a screenshot or icon sheet.\nThis is LEVEL 2 per the user's explicit mapping. Match THIS screenshot's tall upper shoulder corners and broad rectangular lower side panels with small vertical pocket gaps. Do not substitute another level's shape."
+    },
+    {
+      "tier": 3,
+      "file": "armor_broken_3.png",
+      "source": "C:/Users/Administrator/Pictures/Screenshots/屏幕截图 2026-11-18 132255.png",
+      "sourceSha256": "dbe7589e9c3612d12f4bfe83e95beebef26a202b491fadb433aba6b796bc341f",
+      "generatedOriginal": "C:/Users/Administrator/.codex/generated_images/01a1ed29-592a-7fe1-87f0-543fa06c6fdc/exec-4cc9915c-0cac-4f00-b1a3-2f301411f65a.png",
+      "outputSha256": "fbeecb95c0ccc2906677b56e71d830dc6ae56508b4c4342e82dbbcbad0a65f75",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "mainAlphaBounds": [
+        290,
+        223,
+        961,
+        1032
+      ],
+      "maximumAlpha": 255,
+      "generatedDominantRgb": "#C9000E",
+      "prompt": "Use case: background-extraction. Asset: tiny PUBG-style broken vest HUD icon for a Minecraft mod. The attached screenshot is the sole edit target. Extract/reconstruct ONLY the red broken vest silhouette, preserving its distinctive shoulders, sides, bottom hem, small panel cutouts, and especially the wide jagged zigzag fracture that divides the garment down its center. The icon is a flat solid RGB(218,0,16) #DA0010 silhouette, with clean antialiased edges. Change only the background: remove ALL game scenery, HUD panel, edge shadows, clothing behind the icon, and any residual pixels outside the red vest. Do not redesign the silhouette, invent armor details, add outlines, badges, numbers, labels, letters, gradient, lighting, metallic surface, texture, drop shadow, border, or decorative marks. Do not include a person or helmet. Real transparent alpha background, not black or checkerboard. Output one centered isolated icon on a square canvas with equal margin; the visible vest maximum dimension occupies about 81% of canvas height or width. Red body area opaque; gaps and the large central jagged split fully transparent. Preserve the two broken halves and all visible source-derived red islands. This output is one icon only, not a screenshot or icon sheet.\nThis is LEVEL 3 per the user's explicit mapping. Match THIS screenshot's narrow angled upward shoulder straps, inward chest waist shape, and small angular lower pouch lobes. Do not substitute another level's shape."
+    }
+  ]
+}

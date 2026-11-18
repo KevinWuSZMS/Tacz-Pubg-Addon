@@ -89,7 +89,7 @@ public final class ArmorClient {
         double packFraction = !synced || state.capacity() <= 0 ? 0 : Math.clamp(state.used() / (double) state.capacity(), 0, 1);
         if (preview && !synced) { packTier = 2; packFraction = .64; }
         compactCell(graphics, fit, 0, CombatHudTextures.backpack(packTier), synced || preview ? percentage(packFraction) : "—", packTier,
-                packFraction >= 1 ? 0xffe49a52 : 0xffe8e9e7);
+                packFraction >= 1 ? 0xffe49a52 : 0xffe8e9e7, false);
         for (int index = 0; index < 2; index++) {
             boolean helmet = index == 0;
             ItemStack stack = mc.player == null ? ItemStack.EMPTY
@@ -100,8 +100,9 @@ public final class ArmorClient {
             int maximum = armor == null ? 0 : ArmorRules.maximum(helmet, tier);
             double fraction = maximum == 0 ? 0 : Math.clamp(health / maximum, 0, 1);
             if (preview && armor == null) { tier = helmet ? 2 : 3; fraction = helmet ? .86 : .72; }
-            compactCell(graphics, fit, index + 1, helmet ? CombatHudTextures.helmet(tier) : CombatHudTextures.armor(tier),
-                    tier > 0 ? percentage(fraction) : "—", tier, tier > 0 && fraction <= .25 ? 0xffe45e54 : 0xffe8e9e7);
+            var durability = ArmorHudLayout.durability(helmet, tier, fraction);
+            compactCell(graphics, fit, index + 1, helmet ? CombatHudTextures.helmet(tier) : CombatHudTextures.armor(tier, durability.brokenVest()),
+                    durability.label(), tier, durability.color(), durability.brokenVest());
         }
         float middle = logicalHeight / 2f;
         if (gun.present() || preview) {
@@ -141,19 +142,20 @@ public final class ArmorClient {
     }
     private static String percentage(double fraction) { return Math.round(Math.clamp(fraction, 0, 1) * 100) + "%"; }
     private static void compactCell(GuiGraphics graphics, ArmorHudLayout.Metrics fit, int index,
-            ResourceLocation icon, String value, int tier, int color) {
+            ResourceLocation icon, String value, int tier, int color, boolean brokenVest) {
         int size = fit.iconSize();
         int iconColor = tier > 0 ? 0xFFFFFFFF
                 : ((int) (com.example.examplemod.pubgsettings.PubgSettingsService.client().number("hud.icon_inactive_alpha") * 255) << 24) | 0xFFFFFF;
         graphics.pose().pushPose();
         graphics.pose().translate(fit.cellCenter(index) - size / 2f, 0, 0);
-        CombatHudTextures.draw(graphics, icon, 0, 0, size, size, iconColor);
+        // Broken references have wider transparent margins; crop only those margins at draw time.
+        CombatHudTextures.draw(graphics, icon, 0, 0, size, size, iconColor, brokenVest ? 12 : 0);
         if (tier > 0) {
             graphics.fill(size - 6, size - 7, size, size, 0x9B171B1E);
             graphics.pose().pushPose();
             graphics.pose().translate(size - 5, size - 6.5f, 0);
             graphics.pose().scale(.7f, .7f, 1);
-            CombatHudNumbers.draw(graphics, Integer.toString(tier), 0, 0, 0xFFE8E9E7);
+            CombatHudNumbers.draw(graphics, Integer.toString(tier), 0, 0, brokenVest ? ArmorHudLayout.BROKEN_COLOR : 0xFFE8E9E7);
             graphics.pose().popPose();
         }
         graphics.pose().popPose();

@@ -6,6 +6,7 @@ import com.example.examplemod.hud.client.HudLayoutModel;
 import com.example.examplemod.pubgsettings.PubgSettings;
 import com.example.examplemod.vitals.client.CombatHudStyle;
 import com.example.examplemod.vitals.client.CombatHudNumbers;
+import com.example.examplemod.vitals.client.CombatHudTextures;
 import com.example.examplemod.vitals.client.PubgVitalsLayout;
 import net.minecraft.world.entity.Pose;
 
@@ -47,6 +48,7 @@ public final class ArmorHudLayoutChecks {
         glyphCentering();
         oxygenReadout();
         stanceIndicator();
+        brokenEquipment();
         var settings = PubgSettings.initial();
         check(settings.integer("hud.bar_width") == 182 && settings.enabled("hud.align_hotbar"),
                 "New saves align the health/status frame to vanilla's 182px hotbar by default");
@@ -144,6 +146,47 @@ public final class ArmorHudLayoutChecks {
                 }
         }
         System.out.println("Armor HUD layout checks: " + checks + " passed; no game launched.");
+    }
+    private static void brokenEquipment() throws Exception {
+        var absent = ArmorHudLayout.durability(false, 0, 0);
+        check(!absent.brokenVest() && absent.label().equals("—"), "An empty chest slot is distinct from a retained broken vest");
+        check(CombatHudTextures.armor(0, true).equals(CombatHudTextures.armor(0)), "An empty slot never selects a missing broken-tier-zero texture");
+        var imageHashes = new java.util.HashSet<Integer>();
+        for (int tier = 1; tier <= 3; tier++) {
+            var broken = ArmorHudLayout.durability(false, tier, 0);
+            check(broken.brokenVest() && broken.label().equals("0%") && broken.color() == 0xFFDA0010,
+                    "All exhausted vest tiers show the screenshot red zero percent");
+            var surviving = ArmorHudLayout.durability(false, tier, 1.0 / (ArmorRules.maximum(false, tier) * ArmorRules.PRECISION));
+            check(!surviving.brokenVest() && surviving.label().equals("1%"), "The final fractional durability point cannot falsely show broken zero percent");
+            check(!ArmorHudLayout.durability(true, tier, 0).brokenVest(), "An exhausted helmet cannot use a broken vest picture");
+            check(ArmorHudLayout.durability(false, tier, 1).label().equals("100%"), "Replacement armor restores its intact readout");
+            var texture = CombatHudTextures.armor(tier, broken.brokenVest());
+            check(texture.getPath().endsWith("armor_broken_" + tier + ".png")
+                            && !texture.equals(CombatHudTextures.armor(tier, surviving.brokenVest())),
+                    "User screenshot order maps to separate level one, two and three broken icons");
+            try (var input = ArmorHudLayoutChecks.class.getResourceAsStream("/assets/tacz_pubg/" + texture.getPath())) {
+                check(input != null, "Each broken vest image is packaged");
+                var image = javax.imageio.ImageIO.read(input);
+                check(image != null && image.getWidth() == image.getHeight() && image.getColorModel().hasAlpha(),
+                        "Broken vest images use square transparent canvases");
+                check((image.getRGB(0, 0) >>> 24) == 0 && (image.getRGB(image.getWidth()-1, image.getHeight()-1) >>> 24) == 0,
+                        "Broken vest corners have no screenshot background");
+                int opaque = 0, red = 0, hash = 1;
+                boolean fitsCrop = true;
+                for (int y = 0; y < image.getHeight(); y++) for (int x = 0; x < image.getWidth(); x++) {
+                    int pixel = image.getRGB(x, y);
+                    hash = 31 * hash + pixel;
+                    if ((pixel >>> 24) < 128) continue;
+                    opaque++;
+                    if ((pixel >> 16 & 255) > (pixel >> 8 & 255) * 2 && (pixel >> 16 & 255) > (pixel & 255) * 2) red++;
+                    fitsCrop &= x >= image.getWidth() * 12 / 128 && x < image.getWidth() * 116 / 128
+                            && y >= image.getHeight() * 12 / 128 && y < image.getHeight() * 116 / 128;
+                }
+                check(opaque > 0 && red >= opaque * .95, "Broken silhouettes visibly use red rather than the intact white mask");
+                check(fitsCrop, "UV margin fitting preserves every solid part of the broken silhouette");
+                check(imageHashes.add(hash), "Each vest tier packages a distinct reference silhouette");
+            }
+        }
     }
     private static void oxygenReadout() {
         for (int[] sample : new int[][]{{300, 300, 100}, {150, 300, 50}, {-20, 300, 0}, {450, 300, 100}, {0, 0, 0}}) {

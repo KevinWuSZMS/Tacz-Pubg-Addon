@@ -7,6 +7,17 @@ public final class ArmorHudLayout {
     public static final int HEIGHT = 24;
     public static final int TEXT_HEIGHT = 9;
     public static final float LOADED_SCALE = 1.55f;
+    public static final int BROKEN_COLOR = 0xFFDA0010;
+    public record DurabilityDisplay(boolean brokenVest, String label, int color) {}
+    public static DurabilityDisplay durability(boolean helmet, int tier, double fraction) {
+        if (tier <= 0) return new DurabilityDisplay(false, "—", 0xFFE8E9E7);
+        double remaining = Math.clamp(fraction, 0, 1);
+        boolean brokenVest = !helmet && remaining == 0;
+        // A surviving fraction of a durability point must not look fully exhausted.
+        long percent = remaining > 0 ? Math.max(1, Math.round(remaining * 100)) : 0;
+        return new DurabilityDisplay(brokenVest, percent + "%",
+                brokenVest ? BROKEN_COLOR : remaining <= .25 ? 0xFFE45E54 : 0xFFE8E9E7);
+    }
     public record Cell(int x, int y, int width, int height) {}
     public static final int MODE_SIZE = 10, STATUS_SIZE = 15, HEAL_SIZE = 12;
     public record Metrics(float cellWidth, float logicalWidth, int logicalHeight, float scale, int iconSize,

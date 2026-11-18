@@ -12,6 +12,8 @@ public final class CombatHudTextures {
     private static final ResourceLocation[] BACKPACK = equipment("backpack");
     private static final ResourceLocation[] HELMET = equipment("helmet");
     private static final ResourceLocation[] ARMOR = equipment("armor");
+    private static final ResourceLocation[] BROKEN_ARMOR = {ARMOR[0], texture("armor_broken_1"),
+            texture("armor_broken_2"), texture("armor_broken_3")};
 
     private CombatHudTextures() {}
 
@@ -27,8 +29,16 @@ public final class CombatHudTextures {
     public static ResourceLocation backpack(int tier) { return BACKPACK[Math.clamp(tier, 0, 3)]; }
     public static ResourceLocation helmet(int tier) { return HELMET[Math.clamp(tier, 0, 3)]; }
     public static ResourceLocation armor(int tier) { return ARMOR[Math.clamp(tier, 0, 3)]; }
+    public static ResourceLocation armor(int tier, boolean broken) {
+        return (broken ? BROKEN_ARMOR : ARMOR)[Math.clamp(tier, 0, 3)];
+    }
 
     public static void draw(GuiGraphics graphics, ResourceLocation texture, int x, int y, int width, int height, int argb) {
+        draw(graphics, texture, x, y, width, height, argb, 0);
+    }
+
+    /** Inset is measured on normalized 128px UVs, leaving the source bitmap untouched. */
+    public static void draw(GuiGraphics graphics, ResourceLocation texture, int x, int y, int width, int height, int argb, int inset) {
         if (width <= 0 || height <= 0 || (argb >>> 24) == 0) return;
         // Draw queued panels/arcs before the immediate textured quad.
         graphics.flush();
@@ -38,8 +48,8 @@ public final class CombatHudTextures {
         RenderSystem.setShaderColor((argb >> 16 & 255) / 255f, (argb >> 8 & 255) / 255f,
                 (argb & 255) / 255f, (argb >>> 24) / 255f);
         try {
-            // Full normalized UVs preserve the source mask at every GUI/layout scale.
-            graphics.blit(texture, x, y, width, height, 0, 0, 128, 128, 128, 128);
+            int padding = Math.clamp(inset, 0, 63);
+            graphics.blit(texture, x, y, width, height, padding, padding, 128 - padding * 2, 128 - padding * 2, 128, 128);
         } finally {
             RenderSystem.setShaderColor(previous[0], previous[1], previous[2], previous[3]);
         }

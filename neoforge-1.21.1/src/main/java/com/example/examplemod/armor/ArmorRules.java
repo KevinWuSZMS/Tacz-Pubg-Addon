@@ -10,6 +10,7 @@ public final class ArmorRules {
     }
     public static float multiplier(int tier, boolean helmet, boolean broken) {
         if (tier < 1 || tier > 3) return 1;
+        // Official PUBG Update 7.2: destroyed vests retain 20% protection at every tier.
         if (broken) return helmet ? 1 : .8f;
         return switch (tier) { case 1 -> .7f; case 2 -> .6f; default -> .45f; };
     }
@@ -18,4 +19,12 @@ public final class ArmorRules {
         return (int) Math.min(Integer.MAX_VALUE, Math.round(incomingMinecraftDamage * 5.0 * (1 - multiplier) * PRECISION));
     }
     public static int remaining(int maximum, int damage) { return Math.max(0, maximum - Math.max(0, damage)); }
+    public record WearResult(int damage, boolean removeItem) {}
+    /** Depletion destroys helmets; the retained zero-health vest still owns its storage bonus. */
+    public static WearResult afterWear(boolean helmet, int maximum, int previousDamage, int wear) {
+        // Commands may remove the max-damage component; keep the old safe depletion behavior.
+        if (maximum <= 0) return new WearResult(0, helmet);
+        int damage = (int) Math.clamp((long) previousDamage + Math.max(0, wear), 0, maximum);
+        return new WearResult(damage, helmet && damage == maximum);
+    }
 }

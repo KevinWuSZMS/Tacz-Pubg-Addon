@@ -11,6 +11,16 @@ public final class BackpackChecks {
         check(BackpackRules.capacity(1, false) == 220_000, "level one adds 150");
         check(BackpackRules.capacity(2, false) == 270_000, "level two adds 200");
         check(BackpackRules.capacity(3, true) == 370_000, "level three and vest bonuses are independent");
+        for (int vestTier = 1; vestTier <= 3; vestTier++) for (int backpackTier = 0; backpackTier <= 3; backpackTier++) {
+            int maximum = com.example.examplemod.armor.ArmorRules.maximum(false, vestTier) * com.example.examplemod.armor.ArmorRules.PRECISION;
+            var broken = com.example.examplemod.armor.ArmorRules.afterWear(false, maximum, maximum - 1, Integer.MAX_VALUE);
+            int intactCapacity = BackpackRules.capacity(backpackTier, true);
+            int brokenCapacity = BackpackRules.capacity(backpackTier, !broken.removeItem());
+            check(brokenCapacity == intactCapacity && brokenCapacity - BackpackRules.capacity(backpackTier, false) == BackpackRules.VEST,
+                    "Each exhausted vest keeps the full fifty-unit bonus with every backpack tier");
+            check(BackpackRules.accepted(intactCapacity - 1_000, brokenCapacity, 1_000, 2) == 1,
+                    "Breaking a vest does not remove the last available storage space or allow excess pickup");
+        }
         // A normal PC loadout: 200 rifle rounds, 3 first aids, 5 bandages,
         // 4 drinks, 2 frags and 2 smokes leave 32 capacity in a level-one pack + vest.
         int loadout = 200 * BackpackWeights.ammoWeight("ammo_556") + 3 * 10_000

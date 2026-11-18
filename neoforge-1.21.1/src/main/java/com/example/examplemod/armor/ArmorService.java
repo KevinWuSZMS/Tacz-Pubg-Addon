@@ -87,13 +87,13 @@ public final class ArmorService {
         int wear = amount == null ? 0 : ArmorRules.wear(amount, protection.factor);
         if (wear == 0 || protection.stack.isEmpty()) return;
         ItemStack stack = protection.stack;
-        int damage = (int) Math.min(stack.getMaxDamage(), (long) stack.getDamageValue() + wear);
-        stack.setDamageValue(damage);
-        if (armor.helmet() && damage >= stack.getMaxDamage()) {
+        var result = ArmorRules.afterWear(armor.helmet(), stack.getMaxDamage(), stack.getDamageValue(), wear);
+        stack.setDamageValue(result.damage());
+        if (result.removeItem()) {
             protection.player.onEquippedItemBroken(armor, protection.slot);
             stack.shrink(1);
         }
-        // Broken vests remain equipped and retain their capacity + 20% protection.
+        // Official Update 7.2: broken vests remain equipped with their capacity and 20% protection.
         protection.player.getInventory().setChanged();
         protection.player.containerMenu.broadcastChanges();
     }
