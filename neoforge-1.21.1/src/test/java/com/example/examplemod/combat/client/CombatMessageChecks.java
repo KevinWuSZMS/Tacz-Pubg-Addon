@@ -21,9 +21,12 @@ public final class CombatMessageChecks {
             for (String cause : List.of("bleedout", "drown", "team_wipe", "disconnect", "boundary", "environment")) {
                 Event event = new Event(SESSION, 1, "elimination", DOWNER, VICTIM, "", false, cause, 1, 0, true);
                 expect(CombatMessageRenderer.message(event, false, 0xFF0000).getString(), finallyMessage);
-                expect(CombatFeedRow.actionLabel(event), zh ? "终于淘汰" : "finally eliminated");
+                expect(CombatFeedRow.actionLabel(event), "");
+                expect(CombatFeedRow.statusIcon(event, false).getPath(), "textures/gui/hud/kill_feed/downed.png");
             }
             Event knock = new Event(SESSION, 2, "knock", Actor.NONE, VICTIM, "", false, "environment", 0, 0);
+            Event direct = new Event(SESSION, 2, "elimination", Actor.NONE, VICTIM, "", false, "environment", 0, 0, false);
+            expect(CombatFeedRow.statusIcon(direct, false).getPath(), "textures/gui/hud/kill_feed/eliminated.png");
             expect(CombatFeedRow.actionLabel(knock), zh ? "击倒" : "knocked down");
             Event punch = new Event(SESSION, 3, "knock", DOWNER, VICTIM, "", false, "unarmed", 0, 0);
             expect(CombatMessageRenderer.message(punch, false, 0xFF0000).getString(),

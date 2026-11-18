@@ -1591,7 +1591,6 @@
   "screen.tacz_pubg.combat.attack_message": "%1$s used %2$s to %3$s %4$s",
   "screen.tacz_pubg.combat.headshot_message": "%1$s used %2$s to %3$s %4$s with a headshot",
   "screen.tacz_pubg.combat.finally_eliminated": "%1$s finally %2$s %3$s",
-  "screen.tacz_pubg.combat.finally_eliminated_label": "finally eliminated",
   "screen.tacz_pubg.combat.knocked_without_weapon": "%1$s knocked down %2$s",
   "screen.tacz_pubg.combat.knock_label": "knocked down",
   "screen.tacz_pubg.combat.assist_message": "You helped %1$s %2$s",

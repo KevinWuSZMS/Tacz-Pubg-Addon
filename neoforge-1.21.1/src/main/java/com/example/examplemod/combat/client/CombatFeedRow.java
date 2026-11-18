@@ -32,14 +32,13 @@ final class CombatFeedRow {
         int color = CombatHudClient.alpha(settings.color(tint), opacity);
         if ((color >>> 24) < 4) return;
         int iconHeight = Math.max(6, row - 3);
-        boolean downed = event.type().equals("knock") || event.bleedout();
-        boolean direct = event.directElimination();
         boolean weapon = CombatMessageRenderer.showsWeapon(event);
+        ResourceLocation status = statusIcon(event, weapon);
         boolean headshot = weapon && event.firearm() && event.headshot();
         String action = weapon ? "" : actionLabel(event);
         int sourceWidth = weapon ? sourceWidth(font, event, iconHeight) : font.width(action);
         String flag = friendly ? CombatMessageRenderer.text("friendly_fire").getString() : "";
-        int icons = padded(sourceWidth) + padded(headshot ? iconHeight : 0) + padded(downed || direct ? iconHeight * 3 / 2 : 0);
+        int icons = padded(sourceWidth) + padded(headshot ? iconHeight : 0) + padded(status != null ? iconHeight * 3 / 2 : 0);
         int fixed = 6 + padded(badgeWidth(font, attacker)) + badgeWidth(font, event.victim())
                 + icons + padded(font.width(flag));
         String left = attacker.name();
@@ -84,8 +83,8 @@ final class CombatFeedRow {
             CombatHudTextures.draw(g, HEADSHOT, x, 1, iconHeight, iconHeight, color);
             x += padded(iconHeight);
         }
-        if (downed || direct) {
-            CombatHudTextures.draw(g, direct ? ELIMINATED : DOWNED, x, 1, iconHeight * 3 / 2, iconHeight, color);
+        if (status != null) {
+            CombatHudTextures.draw(g, status, x, 1, iconHeight * 3 / 2, iconHeight, color);
             x += padded(iconHeight * 3 / 2);
         }
         if (friendly) {
@@ -104,11 +103,16 @@ final class CombatFeedRow {
         return Math.min(45, font.width(CombatMessageRenderer.weaponName(event).getString()));
     }
 
+    static ResourceLocation statusIcon(Event event, boolean weapon) {
+        if (event.directElimination()) return ELIMINATED;
+        if (event.type().equals("knock") || event.type().equals("elimination") && !weapon) return DOWNED;
+        return null;
+    }
+
     static String actionLabel(Event event) {
         return switch (event.type()) {
             case "revive" -> "+";
             case "knock" -> CombatMessageRenderer.text("knock_label").getString();
-            case "elimination" -> CombatMessageRenderer.text("finally_eliminated_label").getString();
             default -> "";
         };
     }

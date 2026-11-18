@@ -1591,7 +1591,6 @@
   "screen.tacz_pubg.combat.attack_message": "%1$s用 %2$s %3$s了 %4$s",
   "screen.tacz_pubg.combat.headshot_message": "%1$s用 %2$s 命中头部%3$s了 %4$s",
   "screen.tacz_pubg.combat.finally_eliminated": "%1$s终于%2$s了 %3$s",
-  "screen.tacz_pubg.combat.finally_eliminated_label": "终于淘汰",
   "screen.tacz_pubg.combat.knocked_without_weapon": "%1$s击倒了 %2$s",
   "screen.tacz_pubg.combat.knock_label": "击倒",
   "screen.tacz_pubg.combat.assist_message": "你协助%1$s了 %2$s",
