@@ -1,0 +1,104 @@
+{
+  "description": "First-person HUD stance silhouettes reconstructed from the user's PUBG screenshots.",
+  "author": "Codex",
+  "date": "2026-11-18",
+  "tool": "built-in image_gen.imagegen",
+  "method": "Transparent background extraction request with screenshot reference. The returned images are reference-based generated reconstructions, not pixel-exact source cutouts. Original PNG bytes and alpha are preserved; no post-generation image processing was applied.",
+  "appearance": "Off-white right-facing armed silhouettes with thin gray outlines. Small contour and edge differences from the source remain.",
+  "bounds_convention": "[left, top, right, bottom], right and bottom exclusive; alpha thresholds given in 0..255.",
+  "assets": [
+    {
+      "file": "standing.png",
+      "source_screenshot": "屏幕截图 2026-11-18 125737.png",
+      "source_sha256": "c915b35ee04e684e06ac051295e655c17ac02806e500ac490617ed18814870e1",
+      "generated_original": "exec-44198b1a-5451-4913-a9fe-70a1316c3f6d.png",
+      "sha256": "e687e4e736a509976b7bde363da1f5eead8ba86a016d4e1ed6fecb60a010dd5e",
+      "name": "standing",
+      "width": 1254,
+      "height": 1254,
+      "alpha_bbox": {
+        "32": [
+          341,
+          144,
+          976,
+          1112
+        ],
+        "128": [
+          344,
+          147,
+          972,
+          1109
+        ]
+      },
+      "max_alpha": 254,
+      "dominant_nonzero_alpha": [
+        253,
+        129485
+      ],
+      "transparent": 1316336,
+      "prompt": "Use case: background-extraction. Asset type: small game HUD posture icon, transparent RGBA square. Edit target is the attached screenshot. Extract ONLY the tiny off-white armed-person silhouette at the far left of the screenshot, outside and to the left of the dark status panel. Remove all terrain, panels, guns in the foreground, numerals, bars and other HUD symbols. Preserve the target silhouette's pose, anatomy, rifle orientation facing RIGHT, and contour as faithfully as possible. Do not design a different soldier, do not add details. It is a flat solid off-white/white monochrome silhouette, no interior lines, with the same fine dark gray edge/shadow as the source and antialiased edges. Actual transparent background, no checkerboard baked into pixels. Output exactly one isolated silhouette on a SQUARE canvas. Preserve original aspect ratio, do not stretch. No text or labels. Target: the STANDING person with both legs nearly straight, head near the top, rifle shouldered and pointing right; located roughly x=32..81 y=12..77 in the source. Center horizontally. Make the full silhouette height 80% of the square canvas, vertically centered (10% clear margin above and below)."
+    },
+    {
+      "file": "crouching.png",
+      "source_screenshot": "屏幕截图 2026-11-18 125732.png",
+      "source_sha256": "099b3ef4f107e410259b162b501c498dbad6191bbf201c363155f0d9763394ae",
+      "generated_original": "exec-37947b23-dba6-4beb-9013-0540ed19297d.png",
+      "sha256": "b9798dd78a7951aa85b2d4a131d1f34a5d0f907540f71f5c69f58b57b5a14445",
+      "name": "crouching",
+      "width": 1254,
+      "height": 1254,
+      "alpha_bbox": {
+        "32": [
+          380,
+          359,
+          951,
+          932
+        ],
+        "128": [
+          384,
+          362,
+          949,
+          930
+        ]
+      },
+      "max_alpha": 254,
+      "dominant_nonzero_alpha": [
+        253,
+        86471
+      ],
+      "transparent": 1421639,
+      "prompt": "Use case: background-extraction. Asset type: small game HUD posture icon, transparent RGBA square. Edit target is the attached screenshot. Extract ONLY the tiny off-white armed-person silhouette at the far left of the screenshot, outside and to the left of the dark status panel. Remove all terrain, panels, guns in the foreground, numerals, bars and other HUD symbols. Preserve the target silhouette's pose, anatomy, rifle orientation facing RIGHT, and contour as faithfully as possible. Do not design a different soldier, do not add details. It is a flat solid off-white/white monochrome silhouette, no interior lines, with the same fine dark gray edge/shadow as the source and antialiased edges. Actual transparent background, no checkerboard baked into pixels. Output exactly one isolated silhouette on a SQUARE canvas. Preserve original aspect ratio, do not stretch. No text or labels. Target: the CROUCHING person with deeply bent knees, squat body, rifle pointing right; located roughly x=40..86 y=24..69 in the source. Center horizontally and vertically. Make the full silhouette height 56% of the square canvas (22% clear margin above and below), keeping all proportions identical to screenshot."
+    },
+    {
+      "file": "prone.png",
+      "source_screenshot": "屏幕截图 2026-11-18 125724.png",
+      "source_sha256": "9beb0ac5e72a75ee6253bc0a16139ea76329a5959dd374b704bd521d1098d3a3",
+      "generated_original": "exec-8b22cf91-16f2-42fc-96ac-8eec4bc169b2.png",
+      "sha256": "de73e676ed68afa1b76098897ec21ad2a896ca6d077a8f8372c42f85f603de89",
+      "name": "prone",
+      "width": 1254,
+      "height": 1254,
+      "alpha_bbox": {
+        "32": [
+          114,
+          513,
+          1142,
+          778
+        ],
+        "128": [
+          115,
+          514,
+          1141,
+          776
+        ]
+      },
+      "max_alpha": 254,
+      "dominant_nonzero_alpha": [
+        253,
+        75308
+      ],
+      "transparent": 1434547,
+      "prompt": "Use case: background-extraction. Asset type: small game HUD posture icon, transparent RGBA square. Edit target is the attached screenshot. Extract ONLY the tiny off-white armed-person silhouette at the far left of the screenshot, outside and to the left of the dark status panel. Remove all terrain, panels, guns in the foreground, numerals, bars and other HUD symbols. Preserve the target silhouette's pose, anatomy, rifle orientation facing RIGHT, and contour as faithfully as possible. Do not design a different soldier, do not add details. It is a flat solid off-white/white monochrome silhouette, no interior lines, with the same fine dark gray edge/shadow as the source and antialiased edges. Actual transparent background, no checkerboard baked into pixels. Output exactly one isolated silhouette on a SQUARE canvas. Preserve original aspect ratio, do not stretch. No text or labels. Target: the PRONE person lying horizontally with legs extended left, head and rifle to the right, located roughly x=34..107 y=46..72 in the source. Center horizontally and vertically. Make the full silhouette WIDTH 80% of the square canvas, preserving the thin flat lying posture."
+    }
+  ]
+}

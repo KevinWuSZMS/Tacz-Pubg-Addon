@@ -37,6 +37,10 @@ public final class ArmorClient {
     @SubscribeEvent public static void hud(RegisterGuiLayersEvent event) {
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath("tacz_pubg", "combat_equipment"),
                 (graphics, delta) -> renderEquipmentPanel(graphics));
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath("tacz_pubg", PlayerStanceHud.HUD_ID),
+                (graphics, delta) -> PlayerStanceHud.render(graphics));
+        HudLayoutClient.registerPreview(PlayerStanceHud.HUD_ID, PlayerStanceHud::previewBounds,
+                (graphics, rectangle, selected) -> PlayerStanceHud.preview(graphics, rectangle));
         HudLayoutClient.registerPreview("equipment", (width, height) -> {
             var panel = anchoredPanel(width, height);
             return new HudLayoutModel.Rect(panel.x(), panel.y(), panel.width(), panel.height());
@@ -50,6 +54,10 @@ public final class ArmorClient {
         try (var layout = HudLayoutClient.apply(graphics, "equipment", panel.x(), panel.y(), panel.width(), panel.height())) {
             renderCells(graphics, panel, false);
         }
+    }
+    static HudLayoutModel.Rect equipmentBounds(int width, int height) {
+        var panel = anchoredPanel(width, height);
+        return HudLayoutClient.resolve("equipment", width, height, panel.x(), panel.y(), panel.width(), panel.height());
     }
     private static ArmorHudLayout.Panel anchoredPanel(int width, int height) {
         var frame = com.example.examplemod.vitals.client.CombatHudStyle.frame(width, height);

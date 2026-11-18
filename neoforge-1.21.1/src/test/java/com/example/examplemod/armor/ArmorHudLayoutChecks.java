@@ -1,16 +1,52 @@
 package com.example.examplemod.armor;
 
 import com.example.examplemod.armor.client.ArmorHudLayout;
+import com.example.examplemod.armor.client.PlayerStanceHud;
+import com.example.examplemod.hud.client.HudLayoutModel;
 import com.example.examplemod.pubgsettings.PubgSettings;
 import com.example.examplemod.vitals.client.CombatHudStyle;
 import com.example.examplemod.vitals.client.CombatHudNumbers;
 import com.example.examplemod.vitals.client.PubgVitalsLayout;
+import net.minecraft.world.entity.Pose;
 
 public final class ArmorHudLayoutChecks {
     private static int checks;
+    private static void stanceIndicator() throws Exception {
+        check(PlayerStanceHud.stance(Pose.STANDING, false) == PlayerStanceHud.Stance.STANDING, "Standing body selects the upright silhouette");
+        check(PlayerStanceHud.stance(Pose.CROUCHING, false) == PlayerStanceHud.Stance.CROUCHING, "Collision-constrained and rescue crouch select the crouching silhouette");
+        check(PlayerStanceHud.stance(Pose.SWIMMING, false) == PlayerStanceHud.Stance.PRONE, "Ground crawl pose selects prone, including TaCZ and unarmed movement");
+        check(PlayerStanceHud.stance(Pose.SWIMMING, true) == null, "Actual swimming is not labeled as ground prone");
+        for (var pose : new Pose[]{Pose.SLEEPING, Pose.DYING, Pose.FALL_FLYING, Pose.SPIN_ATTACK})
+            check(PlayerStanceHud.stance(pose, false) == null, "Unsupported body pose is not mislabeled as standing");
+        var panel = new HudLayoutModel.Rect(250, 300, 182, 24);
+        var indicator = PlayerStanceHud.bounds(640, 360, panel);
+        var moved = PlayerStanceHud.bounds(640, 360, new HudLayoutModel.Rect(287, 274, 182, 24));
+        check(indicator.x() + indicator.width() < panel.x(), "Posture remains entirely left of the status panel");
+        check(moved.x() - indicator.x() == 37 && moved.y() - indicator.y() == -26,
+                "Default posture anchor follows exact equipment-panel displacement");
+        check(panel.width() == 182 && indicator.width() == indicator.height(), "Posture has its own square canvas without expanding the status row");
+        for (var edge : new HudLayoutModel.Rect[]{new HudLayoutModel.Rect(0, 280, 182, 24), new HudLayoutModel.Rect(0, 0, 182, 24)}) {
+            var placed = PlayerStanceHud.bounds(320, 360, edge);
+            check(placed.x() >= 0 && placed.y() >= 0 && placed.x() + placed.width() <= 320 && placed.y() + placed.height() <= 360,
+                    "Edge fallback keeps the entire indicator on screen");
+            check(placed.y() + placed.height() <= edge.y() || placed.y() >= edge.y() + edge.height(),
+                    "An edge-aligned panel does not cover its own status cells with the posture indicator");
+        }
+        for (var stance : PlayerStanceHud.Stance.values()) {
+            try (var input = ArmorHudLayoutChecks.class.getResourceAsStream("/assets/tacz_pubg/" + stance.texture().getPath())) {
+                check(input != null, "Every stance has a bundled image");
+                var image = javax.imageio.ImageIO.read(input);
+                check(image != null && image.getWidth() == image.getHeight() && image.getColorModel().hasAlpha(),
+                        "Stance images use square transparent canvases");
+                check((image.getRGB(0, 0) >>> 24) == 0 && (image.getRGB(image.getWidth()-1, image.getHeight()-1) >>> 24) == 0,
+                        "Stance corners contain no game-background rectangle");
+            }
+        }
+    }
     public static void main(String[] args) throws Exception {
         glyphCentering();
         oxygenReadout();
+        stanceIndicator();
         var settings = PubgSettings.initial();
         check(settings.integer("hud.bar_width") == 182 && settings.enabled("hud.align_hotbar"),
                 "New saves align the health/status frame to vanilla's 182px hotbar by default");

@@ -2798,5 +2798,6 @@
   "screen.tacz_pubg.medicine.action_painkiller": "Taking painkillers",
   "screen.tacz_pubg.medicine.cancel": "Cancel",
   "screen.tacz_pubg.battle_settings.field.hud.health_critical_red": "Critical health flash red",
-  "screen.tacz_pubg.battle_settings.field.hud.health_flash_ticks": "Critical health color interval (ticks)"
+  "screen.tacz_pubg.battle_settings.field.hud.health_flash_ticks": "Critical health color interval (ticks)",
+  "screen.tacz_pubg.hud_layout.component.player_stance": "Player stance indicator"
 }

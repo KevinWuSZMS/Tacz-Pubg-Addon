@@ -2798,5 +2798,6 @@
   "screen.tacz_pubg.medicine.action_painkiller": "正在服用止痛药",
   "screen.tacz_pubg.medicine.cancel": "取消",
   "screen.tacz_pubg.battle_settings.field.hud.health_critical_red": "危急生命闪烁亮红色",
-  "screen.tacz_pubg.battle_settings.field.hud.health_flash_ticks": "危急生命换色间隔（刻）"
+  "screen.tacz_pubg.battle_settings.field.hud.health_flash_ticks": "危急生命换色间隔（刻）",
+  "screen.tacz_pubg.hud_layout.component.player_stance": "人物姿态提示"
 }
