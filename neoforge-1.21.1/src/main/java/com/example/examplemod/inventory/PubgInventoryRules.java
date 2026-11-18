@@ -2,9 +2,11 @@ package com.example.examplemod.inventory;
 
 /** Pure transaction boundaries shared by the inventory authority and offline checks. */
 public final class PubgInventoryRules {
+    static final double NEARBY_RADIUS = 2.0;
     private PubgInventoryRules() {}
     public static boolean withinNearby(double dx, double dy, double dz) {
-        return Double.isFinite(dx) && Double.isFinite(dy) && Double.isFinite(dz) && dx * dx + dy * dy + dz * dz <= 1.0;
+        return Double.isFinite(dx) && Double.isFinite(dy) && Double.isFinite(dz)
+                && dx * dx + dy * dy + dz * dz <= NEARBY_RADIUS * NEARBY_RADIUS;
     }
     public static boolean capacityChange(long beforeUsed, long afterUsed, int beforeCapacity, int afterCapacity) {
         if (beforeUsed < 0 || afterUsed < 0 || beforeCapacity < 0 || afterCapacity < 0) return false;

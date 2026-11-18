@@ -1,7 +1,7 @@
 {
   "message.tacz_pubg.inventory.pubg.busy": "当前动作完成后才能移动物品",
   "message.tacz_pubg.inventory.pubg.updated": "库存已更新，请重新操作",
-  "message.tacz_pubg.inventory.pubg.ground_changed": "附近物品已变化或超出 1 格范围",
+  "message.tacz_pubg.inventory.pubg.ground_changed": "附近物品已变化或超出 2 格范围",
   "message.tacz_pubg.inventory.pubg.source_changed": "来源物品已变化，请重新操作",
   "message.tacz_pubg.inventory.pubg.source_empty": "来源位置已没有物品",
   "message.tacz_pubg.inventory.pubg.target_changed": "目标位置已变化，请重新操作",

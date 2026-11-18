@@ -11,11 +11,11 @@ public final class PubgInventoryChecks {
         check(PubgInventoryTargets.firstCandidate(8, slot -> slot < 2) == 0, "holding a non-gun uses stable gun order");
         check(PubgInventoryTargets.firstCandidate(1, slot -> false) == -1, "no eligible gun has no default target");
         check(PubgInventoryRules.withinNearby(0, 0, 0), "feet origin");
-        check(PubgInventoryRules.withinNearby(1, 0, 0), "inclusive radius boundary");
-        check(!PubgInventoryRules.withinNearby(Math.nextUp(1.0), 0, 0), "just outside radius");
-        check(PubgInventoryRules.withinNearby(.6, 0, .8), "Euclidean triangle boundary");
-        check(!PubgInventoryRules.withinNearby(.8, 0, .8), "AABB diagonal is not nearby");
-        check(!PubgInventoryRules.withinNearby(0, 1.01, 0), "floor height counts");
+        check(PubgInventoryRules.withinNearby(2, 0, 0), "inclusive radius boundary");
+        check(!PubgInventoryRules.withinNearby(Math.nextUp(2.0), 0, 0), "just outside radius");
+        check(PubgInventoryRules.withinNearby(1.2, 0, 1.6), "Euclidean triangle boundary");
+        check(!PubgInventoryRules.withinNearby(1.6, 0, 1.6), "AABB diagonal is not nearby");
+        check(!PubgInventoryRules.withinNearby(0, 2.01, 0), "floor height counts");
         check(!PubgInventoryRules.withinNearby(Double.NaN, 0, 0), "invalid distance");
         check(!PubgInventoryRules.withinNearby(0, Double.POSITIVE_INFINITY, 0), "infinite distance");
         check(PubgInventoryRules.capacityChange(70_000, 70_000, 70_000, 70_000), "exact capacity");

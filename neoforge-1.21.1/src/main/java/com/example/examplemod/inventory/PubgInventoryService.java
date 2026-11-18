@@ -98,7 +98,7 @@ public final class PubgInventoryService {
         var items = new ArrayList<ItemStack>(41);
         for (int i = 0; i < 41; i++) items.add(player.getInventory().getItem(i).copy());
         var around = player.level().getEntitiesOfClass(GroundLootEntity.class,
-                new AABB(player.position(), player.position()).inflate(1.1), loot -> nearby(player, loot));
+                new AABB(player.position(), player.position()).inflate(PubgInventoryRules.NEARBY_RADIUS + 0.1), loot -> nearby(player, loot));
         around.sort(Comparator.comparingDouble((GroundLootEntity e) -> player.position().distanceToSqr(e.position())).thenComparingInt(GroundLootEntity::getId));
         var rows = new ArrayList<Nearby>();
         for (GroundLootEntity loot : around) {

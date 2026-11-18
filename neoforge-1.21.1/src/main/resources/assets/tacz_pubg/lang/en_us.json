@@ -1,7 +1,7 @@
 {
   "message.tacz_pubg.inventory.pubg.busy": "Finish the current action before moving items",
   "message.tacz_pubg.inventory.pubg.updated": "Inventory changed. Try again",
-  "message.tacz_pubg.inventory.pubg.ground_changed": "Nearby item changed or is more than one block away",
+  "message.tacz_pubg.inventory.pubg.ground_changed": "Nearby item changed or is more than two blocks away",
   "message.tacz_pubg.inventory.pubg.source_changed": "Source item changed. Try again",
   "message.tacz_pubg.inventory.pubg.source_empty": "The source is now empty",
   "message.tacz_pubg.inventory.pubg.target_changed": "Destination changed. Try again",
