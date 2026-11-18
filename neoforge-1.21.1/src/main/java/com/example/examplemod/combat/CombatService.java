@@ -282,7 +282,7 @@ public final class CombatService {
         UUID attacker = credit.killer();
         if (attacker == null) attacker = end.attacker;
         if (attacker == null && down != null && end.cause.equals("bleedout")) attacker = down.hit.attacker;
-        publish(g,p.server,"elimination",attacker,p.getUUID(),end,end.cause,null);
+        publish(g,p.server,"elimination",attacker,p.getUUID(),end,end.cause,null,down!=null);
         for(UUID assister:credit.assistants()) {ServerPlayer recipient=p.server.getPlayerList().getPlayer(assister);if(recipient!=null)publish(g,p.server,"assist",assister,p.getUUID(),end,end.cause,recipient);}
         pushAll(g,p.server);return credit.killer();
     }
@@ -355,7 +355,11 @@ public final class CombatService {
             ServerPlayer p=g.server.getPlayerList().getPlayer(entry.getKey());
             String cause=p==null?"disconnect":"boundary";
             if(p!=null) {g.forced.put(p.getUUID(),new Hit(null,"",false,cause,""));finalDeath(p,g.engine,p.damageSources().genericKill());}
-            else {entry.getValue().eliminated=true;entry.getValue().down=null;entry.getValue().contributors.clear();cancelRescues(g,entry.getKey());publish(g,g.server,"elimination",null,entry.getKey(),new Hit(null,"",false,cause,""),cause,null);}
+            else {
+                Player state=entry.getValue();boolean wasDowned=state.down!=null;
+                state.eliminated=true;state.down=null;state.contributors.clear();cancelRescues(g,entry.getKey());
+                publish(g,g.server,"elimination",null,entry.getKey(),new Hit(null,"",false,cause,""),cause,null,wasDowned);
+            }
         }
     }
     /** Called synchronously by both administrative and natural match endings. */
@@ -407,7 +411,10 @@ public final class CombatService {
         }
     }
     private static void publish(Game g,MinecraftServer server,String type,UUID attacker,UUID victim,Hit hit,String cause,ServerPlayer only) {
-        Player stats=g.players.get(attacker);var event=new CombatPayloads.Event(g.engine.session().sessionId(),++g.sequence,type,actor(g,attacker),actor(g,victim),hit.weapon,hit.headshot,cause,stats==null?0:stats.kills,stats==null?0:stats.assists);
+        publish(g,server,type,attacker,victim,hit,cause,only,false);
+    }
+    private static void publish(Game g,MinecraftServer server,String type,UUID attacker,UUID victim,Hit hit,String cause,ServerPlayer only,boolean wasDowned) {
+        Player stats=g.players.get(attacker);var event=new CombatPayloads.Event(g.engine.session().sessionId(),++g.sequence,type,actor(g,attacker),actor(g,victim),hit.weapon,hit.headshot,cause,stats==null?0:stats.kills,stats==null?0:stats.assists,wasDowned);
         var packet=new CombatPayloads.EventMessage(event);
         if(only!=null)PacketDistributor.sendToPlayer(only,packet);else for(UUID id:g.players.keySet()){ServerPlayer p=server.getPlayerList().getPlayer(id);if(p!=null)PacketDistributor.sendToPlayer(p,packet);}
     }

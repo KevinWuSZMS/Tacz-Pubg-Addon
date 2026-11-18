@@ -140,6 +140,8 @@ public record PubgSettings(Map<String, Double> values) {
         n(f,"combat.message_rows",3,1,6,true); n(f,"combat.message_seconds",6,.5,30,false);
         n(f,"combat.fade_in_seconds",.18,0,2,false); n(f,"combat.fade_out_seconds",.8,0,5,false);
         n(f,"combat.move_seconds",.18,0,2,false); n(f,"combat.counter_seconds",10,.5,60,false);
+        n(f,"combat.older_opacity",.65,0,1,false);
+        n(f,"combat.counter_flash_seconds",.3,0,2,false); n(f,"combat.counter_flash_opacity",.28,0,1,false);
         n(f,"combat.feed_rows",6,1,12,true); n(f,"combat.feed_seconds",6,.5,30,false);
         n(f,"combat.center_y",.72,.3,.9,false); n(f,"combat.message_scale",.85,.5,1.5,false);
         n(f,"combat.counter_scale",1.4,.7,2.5,false); n(f,"combat.feed_scale",.75,.5,1.5,false);
