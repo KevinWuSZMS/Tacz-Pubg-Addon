@@ -219,39 +219,72 @@ public final class PubgInventoryScreen extends Screen {
     private void weapon(GuiGraphics g, int slot, int mx, int my) {
         int x = layout.weaponX(), y = layout.weaponTop(slot), w = layout.weaponWidth(), h = layout.weaponHeight();
         ItemStack item = stack(slot);
-        Hit hit = new Hit(x, y, w, h - 2, item.isEmpty() ? null : new Row(false, slot, item.copy(), 1, 0), slot, "weapon");
+        var attachmentLayout = PubgAttachmentLayout.of(x, y, w, h);
+        int cardHeight = attachmentLayout.dividerY() - y;
+        Hit hit = new Hit(x, y, w, cardHeight, item.isEmpty() ? null : new Row(false, slot, item.copy(), 1, 0), slot, "weapon");
         hits.add(hit);
         var gun = IGun.getIGunOrNull(item);
-        var attachmentLayout = PubgAttachmentLayout.of(x, y, w, h);
         var supported = PubgAttachmentSlots.supportedTypes(item);
         boolean overAttachment = supported.stream().anyMatch(type -> attachmentLayout.slot(type).contains(mx, my));
         boolean hover = hit.contains(mx, my) && !overAttachment, refittable = gun != null && !gun.hasAttachmentLock(item);
         if (hover && refittable && !dragging) {
-            g.fill(x, y, x + w, y + h - 3, 0x42696e71);
-            outline(g, x, y, w, h - 2, 0x99d2d6d7);
+            g.fill(x, y, x + w, y + cardHeight, 0x42696e71);
+            outline(g, x, y, w, cardHeight, 0x99d2d6d7);
         }
-        outline(g, x + 2, y, 15, 17, 0xffbfc2c3);
-        CombatHudNumbers.drawCentered(g, Integer.toString(slot + 1), x + 9.5f, y + 3, 11, TEXT);
-        String label = item.isEmpty() ? tr(slot == 2 ? "handgun" : "primary").getString() : item.getHoverName().getString();
-        g.drawString(font, font.plainSubstrByWidth(label, w - 78), x + 23, y + 4, item.isEmpty() ? MUTED : TEXT, true);
-        g.fill(x, y + h - 3, x + w, y + h - 2, LINE);
-        if (item.isEmpty()) return;
-        var ammo = WeaponHudData.read(minecraft.player, item);
-        if (ammo.present()) {
-            String count = ammo.loaded() + "/" + ammo.reserveText();
-            CombatHudNumbers.draw(g, count, x + w - CombatHudNumbers.width(count, 13) - 2, y + 1, 13, TEXT);
-        }
-        int modelHeight = Math.max(12, attachmentLayout.verticalStep() * 2 - attachmentLayout.size() - 4);
-        int modelWidth = attachmentLayout.horizontalStep() * 4 - attachmentLayout.size() - 8;
-        int modelTop = attachmentLayout.centerY() - modelHeight / 2;
-        if (item.getItem() instanceof IGun) {
+        var model = attachmentLayout.model();
+        if (gun != null) {
             com.example.examplemod.lootspawn.client.GroundGunModelRenderer.renderInventory(item, g,
-                    x + (w - modelWidth) / 2, modelTop, modelWidth, modelHeight, 0);
-        } else icon(g, item, x + w / 2 - 16, modelTop, Math.min(32, modelHeight));
+                    model.x(), model.y(), model.width(), model.height(), 0);
+        } else if (!item.isEmpty()) icon(g, item, x + w / 2 - 16, model.y(), Math.min(32, model.height()));
+        // PUBG's labels and slots overlay the large gun instead of reserving an empty box around it.
+        g.pose().pushPose();
+        g.pose().translate(0, 0, 250);
+        weaponHeading(g, slot, item, x, y, w);
+        g.fill(x, attachmentLayout.dividerY(), x + w, attachmentLayout.dividerY() + 1, LINE);
+        g.pose().popPose();
         if (hover && refittable && !dragging) {
             actionTooltip = Component.translatable("screen.tacz_pubg.inventory.pubg.refit_weapon", item.getHoverName());
         }
         for (AttachmentType type : supported) attachment(g, slot, item, type, attachmentLayout.slot(type), mx, my);
+    }
+    private void weaponHeading(GuiGraphics g, int slot, ItemStack item, int x, int y, int w) {
+        int indexSize = Math.clamp(Math.round(w * .063f), 12, 20);
+        outline(g, x + 2, y, indexSize, indexSize + 1, 0xffbfc2c3);
+        CombatHudNumbers.drawCentered(g, Integer.toString(slot + 1), x + 2 + indexSize / 2f, y + 3, indexSize - 5, TEXT);
+        String label = item.isEmpty() ? tr(slot == 2 ? "handgun" : "primary").getString()
+                : net.minecraft.ChatFormatting.stripFormatting(item.getHoverName().getString());
+        int nameX = x + indexSize + 7;
+        int nameWidth = Math.max(12, Math.round(w * .55f) - (nameX - x) - 3);
+        g.drawString(font, font.plainSubstrByWidth(label, nameWidth), nameX, y + 3, item.isEmpty() ? MUTED : TEXT, true);
+        var ammo = WeaponHudData.read(minecraft.player, item);
+        if (ammo.present()) {
+            float loadedHeight = Math.clamp(w * .044f, 9, 18), reserveHeight = loadedHeight * .72f;
+            int reserveWidth = CombatHudNumbers.width(ammo.reserveText(), reserveHeight);
+            float reserveX = x + w - reserveWidth - 2;
+            CombatHudNumbers.draw(g, ammo.reserveText(), reserveX, y + 2 + loadedHeight - reserveHeight, reserveHeight, MUTED);
+            CombatHudNumbers.draw(g, Integer.toString(ammo.loaded()),
+                    reserveX - 2 - CombatHudNumbers.width(Integer.toString(ammo.loaded()), loadedHeight), y + 2, loadedHeight, TEXT);
+        }
+        var kind = PubgInventoryAmmoPresentation.read(item);
+        if (kind.present()) ammunitionType(g, kind, x, y, w, Math.clamp(w * .044f, 9, 18));
+    }
+    private void ammunitionType(GuiGraphics g, PubgInventoryAmmoPresentation.Ammo ammo, int x, int y, int w, float countHeight) {
+        // Keep the right-aligned caption clear of the sight at 62% of the weapon card.
+        int available = Math.max(24, Math.round(w * .28f));
+        int iconSize = Math.clamp(Math.round(w * .052f), 10, 18);
+        int gap = 2;
+        float textScale = Math.clamp((available - iconSize - gap) / (float) Math.max(1, font.width(ammo.name())), .6f, 1);
+        int labelWidth = Math.max(1, (int) ((available - iconSize - gap) / textScale));
+        String label = font.plainSubstrByWidth(ammo.name().getString(), labelWidth);
+        int actualTextWidth = Math.round(font.width(label) * textScale);
+        int left = x + w - 2 - actualTextWidth - iconSize - gap;
+        int top = y + Math.round(countHeight) + 4;
+        icon(g, ammo.icon(), left, top - 2, iconSize);
+        g.pose().pushPose();
+        g.pose().translate(left + iconSize + gap, top + (iconSize - 8 * textScale) / 2f - 2, 0);
+        g.pose().scale(textScale, textScale, 1);
+        g.drawString(font, label, 0, 0, TEXT, true);
+        g.pose().popPose();
     }
     private void attachment(GuiGraphics g, int gunSlot, ItemStack gun, AttachmentType type,
                             PubgAttachmentLayout.Slot position, int mx, int my) {

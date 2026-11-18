@@ -32,17 +32,27 @@ public final class PubgInventoryLayoutChecks {
                     var muzzle = anchors.slot(MUZZLE); var laser = anchors.slot(LASER);
                     var grip = anchors.slot(GRIP); var scope = anchors.slot(SCOPE);
                     var mag = anchors.slot(EXTENDED_MAG); var stock = anchors.slot(STOCK);
-                    require(muzzle.x() + stock.x() == 2 * grip.x(), "muzzle and stock are not balanced around grip");
-                    require(laser.x() + scope.x() == 2 * grip.x() && scope.x() == mag.x(), "laser/scope/mag are not balanced");
-                    require(scope.y() + grip.y() == 2 * muzzle.y() && muzzle.y() == stock.y(), "top and bottom are not symmetric");
-                    require(laser.y() == grip.y() && grip.y() == mag.y(), "lower attachment row misaligned");
-                    require(grip.x() + grip.size() / 2 == x + w / 2, "grip is not at horizontal center");
-                    checks += 5;
+                    require(muzzle.x() < grip.x() && grip.x() < mag.x() && mag.x() < laser.x() && laser.x() < stock.x(),
+                            "bottom row must be muzzle, grip, magazine, laser, stock without moving unsupported positions");
+                    require(Math.abs(muzzle.x() + stock.x() - 2 * mag.x()) <= 1
+                            && Math.abs(grip.x() + laser.x() - 2 * mag.x()) <= 1, "five fixed columns are not balanced");
+                    require(muzzle.y() == grip.y() && grip.y() == mag.y() && mag.y() == laser.y() && laser.y() == stock.y(),
+                            "all five lower attachments must share the bottom row");
+                    require(scope.y() < muzzle.y() && Math.abs(scope.x() + scope.size() / 2f - (x + w * .622f)) < 1.5f,
+                            "sight must sit separately near 62% card width");
+                    var model = anchors.model();
+                    require(model.width() >= w * .88f && model.height() >= h * .72f,
+                            "gun preview was squeezed into the gap between attachment rows again");
+                    require(model.y() + model.height() > mag.y(), "gun must extend behind lower slot overlays");
+                    require(model.x() >= x && model.x() + model.width() <= x + w
+                            && model.y() >= y && model.y() + model.height() < anchors.dividerY(), "gun clipped by card divider");
+                    require(anchors.dividerY() < y + h - 3, "weapon rows need space after their divider");
+                    checks += 8;
                     AttachmentType[] types = {MUZZLE, LASER, SCOPE, GRIP, EXTENDED_MAG, STOCK};
                     for (int i = 0; i < types.length; i++) {
                         var slot = anchors.slot(types[i]);
                         require(slot.x() >= x && slot.x() + slot.size() <= x + w, "attachment outside weapon card");
-                        require(slot.y() >= y + 20 && slot.y() + slot.size() <= y + h - 5, "attachment overlaps title/ammo/divider");
+                        require(slot.y() >= y && slot.y() + slot.size() < anchors.dividerY(), "attachment crosses its card divider");
                         require(slot.size() >= 16 && slot.contains(slot.x(), slot.y())
                                 && !slot.contains(slot.x() + slot.size(), slot.y()), "attachment hit region inaccessible");
                         checks += 3;
