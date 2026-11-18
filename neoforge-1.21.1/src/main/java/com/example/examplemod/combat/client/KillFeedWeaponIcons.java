@@ -1,7 +1,7 @@
 package com.example.examplemod.combat.client;
 
 import com.example.examplemod.ExampleMod;
-import com.example.examplemod.throwables.ThrowableKind;
+import com.example.examplemod.vitals.client.ThrowableHudIcons;
 import com.google.gson.JsonParser;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.tacz.guns.api.TimelessAPI;
@@ -21,7 +21,6 @@ final class KillFeedWeaponIcons {
     private static final String BASE = "textures/gui/hud/kill_feed/";
     private static final ResourceLocation GUNS = asset("guns.png");
     private static final ResourceLocation GENERIC_GUN = ResourceLocation.parse("tacz:m4a1");
-    private static final Map<ResourceLocation, ResourceLocation> THROWABLES = throwableIcons();
     private static Map<ResourceLocation, Sprite> gunSprites = Map.of();
 
     private KillFeedWeaponIcons() {}
@@ -30,21 +29,6 @@ final class KillFeedWeaponIcons {
 
     private static ResourceLocation asset(String name) {
         return ResourceLocation.fromNamespaceAndPath(ExampleMod.MODID, BASE + name);
-    }
-
-    private static Map<ResourceLocation, ResourceLocation> throwableIcons() {
-        var icons = new HashMap<ResourceLocation, ResourceLocation>();
-        for (var kind : ThrowableKind.values()) {
-            var item = ResourceLocation.fromNamespaceAndPath(ExampleMod.MODID, kind.id);
-            icons.put(item, asset("throwables/" + kind.id + ".png"));
-        }
-        icons.put(ResourceLocation.parse("lrtactical:m67"), asset("throwables/frag_grenade.png"));
-        icons.put(ResourceLocation.parse("lrtactical:rgn"), asset("throwables/frag_grenade.png"));
-        icons.put(ResourceLocation.parse("lrtactical:flash_grenade"), asset("throwables/stun_grenade.png"));
-        for (var name : new String[] {"smoke_grenade", "molotov", "c4"}) {
-            icons.put(ResourceLocation.fromNamespaceAndPath("lrtactical", name), asset("throwables/" + name + ".png"));
-        }
-        return Map.copyOf(icons);
     }
 
     static void register(IEventBus bus) {
@@ -97,7 +81,7 @@ final class KillFeedWeaponIcons {
     }
 
     static boolean drawThrowable(GuiGraphics graphics, ResourceLocation item, int x, int y, int width, int height, int argb) {
-        var icon = item == null ? null : THROWABLES.get(item);
+        var icon = ThrowableHudIcons.texture(item, null);
         if (icon == null) return false;
         draw(graphics, icon, new Sprite(0, 0, 96, 96, 96, 96), x, y, width, height, argb);
         return true;

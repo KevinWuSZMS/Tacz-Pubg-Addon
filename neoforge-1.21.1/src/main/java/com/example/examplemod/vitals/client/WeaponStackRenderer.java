@@ -3,10 +3,9 @@ package com.example.examplemod.vitals.client;
 import com.example.examplemod.hud.client.HudLayoutClient;
 import com.example.examplemod.hud.client.HudLayoutModel;
 import com.example.examplemod.pubgsettings.PubgSettingsService;
-import com.example.examplemod.zones.client.xaero.XaeroHudAnchor;
+import com.example.examplemod.keybindings.client.BindingVisuals;
 import com.mojang.blaze3d.systems.RenderSystem;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import me.xjqsh.lrtactical.api.item.IThrowable;
 import net.minecraft.client.Minecraft;
@@ -29,18 +28,34 @@ public final class WeaponStackRenderer {
     }
     private static boolean drawSilhouette(GuiGraphics graphics, net.minecraft.resources.ResourceLocation texture,
                                           int x, int y, int width, int height, int argb) {
-        if (texture == null) return false;
+        if (texture == null || Minecraft.getInstance().getResourceManager().getResource(texture).isEmpty()) return false;
         int drawWidth = Math.max(1, Math.min(width, height * 3));
         int drawHeight = Math.max(1, Math.min(height, drawWidth / 3));
         x += (width - drawWidth) / 2; y += (height - drawHeight) / 2;
+        graphics.flush();
+        float[] previous = RenderSystem.getShaderColor().clone();
         RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
         RenderSystem.setShaderColor((argb >> 16 & 255) / 255f, (argb >> 8 & 255) / 255f, (argb & 255) / 255f, (argb >>> 24) / 255f);
-        graphics.blit(texture, x, y, drawWidth, drawHeight, 0, 0, 39, 13, 39, 13);
-        RenderSystem.setShaderColor(1, 1, 1, 1);
+        try {
+            graphics.blit(texture, x, y, drawWidth, drawHeight, 0, 0, 39, 13, 39, 13);
+        } finally {
+            RenderSystem.setShaderColor(previous[0], previous[1], previous[2], previous[3]);
+        }
         return true;
     }
     private static ThrowableKey throwableKey(ItemStack stack) {
         return new ThrowableKey(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()), ((IThrowable) stack.getItem()).getId(stack));
+    }
+    public static int throwableCount(ItemStack equipped, Iterable<ItemStack> inventory) {
+        if (equipped.isEmpty() || !(equipped.getItem() instanceof IThrowable)) return 0;
+        var selected = throwableKey(equipped);
+        long count = 0;
+        for (ItemStack stack : inventory) {
+            if (!stack.isEmpty() && stack.getItem() instanceof IThrowable && selected.equals(throwableKey(stack)))
+                count = Math.min(Integer.MAX_VALUE, count + stack.getCount());
+        }
+        return (int) count;
     }
     public static List<Integer> visibleSlots(List<Boolean> occupied) {
         var result = new ArrayList<Integer>();
@@ -51,9 +66,7 @@ public final class WeaponStackRenderer {
         var settings = PubgSettingsService.client();
         var map = HudLayoutClient.mapBounds(width, height);
         int w = Math.min(settings.integer("hud.weapon_stack_width"), Math.max(1, width - 8));
-        int row = settings.integer("hud.weapon_stack_row_height"), gap = settings.integer("hud.weapon_stack_gap");
-        int h = Math.min((row + gap) * 5, Math.max(1, height - 4));
-        return com.example.examplemod.hud.client.MinimapPlacementPolicy.weaponsLeft(map, w, h, 4);
+        return WeaponStackLayout.bounds(map, w);
     }
     public static void render(GuiGraphics g) {
         var mc = Minecraft.getInstance();
@@ -64,54 +77,97 @@ public final class WeaponStackRenderer {
     public static void preview(GuiGraphics g, HudLayoutModel.Rect r) { draw(g, r, true); }
     private static void draw(GuiGraphics g, HudLayoutModel.Rect bounds, boolean preview) {
         var mc = Minecraft.getInstance();
-        if (mc.player == null) return;
+        if (mc.player == null || bounds.width() < 8 || bounds.height() < 30) return;
         var occupied = new ArrayList<Boolean>();
         for (int i = 0; i < 5; i++) occupied.add(!mc.player.getInventory().getItem(i).isEmpty());
         var rows = visibleSlots(occupied);
-        int step = Math.min(Math.max(1, bounds.height() / Math.max(1, rows.size())),
-                PubgSettingsService.client().integer("hud.weapon_stack_row_height") + PubgSettingsService.client().integer("hud.weapon_stack_gap"));
+        int iconHeight = PubgSettingsService.client().integer("hud.weapon_stack_row_height");
+        int padding = PubgSettingsService.client().integer("hud.weapon_stack_gap");
         if (preview && rows.isEmpty()) {
-            for (int row = 0; row < 3; row++) {
-                int y = bounds.y() + bounds.height() - (row + 1) * step;
-                drawGunSilhouette(g, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("tacz", row == 1 ? "m1911" : "m4a1"),
-                        bounds.x(), y + 3, bounds.width() - 14, Math.max(1, Math.min(step - 4, (bounds.width() - 14) / 3)), row == 0 ? 0xFFFFFFFF : 0x70FFFFFF);
-                CombatHudNumbers.draw(g, Integer.toString(row == 0 ? 1 : row == 1 ? 3 : 5), bounds.x() + bounds.width() - 7, y + 5, 0xFFC7C8C7);
+            for (int line = 0; line < 5; line++) {
+                var row = WeaponStackLayout.row(bounds, line, iconHeight, padding);
+                drawKey(g, row.key(), line, false);
+                if (line == 4) {
+                    var icon = row.smallItem();
+                    CombatHudTextures.draw(g, ThrowableHudIcons.texture(net.minecraft.resources.ResourceLocation.parse("tacz_pubg:frag_grenade"), null),
+                            icon.x(), icon.y(), icon.width(), icon.height(), 0xBFFFFFFF);
+                    drawCount(g, row.count(), 1, 0xFFFFFFFF);
+                } else if (line == 3) {
+                    drawItem(g, new ItemStack(net.minecraft.world.item.Items.IRON_SWORD), row.smallItem(), .7f);
+                } else {
+                    var area = row.gun();
+                    drawGunSilhouette(g, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("tacz", line == 2 ? "m1911" : "m4a1"),
+                            area.x(), area.y(), area.width(), area.height(), line == 0 ? 0xFFFFFFFF : 0x70FFFFFF);
+                }
             }
             return;
         }
         for (int line = 0; line < rows.size(); line++) {
-            int slot = rows.get(line), y = bounds.y() + bounds.height() - (line + 1) * step;
+            int slot = rows.get(line);
+            var row = WeaponStackLayout.row(bounds, line, iconHeight, padding);
             ItemStack item = mc.player.getInventory().getItem(slot);
             boolean chosen = slot == mc.player.getInventory().selected;
             float alpha = chosen ? 1 : (float) PubgSettingsService.client().number("hud.icon_inactive_alpha");
             var gun = WeaponHudData.read(mc.player, item);
             boolean empty = gun.present() && gun.loaded() == 0;
             int color = empty ? 0xFFFF5555 : ((int) (alpha * 255) << 24) | 0xFFFFFF;
-            CombatHudNumbers.draw(g, Integer.toString(slot + 1), bounds.x() + bounds.width() - 7, y + 6, color);
+            drawKey(g, row.key(), slot, empty);
             if (item.getItem() instanceof IThrowable) {
-                var types = new LinkedHashMap<ThrowableKey, ItemStack>();
-                for (ItemStack stack : mc.player.getInventory().items) if (!stack.isEmpty() && stack.getItem() instanceof IThrowable) {
-                    var key = throwableKey(stack);
-                    var previous = types.get(key);
-                    if (previous == null) types.put(key, stack.copy()); else previous.setCount((int) Math.min(Integer.MAX_VALUE, (long) previous.getCount() + stack.getCount()));
-                }
-                int cell = Math.max(1, (bounds.width() - 10) / Math.max(1, types.size())), index = 0;
-                for (ItemStack stack : types.values()) {
-                    int x = bounds.x() + index++ * cell, size = Math.min(16, Math.max(4, cell - 1));
-                    float typeAlpha = chosen && throwableKey(stack).equals(throwableKey(item)) ? 1 : (float) PubgSettingsService.client().number("hud.icon_inactive_alpha");
-                    RenderSystem.setShaderColor(1, 1, 1, typeAlpha);
-                    g.pose().pushPose(); g.pose().translate(x, y, 0); g.pose().scale(size / 16f, size / 16f, 1);
-                    g.renderItem(stack, 0, 0); g.pose().popPose();
-                    RenderSystem.setShaderColor(1, 1, 1, 1);
-                    CombatHudNumbers.draw(g, Integer.toString(stack.getCount()), x, y + 15, ((int) (typeAlpha * 255) << 24) | 0xFFFFFF);
-                }
+                var texture = ThrowableHudIcons.texture(item);
+                var icon = row.smallItem();
+                if (texture != null && mc.getResourceManager().getResource(texture).isPresent())
+                    CombatHudTextures.draw(g, texture, icon.x(), icon.y(), icon.width(), icon.height(), color);
+                else drawItem(g, item, icon, alpha);
+                drawCount(g, row.count(), throwableCount(item, mc.player.getInventory().items), color);
             } else if (gun.present() && gun.texture() != null) {
-                drawGunSilhouette(g, item, bounds.x(), y + 3, bounds.width() - 13, step - 4, color);
+                var area = row.gun();
+                if (!drawGunSilhouette(g, item, area.x(), area.y(), area.width(), area.height(), color))
+                    drawItem(g, item, row.smallItem(), alpha);
             } else {
-                RenderSystem.setShaderColor(1, 1, 1, alpha);
-                g.renderItem(item, bounds.x() + bounds.width() - 32, y + 1);
-                RenderSystem.setShaderColor(1, 1, 1, 1);
+                drawItem(g, item, row.smallItem(), alpha);
             }
+        }
+    }
+    private static void drawCount(GuiGraphics g, HudLayoutModel.Rect box, int count, int color) {
+        String label = Integer.toString(count);
+        float height = Math.min(box.height(), CombatHudNumbers.DEFAULT_HEIGHT * box.width() / Math.max(1, CombatHudNumbers.visibleWidth(label)));
+        var ink = CombatHudNumbers.inkBounds(label, height);
+        CombatHudNumbers.draw(g, label, box.x() + box.width() - ink.right(), box.y() + box.height() - height, height, color);
+    }
+    private static void drawItem(GuiGraphics g, ItemStack item, HudLayoutModel.Rect box, float alpha) {
+        g.flush();
+        float[] previous = RenderSystem.getShaderColor().clone();
+        RenderSystem.setShaderColor(1, 1, 1, alpha);
+        g.pose().pushPose();
+        try {
+            g.pose().translate(box.x(), box.y(), 0);
+            g.pose().scale(box.width() / 16f, box.height() / 16f, 1);
+            g.renderItem(item, 0, 0);
+            g.flush();
+        } finally {
+            g.pose().popPose();
+            RenderSystem.setShaderColor(previous[0], previous[1], previous[2], previous[3]);
+        }
+    }
+    private static final class Keycaps { private static final BindingVisuals VISUALS = new BindingVisuals(); }
+    private static void drawKey(GuiGraphics g, HudLayoutModel.Rect box, int slot, boolean empty) {
+        var mc = Minecraft.getInstance();
+        String label = mc.options.keyHotbarSlots[slot].getTranslatedKeyMessage().getString();
+        Keycaps.VISUALS.roundRect(g, box.x(), box.y(), box.width(), box.height(), Math.min(2, box.width() / 5f), 0xCFE8E5DC, 0);
+        int color = empty ? 0xFFDA3434 : 0xFF545851;
+        if (label.matches("[0-9]+")) {
+            float height = Math.max(1, Math.min(box.height() - 2, 9));
+            height = Math.min(height, 9f * Math.max(1, box.width() - 2) / Math.max(1, CombatHudNumbers.visibleWidth(label)));
+            CombatHudNumbers.drawVisibleCentered(g, label, box.x() + box.width() / 2f, box.y() + (box.height() - height) / 2f, height, color);
+        } else {
+            float scale = Math.min(Math.max(1, box.height() - 2) / (float) mc.font.lineHeight,
+                    Math.max(1, box.width() - 2) / (float) Math.max(1, mc.font.width(label)));
+            g.pose().pushPose();
+            g.pose().translate(box.x() + (box.width() - mc.font.width(label) * scale) / 2,
+                    box.y() + (box.height() - mc.font.lineHeight * scale) / 2, 0);
+            g.pose().scale(scale, scale, 1);
+            g.drawString(mc.font, label, 0, 0, color, false);
+            g.pose().popPose();
         }
     }
 }

@@ -386,6 +386,8 @@ tasks.named('check').configure { dependsOn droppedLootTransitionChecks }
         matchDropChecks: 'com.example.examplemod.zones.match.MatchDropChecks',
         pubgMedicineChecks: 'com.example.examplemod.vitals.PubgMedicineChecks',
         medicinePresentationChecks: 'com.example.examplemod.vitals.MedicinePresentationChecks',
+        throwableHudIconChecks: 'com.example.examplemod.vitals.ThrowableHudIconChecks',
+        weaponStackChecks: 'com.example.examplemod.vitals.WeaponStackChecks',
         originalIconChecks: 'com.example.examplemod.originalicons.OriginalIconChecks',
         detailedItemGeometryChecks: 'com.example.examplemod.originalicons.client.DetailedItemGeometryChecks',
         seamlessPixelGeometryChecks: 'com.example.examplemod.originalicons.client.SeamlessPixelGeometryChecks',
@@ -451,10 +453,10 @@ tasks.named('check').configure { dependsOn droppedLootTransitionChecks }
         if (checkName == 'combatAbiChecks') {
             classpath += files('run/mods/neoforge-carpet-1.21.1-1.0.8+v251027.jar')
         }
-        if (checkName in ['throwableSettingsFieldNamesChecks', 'gunAmmoConfigChecks', 'combatRulesChecks', 'combatWireChecks', 'pubgSettingsChecks', 'backpackChecks']) {
+        if (checkName in ['throwableSettingsFieldNamesChecks', 'gunAmmoConfigChecks', 'combatRulesChecks', 'combatWireChecks', 'pubgSettingsChecks', 'backpackChecks', 'throwableHudIconChecks', 'weaponStackChecks']) {
             classpath += files('../downloads/lrtactical/LesRaisins-Tactical-Equipements-1.21.1-0.4.3.jar')
         }
-        if (checkName in ['combatRulesChecks', 'combatWireChecks', 'pubgSettingsChecks', 'pubgMedicineChecks', 'armorHudLayoutChecks', 'backpackChecks']) {
+        if (checkName in ['combatRulesChecks', 'combatWireChecks', 'pubgSettingsChecks', 'pubgMedicineChecks', 'armorHudLayoutChecks', 'backpackChecks', 'weaponStackChecks']) {
             classpath += files('../downloads/tacz/tacz-neoforge-1.21.1-1.1.8-hotfix-r7.jar')
         }
         if (checkName == 'heavyWeaponExplosionChecks') {
