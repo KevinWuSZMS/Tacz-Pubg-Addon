@@ -5,6 +5,8 @@ import net.minecraft.network.chat.Component;
 
 /** One announcement for the latest circle event crossed between HUD snapshots. */
 public final class SafeZoneAlerts {
+    private static final int[] FINAL_MINUTE_WARNINGS = {5, 10, 20, 30, 40, 60};
+
     private SafeZoneAlerts() {}
 
     public static Component message(MatchStatus previous, MatchStatus next) {
@@ -23,12 +25,13 @@ public final class SafeZoneAlerts {
         if (!waiting) return null;
 
         int remaining = next.secondsRemaining();
-        int threshold;
-        if (remaining > 60) threshold = Math.ceilDiv(remaining, 120) * 120;
-        else if (remaining > 30) threshold = 60;
-        else if (remaining > 10) threshold = 30;
-        else if (remaining > 5) threshold = 10;
-        else threshold = 5;
+        int threshold = Math.ceilDiv(remaining, 120) * 120;
+        for (int warning : FINAL_MINUTE_WARNINGS) {
+            if (remaining <= warning) {
+                threshold = warning;
+                break;
+            }
+        }
         return previous.secondsRemaining() > threshold
                 ? Texts.of("screen.tacz_pubg.pubg_hud.restrict_in", duration(threshold)) : null;
     }
