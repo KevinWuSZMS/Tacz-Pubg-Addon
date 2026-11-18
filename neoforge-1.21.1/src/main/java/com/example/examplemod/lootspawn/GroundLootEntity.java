@@ -116,6 +116,12 @@ public final class GroundLootEntity extends Entity {
         return isResting() && pickupDelay == 0 && mayBeListedFor(player);
     }
 
+    /** An explicit inventory transfer need not wait for the world pickup animation/delay.
+     * The inventory authority separately validates visibility, distance and the snapshot. */
+    public boolean canBePickedUpFromInventory(Player player) {
+        return !isPhysicsBlocked() && mayBeListedFor(player);
+    }
+
     /** A visible pile can still be falling or waiting for its original pickup delay. */
     public boolean mayBeListedFor(Player player) {
         return pickupTarget == null || pickupTarget.equals(player.getUUID());
@@ -162,7 +168,7 @@ public final class GroundLootEntity extends Entity {
     /** Server inventory transactions consume a real carrier only after all destination checks pass. */
     public boolean consumeForInventory(Player player, ItemStack expected, int amount) {
         if (level().isClientSide || isRemoved() || !validAnchor || player.level() != level()
-                || !canBePickedUpBy(player) || amount <= 0 || amount > getQuantity()
+                || !canBePickedUpFromInventory(player) || amount <= 0 || amount > getQuantity()
                 || !ItemStack.isSameItemSameComponents(getItem(), expected)) return false;
         int remaining = getQuantity() - amount;
         entityData.set(QUANTITY, remaining);

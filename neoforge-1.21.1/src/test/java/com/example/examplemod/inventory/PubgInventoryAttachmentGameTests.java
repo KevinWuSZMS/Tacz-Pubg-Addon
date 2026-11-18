@@ -8,6 +8,7 @@ import com.example.examplemod.lootspawn.RoundLootService;
 import com.example.examplemod.backpack.BackpackRegistration;
 import com.example.examplemod.backpack.BackpackService;
 import com.tacz.guns.api.TimelessAPI;
+import com.tacz.guns.api.item.IAmmo;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.api.item.attachment.AttachmentType;
 import com.tacz.guns.api.item.builder.AttachmentItemBuilder;
@@ -60,28 +61,39 @@ public final class PubgInventoryAttachmentGameTests {
     }
 
     @GameTest(template = "empty", templateNamespace = "tacz_pubg")
-    public static void rejectedHeldMagazineNeverFallsThroughToAnotherGun(GameTestHelper helper) throws Exception {
+    public static void smallerHeldMagazineReturnsExcessWithoutSwitchingGuns(GameTestHelper helper) throws Exception {
         FakePlayer player = player(helper);
         try {
-            ItemStack held = gun(helper), second = gun(helper), incoming = attachment("extended_mag_1");
-            IGun api = (IGun) held.getItem();
-            api.installAttachment(player.registryAccess(), held, attachment("extended_mag_3"));
-            var data = TimelessAPI.getCommonGunIndex(api.getGunId(held)).orElseThrow().getGunData();
-            int highCapacity = AttachmentDataUtils.getAmmoCountWithAttachment(held, data);
-            ItemStack smaller = held.copy(); api.installAttachment(player.registryAccess(), smaller, incoming);
-            int lowCapacity = AttachmentDataUtils.getAmmoCountWithAttachment(smaller, data);
-            helper.assertTrue(highCapacity > lowCapacity, "The loaded-magazine fixture must have distinct capacities");
-            api.setCurrentAmmoCount(held, lowCapacity + 1); api.setBulletInBarrel(held, true);
-            ItemStack originalHeld = held.copy(); incoming.setCount(2);
-            player.getInventory().setItem(0, held); player.getInventory().setItem(1, second);
-            player.getInventory().setItem(9, incoming);
-            ItemStack[] before = snapshot(player);
-            helper.assertTrue(!rightClick(player, 9), "A rejected held magazine silently installed on the other gun");
-            assertUnchanged(helper, player, before);
-            helper.assertTrue(ItemStack.matches(originalHeld, player.getInventory().getItem(0))
-                            && failures().containsKey(player.getUUID()), "Rejected held magazine lost ammunition or its explanation");
+            for (boolean full : new boolean[] {false, true}) {
+                player.getInventory().clearContent();
+                ItemStack held = gun(helper), second = gun(helper), incoming = attachment("extended_mag_1");
+                ItemStack old = named(attachment("extended_mag_3"), "held larger magazine");
+                IGun api = (IGun) held.getItem();
+                api.installAttachment(player.registryAccess(), held, old);
+                var data = TimelessAPI.getCommonGunIndex(api.getGunId(held)).orElseThrow().getGunData();
+                int highCapacity = AttachmentDataUtils.getAmmoCountWithAttachment(held, data);
+                ItemStack smaller = held.copy(); api.installAttachment(player.registryAccess(), smaller, incoming);
+                int lowCapacity = AttachmentDataUtils.getAmmoCountWithAttachment(smaller, data);
+                helper.assertTrue(highCapacity > lowCapacity, "The loaded-magazine fixture must have distinct capacities");
+                api.setCurrentAmmoCount(held, lowCapacity + 1); api.setBulletInBarrel(held, true);
+                ItemStack originalSecond = second.copy(); incoming.setCount(2);
+                player.getInventory().setItem(0, held); player.getInventory().setItem(1, second);
+                if (full) fillStorage(player);
+                player.getInventory().setItem(9, incoming);
+                helper.assertTrue(rightClick(player, 9), "Smaller held magazine did not return its excess round");
+                ItemStack finalHeld = player.getInventory().getItem(0);
+                helper.assertTrue(ItemStack.matches(originalSecond, player.getInventory().getItem(1))
+                                && player.getInventory().getItem(9).getCount() == 1
+                                && ItemStack.matches(incoming.copyWithCount(1), api.getAttachment(player.registryAccess(), finalHeld, AttachmentType.EXTENDED_MAG))
+                                && api.getCurrentAmmoCount(finalHeld) == lowCapacity && api.hasBulletInBarrel(finalHeld)
+                                && ammoCount(player, data.getAmmoId(), false) == (full ? 0 : 1)
+                                && ammoCount(player, data.getAmmoId(), true) == (full ? 1 : 0)
+                                && carried(player, old) == (full ? 0 : 1) && groundCount(player, old) == (full ? 1 : 0),
+                        "Magazine downgrade changed the other gun, lost chamber/excess ammunition, or duplicated an attachment");
+                helper.assertTrue(!failures().containsKey(player.getUUID()), "Successful excess-round return retained a stale capacity error");
+            }
             helper.succeed();
-        } finally { cleanup(player); }
+        } finally { discardTransactionDrops(player); cleanup(player); }
     }
     @GameTest(template = "empty", templateNamespace = "tacz_pubg")
     public static void installedSightTransfersReturnDisplacedComponentsExactlyOnce(GameTestHelper helper) throws Exception {
@@ -135,28 +147,68 @@ public final class PubgInventoryAttachmentGameTests {
             helper.assertTrue(ItemStack.matches(displaced, api.getAttachment(player.registryAccess(), player.getInventory().getItem(0), AttachmentType.SCOPE))
                             && ItemStack.matches(sight, api.getAttachment(player.registryAccess(), player.getInventory().getItem(1), AttachmentType.SCOPE)),
                     "Full-inventory exchange did not preserve both attachments");
-            player.getInventory().clearContent();
-            source = gun(helper); destination = gun(helper);
-            api.installAttachment(player.registryAccess(), source, attachment("extended_mag_3"));
-            var data = TimelessAPI.getCommonGunIndex(api.getGunId(source)).orElseThrow().getGunData();
-            int baseCapacity = AttachmentDataUtils.getAmmoCountWithAttachment(destination, data);
-            api.setCurrentAmmoCount(source, baseCapacity + 1); api.setBulletInBarrel(source, true);
-            player.getInventory().setItem(0, source); player.getInventory().setItem(1, destination);
-            before = snapshot(player);
-            for (int target : new int[] {-2, -1, 1}) {
-                helper.assertTrue(!transfer(player, 0, target, AttachmentType.EXTENDED_MAG), "Loaded source magazine could be removed with no room for rounds");
-                assertUnchanged(helper, player, before);
-            }
-            api.setCurrentAmmoCount(source, 0); api.setBulletInBarrel(source, false);
-            api.installAttachment(player.registryAccess(), source, attachment("extended_mag_1"));
-            api.installAttachment(player.registryAccess(), destination, attachment("extended_mag_3"));
-            int smallerCapacity = AttachmentDataUtils.getAmmoCountWithAttachment(source, data);
-            api.setCurrentAmmoCount(destination, smallerCapacity + 1); api.setBulletInBarrel(destination, true);
-            before = snapshot(player);
-            helper.assertTrue(!transfer(player, 0, 1, AttachmentType.EXTENDED_MAG), "Destination lost excess rounds during magazine replacement");
-            assertUnchanged(helper, player, before);
             helper.succeed();
         } finally { cleanup(player); }
+    }
+
+    @GameTest(template = "empty", templateNamespace = "tacz_pubg")
+    public static void loadedMagazineRemovalReturnsExcessFromTheFinalSourceGun(GameTestHelper helper) throws Exception {
+        FakePlayer player = player(helper);
+        try {
+            for (boolean full : new boolean[] {false, true}) for (int target : new int[] {-2, -1, 1}) {
+                player.getInventory().clearContent(); discardTransactionDrops(player);
+                ItemStack source = gun(helper), destination = gun(helper), magazine = named(attachment("extended_mag_3"), "removed loaded magazine");
+                IGun api = (IGun) source.getItem();
+                var data = TimelessAPI.getCommonGunIndex(api.getGunId(source)).orElseThrow().getGunData();
+                int baseCapacity = AttachmentDataUtils.getAmmoCountWithAttachment(source, data);
+                api.installAttachment(player.registryAccess(), source, magazine);
+                api.setCurrentAmmoCount(source, baseCapacity + 1); api.setBulletInBarrel(source, true);
+                player.getInventory().setItem(0, source); player.getInventory().setItem(1, destination);
+                if (full) fillStorage(player);
+                helper.assertTrue(transfer(player, 0, target, AttachmentType.EXTENDED_MAG), "Removing or transferring a loaded magazine did not settle excess rounds");
+                ItemStack finalSource = player.getInventory().getItem(0), finalTarget = player.getInventory().getItem(1);
+                int carriedMagazines = target == -1 && !full ? 1 : 0;
+                int droppedMagazines = target == -2 || target == -1 && full ? 1 : 0;
+                helper.assertTrue(api.getAttachment(player.registryAccess(), finalSource, AttachmentType.EXTENDED_MAG).isEmpty()
+                                && api.getCurrentAmmoCount(finalSource) == baseCapacity && api.hasBulletInBarrel(finalSource)
+                                && api.getCurrentAmmoCount(finalTarget) == 0 && !api.hasBulletInBarrel(finalTarget)
+                                && ammoCount(player, data.getAmmoId(), false) == (full ? 0 : 1)
+                                && ammoCount(player, data.getAmmoId(), true) == (full ? 1 : 0)
+                                && carried(player, magazine) == carriedMagazines && groundCount(player, magazine) == droppedMagazines
+                                && (target != 1 || ItemStack.matches(magazine, api.getAttachment(player.registryAccess(), finalTarget, AttachmentType.EXTENDED_MAG))),
+                        "Source magazine removal lost or duplicated ammunition/chamber state or returned the physical magazine incorrectly");
+            }
+            helper.succeed();
+        } finally { discardTransactionDrops(player); cleanup(player); }
+    }
+
+    @GameTest(template = "empty", templateNamespace = "tacz_pubg")
+    public static void magazineExchangeReturnsExcessFromTheFinalDestinationGun(GameTestHelper helper) throws Exception {
+        FakePlayer player = player(helper);
+        try {
+            for (boolean full : new boolean[] {false, true}) {
+                player.getInventory().clearContent(); discardTransactionDrops(player);
+                ItemStack source = gun(helper), destination = gun(helper), small = attachment("extended_mag_1"), large = attachment("extended_mag_3");
+                IGun api = (IGun) source.getItem();
+                api.installAttachment(player.registryAccess(), source, small);
+                api.installAttachment(player.registryAccess(), destination, large);
+                var data = TimelessAPI.getCommonGunIndex(api.getGunId(source)).orElseThrow().getGunData();
+                int smallerCapacity = AttachmentDataUtils.getAmmoCountWithAttachment(source, data);
+                api.setCurrentAmmoCount(destination, smallerCapacity + 1); api.setBulletInBarrel(destination, true);
+                player.getInventory().setItem(0, source); player.getInventory().setItem(1, destination);
+                if (full) fillStorage(player);
+                helper.assertTrue(transfer(player, 0, 1, AttachmentType.EXTENDED_MAG), "Legal magazine exchange did not return the destination's excess ammunition");
+                ItemStack finalSource = player.getInventory().getItem(0), finalTarget = player.getInventory().getItem(1);
+                helper.assertTrue(ItemStack.matches(large, api.getAttachment(player.registryAccess(), finalSource, AttachmentType.EXTENDED_MAG))
+                                && ItemStack.matches(small, api.getAttachment(player.registryAccess(), finalTarget, AttachmentType.EXTENDED_MAG))
+                                && api.getCurrentAmmoCount(finalSource) == 0 && !api.hasBulletInBarrel(finalSource)
+                                && api.getCurrentAmmoCount(finalTarget) == smallerCapacity && api.hasBulletInBarrel(finalTarget)
+                                && ammoCount(player, data.getAmmoId(), false) == (full ? 0 : 1)
+                                && ammoCount(player, data.getAmmoId(), true) == (full ? 1 : 0),
+                        "Destination magazine downgrade lost its chamber round, excess ammunition, or either physical magazine");
+            }
+            helper.succeed();
+        } finally { discardTransactionDrops(player); cleanup(player); }
     }
 
     @GameTest(template = "empty", templateNamespace = "tacz_pubg")
@@ -460,6 +512,23 @@ public final class PubgInventoryAttachmentGameTests {
     private static int groundCount(FakePlayer player, ItemStack item) {
         return player.level().getEntitiesOfClass(GroundLootEntity.class, player.getBoundingBox().inflate(2),
                 loot -> ItemStack.isSameItemSameComponents(item, loot.getItem())).stream().mapToInt(GroundLootEntity::getQuantity).sum();
+    }
+    private static void fillStorage(FakePlayer player) {
+        for (int slot = 3; slot < 36; slot++) player.getInventory().setItem(slot, new ItemStack(Items.STONE, 64));
+    }
+    private static int ammoCount(FakePlayer player, ResourceLocation id, boolean ground) {
+        if (ground) return player.level().getEntitiesOfClass(GroundLootEntity.class, player.getBoundingBox().inflate(2),
+                loot -> loot.getItem().getItem() instanceof IAmmo ammo && ammo.getAmmoId(loot.getItem()).equals(id))
+                .stream().mapToInt(GroundLootEntity::getQuantity).sum();
+        int count = 0;
+        for (int slot = 0; slot < 41; slot++) {
+            ItemStack stack = player.getInventory().getItem(slot);
+            if (stack.getItem() instanceof IAmmo ammo && ammo.getAmmoId(stack).equals(id)) count += stack.getCount();
+        }
+        return count;
+    }
+    private static void discardTransactionDrops(FakePlayer player) {
+        player.level().getEntitiesOfClass(GroundLootEntity.class, player.getBoundingBox().inflate(2)).forEach(GroundLootEntity::discard);
     }
     private static void discardGround(FakePlayer player, ItemStack... items) {
         for (ItemStack item : items) player.level().getEntitiesOfClass(GroundLootEntity.class, player.getBoundingBox().inflate(2),

@@ -2,15 +2,20 @@ package com.example.examplemod.inventory.client;
 
 import com.example.examplemod.inventory.PubgInventoryPayloads;
 import com.example.examplemod.inventory.PubgInventoryPayloads.Action;
+import com.tacz.guns.api.client.gameplay.IClientPlayerGunOperator;
+import com.tacz.guns.api.item.IGun;
+import com.tacz.guns.client.renderer.item.AnimateGeoItemRenderer;
 import com.tacz.guns.client.sound.SoundPlayManager;
 import com.tacz.guns.resource.modifier.AttachmentPropertyManager;
 import com.tacz.guns.sound.SoundManager;
 import java.util.List;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
+import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 /** Presentation cache only. All moves and component changes are performed on the server. */
@@ -55,6 +60,23 @@ public final class PubgInventoryState {
         if (!result.soundItem().isEmpty()) {
             SoundPlayManager.playerRefitSound(result.soundItem(), player, result.uninstall() ? SoundManager.UNINSTALL_SOUND : SoundManager.INSTALL_SOUND);
         }
-        if (player.getInventory().selected == result.gunSlot()) AttachmentPropertyManager.postChangeEvent(player, player.getMainHandItem());
+        if (result.gunSlot() >= 0 && player.getInventory().selected == result.gunSlot()) {
+            AttachmentPropertyManager.postChangeEvent(player, player.getMainHandItem());
+            if (result.soundItem().isEmpty()) resetHeldGun(player);
+        }
+    }
+    private static void resetHeldGun(LocalPlayer player) {
+        var data = IClientPlayerGunOperator.fromLocalPlayer(player).getDataHolder();
+        if (data.drawFuture != null) { data.drawFuture.cancel(false); data.drawFuture = null; }
+        data.reset();
+        data.clientDrawTimestamp = System.currentTimeMillis();
+        SoundPlayManager.stopPlayGunSound();
+        ItemStack held = player.getMainHandItem();
+        if (!(held.getItem() instanceof IGun)) return;
+        data.lockState(operator -> operator.getSynDrawCoolDown() > 0);
+        // Native change detection compares gun/display IDs only. Explicit initialization also
+        // handles another copy of the same gun or changed attachments without another C2S draw.
+        if (IClientItemExtensions.of(held.getItem()).getCustomRenderer() instanceof AnimateGeoItemRenderer<?, ?> renderer)
+            renderer.tryInit(held, player, 0);
     }
 }

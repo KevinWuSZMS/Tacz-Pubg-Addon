@@ -239,6 +239,7 @@ public final class ThrowableService {
     }
     private static void toss(ItemTossEvent event) {
         if (!(event.getPlayer() instanceof ServerPlayer p)) return;
+        if (com.example.examplemod.inventory.PubgInventoryService.isPreparingDrop(p)) return;
         Held held = held(p);
         if (held == null || held.cooked < 0 || event.getEntity().getItem().getItem() != held.item) return;
         // The tossed stack contains only uncommitted grenades; the pinned one is already escrowed.

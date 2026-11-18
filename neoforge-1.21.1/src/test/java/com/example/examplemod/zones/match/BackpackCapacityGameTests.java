@@ -222,9 +222,10 @@ public final class BackpackCapacityGameTests {
                         "Dropping at the feet erased the vanilla pickup delay at " + slot);
                 helper.assertTrue(PubgInventoryService.nearby(f.player, dropped) && !dropped.canBePickedUpBy(f.player),
                         "The authoritative nearby row waited for the pickup delay or bypassed that delay at " + slot);
-                helper.assertTrue(!dropped.consumeForInventory(f.player, dropped.getItem(), 1)
-                                && dropped.getQuantity() == original.getCount(),
-                        "Listing a pending drop made it prematurely consumable at " + slot);
+                helper.assertTrue(dropped.canBePickedUpFromInventory(f.player)
+                                && dropped.consumeForInventory(f.player, dropped.getItem(), 1)
+                                && dropped.getQuantity() == original.getCount() - 1,
+                        "Explicit inventory pickup waited for the world pickup delay or consumed the wrong amount at " + slot);
             }
             helper.succeed();
         }

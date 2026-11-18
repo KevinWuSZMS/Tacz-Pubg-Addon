@@ -12,10 +12,15 @@ import com.example.examplemod.lootspawn.DroppedLootPolicy;
 import com.example.examplemod.inventory.PubgInventoryPayloads.*;
 import com.tacz.guns.api.DefaultAssets;
 import com.tacz.guns.api.TimelessAPI;
+import com.tacz.guns.api.entity.IGunOperator;
+import com.tacz.guns.api.item.IAmmo;
+import com.tacz.guns.api.item.IAmmoBox;
 import com.tacz.guns.api.item.IAttachment;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.api.item.attachment.AttachmentType;
+import com.tacz.guns.api.item.builder.AmmoItemBuilder;
 import com.tacz.guns.resource.modifier.AttachmentPropertyManager;
+import com.tacz.guns.resource.pojo.data.gun.Bolt;
 import com.tacz.guns.util.AttachmentDataUtils;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -47,6 +52,7 @@ public final class PubgInventoryService {
     private static final Map<UUID, Long> LAST_REFRESH = new HashMap<>();
     private static final Map<UUID, UUID> SESSIONS = new HashMap<>();
     private static final Map<UUID, String> FAILURE = new HashMap<>();
+    private static final ThreadLocal<Player> PREPARING_DROP = new ThreadLocal<>();
     private static long revision, pickupOrder;
     private PubgInventoryService() {}
     public static void register(IEventBus modBus, IEventBus gameBus) {
@@ -114,7 +120,9 @@ public final class PubgInventoryService {
             if (now - last >= 2) { LAST_REFRESH.put(player.getUUID(), now); sendSnapshot(player); }
             return;
         }
-        if (CombatService.actionBlocked(player) || AutoAttachmentService.busy(player)) { fail(player, message("busy")); return; }
+        // Gun/use animations do not lock inventory. Only a committed change to the active
+        // item interrupts that action; unrelated transfers keep it running.
+        if (CombatService.actionBlocked(player)) { fail(player, message("busy")); return; }
         Snapshot state = SNAPSHOTS.getOrDefault(player.getUUID(), new ArrayDeque<>()).stream()
                 .filter(s -> s.revision() == command.revision()).findFirst().orElse(null);
         if (state == null) { fail(player, message("updated")); return; }
@@ -127,7 +135,7 @@ public final class PubgInventoryService {
                     || !ItemStack.isSameItemSameComponents(expected.item(), loot.getItem()) || expected.quantity() != loot.getQuantity()) {
                 fail(player, message("ground_changed")); return;
             }
-            if (!loot.canBePickedUpBy(player)) { fail(player, message("busy")); return; }
+            if (!loot.canBePickedUpFromInventory(player)) { fail(player, message("ground_changed")); return; }
             ground = loot; source = loot.getItem();
         } else {
             if (command.source() < 0 || command.source() > 41 || !unchanged(player, state, command.source())) {
@@ -153,10 +161,6 @@ public final class PubgInventoryService {
         if (!success) fail(player, FAILURE.getOrDefault(player.getUUID(), message("cannot_place")));
         else {
             changed(player);
-            if (player.getMainHandItem().getItem() instanceof IGun) {
-                AttachmentPropertyManager.postChangeEvent(player, player.getMainHandItem());
-                PacketDistributor.sendToPlayer(player, new Feedback("", ItemStack.EMPTY, false, player.getInventory().selected));
-            }
             sendSnapshot(player);
         }
         FAILURE.remove(player.getUUID());
@@ -296,10 +300,10 @@ public final class PubgInventoryService {
                     plan.items[from].shrink(amount);
                 }
                 ItemStack replacement = source.copyWithCount(amount);
-                if (ground != null && MatchInventoryService.weapon(replacement))
-                    AutoAttachmentService.transferCompatibleAttachments(player, old, replacement);
                 plan.set(to, replacement);
-                plan.returnOrDrop(old);
+                if (old.getItem() instanceof IGun) {
+                    if (!stripGunForDrop(plan, old, to)) return false;
+                } else plan.returnOrDrop(old);
             }
         }
         if (!plan.finish(ground, source, amount)) return false;
@@ -355,8 +359,10 @@ public final class PubgInventoryService {
             if (!ItemStack.matches(incoming.copyWithCount(1), api.getAttachment(player.registryAccess(), gun, type))) return false;
             if (ground == null) plan.items[from].shrink(1);
         }
-        if (!preservesAmmunition(player, live(player, target), gun, api)) return false;
+        List<ItemStack> returnedAmmo = new ArrayList<>();
+        if (!rebalanceAmmunition(live(player, target), gun, api, returnedAmmo)) return false;
         plan.returnOrDrop(old);
+        returnedAmmo.forEach(plan::returnAmmo);
         if (!plan.finish(ground, incoming, 1)) return false;
         if (ground != null) acquired(player, incoming);
         sound(player, unload ? old : incoming, unload, target);
@@ -371,6 +377,7 @@ public final class PubgInventoryService {
         try { type = AttachmentType.valueOf(typeName.toUpperCase(java.util.Locale.ROOT)); }
         catch (IllegalArgumentException e) { return false; }
         Plan plan = new Plan(player);
+        List<ItemStack> returnedParts = new ArrayList<>(), returnedAmmo = new ArrayList<>();
         ItemStack gun = plan.items[source];
         if (gun.getCount() != 1 || !(gun.getItem() instanceof IGun api) || api.hasAttachmentLock(gun)
                 || type == AttachmentType.NONE || !api.allowAttachmentType(gun, type)
@@ -390,16 +397,19 @@ public final class PubgInventoryService {
                     || !displaced.isEmpty() && !physicalAttachment(displaced, type)
                     || ItemStack.isSameItemSameComponents(displaced, attachment)) return false;
             destinationApi.installAttachment(player.registryAccess(), destination, attachment.copy());
-            if (!ItemStack.matches(attachment, destinationApi.getAttachment(player.registryAccess(), destination, type))
-                    || !preservesAmmunition(player, live(player, target), destination, destinationApi)) return false;
+            if (!ItemStack.matches(attachment, destinationApi.getAttachment(player.registryAccess(), destination, type))) return false;
             if (!displaced.isEmpty() && compatible(gun, displaced, type)) {
                 api.installAttachment(player.registryAccess(), gun, displaced.copy());
                 if (!ItemStack.matches(displaced, api.getAttachment(player.registryAccess(), gun, type))) return false;
-            } else plan.returnOrDrop(displaced);
+            } else if (!displaced.isEmpty()) returnedParts.add(displaced);
+            if (!rebalanceAmmunition(live(player, target), destination, destinationApi, returnedAmmo)) return false;
         }
         // A magazine exchange is checked after both final magazines are present, never at the
         // temporary unloaded state, which may be smaller than either physical magazine.
-        if (!preservesAmmunition(player, live(player, source), gun, api)) return false;
+        if (!rebalanceAmmunition(live(player, source), gun, api, returnedAmmo)) return false;
+        // Finish every gun mutation before storage attempts restore their copied inventory.
+        returnedParts.forEach(plan::returnOrDrop);
+        returnedAmmo.forEach(plan::returnAmmo);
         if (target == -2) plan.drops.add(attachment.copy());
         if (!plan.finish(null, ItemStack.EMPTY, 0)) return false;
         sound(player, attachment, true, source);
@@ -411,13 +421,84 @@ public final class PubgInventoryService {
         return item.getCount() == 1 && item.getItem() instanceof IAttachment attachment && attachment.getType(item) == type;
     }
 
-    private static boolean preservesAmmunition(ServerPlayer player, ItemStack originalGun, ItemStack gun, IGun api) {
+    /** A smaller final magazine unloads only excess rounds; a chambered round stays chambered. */
+    private static boolean rebalanceAmmunition(ItemStack originalGun, ItemStack gun, IGun api, List<ItemStack> returnedAmmo) {
+        int before = api.getCurrentAmmoCount(originalGun);
+        if (before < 0 || before != api.getCurrentAmmoCount(gun)
+                || api.hasBulletInBarrel(originalGun) != api.hasBulletInBarrel(gun)) return false;
         int capacity = TimelessAPI.getCommonGunIndex(api.getGunId(gun))
                 .map(index -> AttachmentDataUtils.getAmmoCountWithAttachment(gun, index.getGunData())).orElse(-1);
-        if (!PubgInventoryRules.preservesAmmunition(api.getCurrentAmmoCount(originalGun), api.hasBulletInBarrel(originalGun),
-                api.getCurrentAmmoCount(gun), api.hasBulletInBarrel(gun), capacity)) {
-            FAILURE.put(player.getUUID(), message("magazine_full")); return false;
+        if (capacity < 0) return false;
+        int excess = Math.max(0, before - capacity);
+        if (excess > 0) {
+            if (!appendAmmo(gun, api, excess, returnedAmmo)) return false;
+            api.setCurrentAmmoCount(gun, before - excess);
         }
+        return PubgInventoryRules.preservesAmmunition(before - excess, api.hasBulletInBarrel(originalGun),
+                api.getCurrentAmmoCount(gun), api.hasBulletInBarrel(gun), capacity);
+    }
+
+    private static boolean appendAmmo(ItemStack gun, IGun api, long count, List<ItemStack> returnedAmmo) {
+        if (count == 0) return true;
+        if (count < 0 || count > Integer.MAX_VALUE) return false;
+        var index = TimelessAPI.getCommonGunIndex(api.getGunId(gun)).orElse(null);
+        if (index == null || TimelessAPI.getCommonAmmoIndex(index.getGunData().getAmmoId()).isEmpty()) return false;
+        returnedAmmo.add(AmmoItemBuilder.create().setId(index.getGunData().getAmmoId()).setCount((int) count).build());
+        return true;
+    }
+
+    /** Only explicit removal/replacement strips a gun; swapping occupied weapon slots keeps both intact. */
+    private static boolean stripGunForDrop(Plan plan, ItemStack originalGun, int replacementSlot) {
+        if (originalGun.getCount() != 1 || !(originalGun.getItem() instanceof IGun api)) return false;
+        ItemStack gun = originalGun.copy();
+        ItemStack replacement = replacementSlot < 0 ? ItemStack.EMPTY : plan.items[replacementSlot];
+        ItemStack originalReplacement = replacement.copy();
+        List<ItemStack> returnedParts = new ArrayList<>(), returnedAmmo = new ArrayList<>();
+        var index = TimelessAPI.getCommonGunIndex(api.getGunId(gun)).orElse(null);
+        int magazine = api.getCurrentAmmoCount(gun);
+        if (magazine < 0 || index == null && (magazine > 0 || api.hasBulletInBarrel(gun))) return false;
+        long loaded = magazine + (api.hasBulletInBarrel(gun) && index != null
+                && index.getGunData().getBolt() != Bolt.OPEN_BOLT ? 1L : 0L);
+        if (!appendAmmo(gun, api, loaded, returnedAmmo)) return false;
+        // Dummy reserve/configuration is not physical ammunition. Only actually loaded rounds return.
+        api.setCurrentAmmoCount(gun, 0);
+        api.setBulletInBarrel(gun, false);
+        if (api.getCurrentAmmoCount(gun) != 0 || api.hasBulletInBarrel(gun)) return false;
+        for (AttachmentType type : AttachmentType.values()) {
+            if (type == AttachmentType.NONE) continue;
+            ItemStack part = api.getAttachment(plan.player.registryAccess(), gun, type).copy();
+            // Built-in assets belong to the bare gun and never become physical attachment items.
+            if (!DefaultAssets.isEmptyAttachmentId(api.getBuiltInAttachmentId(gun, type))) {
+                if (!part.isEmpty() || !DefaultAssets.isEmptyAttachmentId(api.getAttachmentId(gun, type))) return false;
+                continue;
+            }
+            if (part.isEmpty()) {
+                if (!DefaultAssets.isEmptyAttachmentId(api.getAttachmentId(gun, type))) return false;
+                continue;
+            }
+            // Locked external attachments cannot be stripped: reject the whole transaction rather
+            // than silently dropping an equipped gun. Empty/built-in-only locked guns remain valid.
+            if (api.hasAttachmentLock(gun) || !physicalAttachment(part, type)) return false;
+            api.unloadAttachment(plan.player.registryAccess(), gun, type);
+            if (!api.getAttachment(plan.player.registryAccess(), gun, type).isEmpty()
+                    || !DefaultAssets.isEmptyAttachmentId(api.getAttachmentId(gun, type))) return false;
+            if (compatible(replacement, part, type)) {
+                IGun target = (IGun) replacement.getItem();
+                if (target.getAttachment(plan.player.registryAccess(), replacement, type).isEmpty()
+                        && DefaultAssets.isEmptyAttachmentId(target.getAttachmentId(replacement, type))) {
+                    target.installAttachment(plan.player.registryAccess(), replacement, part.copy());
+                    if (!ItemStack.matches(part, target.getAttachment(plan.player.registryAccess(), replacement, type))) return false;
+                    continue;
+                }
+            }
+            returnedParts.add(part);
+        }
+        if (api.getCurrentAmmoCount(gun) != 0 || api.hasBulletInBarrel(gun)) return false;
+        if (replacement.getItem() instanceof IGun target
+                && !rebalanceAmmunition(originalReplacement, replacement, target, returnedAmmo)) return false;
+        returnedParts.forEach(plan::returnOrDrop);
+        returnedAmmo.forEach(plan::returnAmmo);
+        plan.drops.add(gun);
         return true;
     }
 
@@ -428,11 +509,26 @@ public final class PubgInventoryService {
         Plan plan = new Plan(player);
         if (from == 41) plan.pack = ItemStack.EMPTY;
         else plan.items[from] = ItemStack.EMPTY;
-        plan.drops.add(original.copy());
+        if (original.getItem() instanceof IGun) {
+            if (!stripGunForDrop(plan, original, -1)) return false;
+        } else plan.drops.add(original.copy());
         return plan.finish(null, ItemStack.EMPTY, 0);
     }
 
     private static GroundLootEntity prepareDrop(ServerPlayer player, ItemStack original) {
+        Player previous = PREPARING_DROP.get();
+        PREPARING_DROP.set(player);
+        try { return prepareDropEntity(player, original); }
+        finally {
+            if (previous == null) PREPARING_DROP.remove();
+            else PREPARING_DROP.set(previous);
+        }
+    }
+
+    /** Toss callbacks may veto this preview; active-item cancellation waits for commit. */
+    public static boolean isPreparingDrop(Player player) { return PREPARING_DROP.get() == player; }
+
+    private static GroundLootEntity prepareDropEntity(ServerPlayer player, ItemStack original) {
         // Keep vanilla ownership/pickup delay while checking the actual entity spawn result.
         var previousCapture = player.captureDrops(new ArrayList<>());
         net.minecraft.world.entity.item.ItemEntity dropped;
@@ -465,6 +561,8 @@ public final class PubgInventoryService {
         final ServerPlayer player;
         final ItemStack[] items = new ItemStack[41];
         final ItemStack[] original = new ItemStack[41];
+        final ItemStack[] originalReferences = new ItemStack[41];
+        final boolean[] written = new boolean[41];
         final ItemStack originalPack;
         final ItemStack originalCursor;
         final List<ItemStack> originalTemporary;
@@ -483,7 +581,10 @@ public final class PubgInventoryService {
             equipmentLimit = EquipmentInventoryRules.limit(player); beforeEquipment = EquipmentInventoryRules.carried(player);
             settings = InventoryConfig.current(player);
             active = InventoryConfig.active(player);
-            for (int i = 0; i < 41; i++) { original[i] = live(player, i).copy(); items[i] = original[i].copy(); }
+            for (int i = 0; i < 41; i++) {
+                originalReferences[i] = live(player, i);
+                original[i] = originalReferences[i].copy(); items[i] = original[i].copy();
+            }
         }
         ItemStack get(int slot) { return slot == 41 ? pack : items[slot]; }
         void set(int slot, ItemStack value) { if (slot == 41) pack = value.copy(); else items[slot] = value.copy(); }
@@ -499,6 +600,31 @@ public final class PubgInventoryService {
             if (store(returning.copy()) && valid()) return;
             restoreItems(saved);
             drops.add(returning.copy());
+        }
+        /** Returned rounds fill the available weight/slots first; only the remainder lands nearby. */
+        void returnAmmo(ItemStack returning) {
+            if (returning.isEmpty()) return;
+            ItemStack prepared = returning.copy();
+            com.example.examplemod.lootspawn.RoundLootService.markCurrentRound(
+                    player.serverLevel(), player.getX(), player.getZ(), prepared);
+            MatchInventoryService.prepareStack(player, prepared);
+            ItemStack[] saved = copyItems();
+            int low = 0, high = (int) Math.min(returning.getCount(), 33L * Math.min(prepared.getMaxStackSize(),
+                    player.getInventory().getMaxStackSize(prepared)));
+            while (low < high) {
+                int amount = low + (int) (((long) high - low + 1) / 2);
+                restoreItems(saved);
+                if (store(prepared.copyWithCount(amount)) && valid()) low = amount;
+                else high = amount - 1;
+            }
+            restoreItems(saved);
+            if (low > 0 && !store(prepared.copyWithCount(low)))
+                throw new IllegalStateException("Ammunition return changed inside copied inventory plan");
+            for (int remaining = returning.getCount() - low; remaining > 0;) {
+                int count = Math.min(remaining, com.example.examplemod.lootspawn.LootPileQuantities.MAX_QUANTITY);
+                drops.add(prepared.copyWithCount(count));
+                remaining -= count;
+            }
         }
         boolean store(ItemStack returning) {
             if (returning.isEmpty()) return true;
@@ -591,6 +717,7 @@ public final class PubgInventoryService {
                 if (ground != null && !ground.consumeForInventory(player, expected, amount)) return false;
                 committed = true;
                 changed(player);
+                reconcileActiveItem();
                 return true;
             } catch (RuntimeException error) {
                 com.example.examplemod.ExampleMod.LOGGER.warn("Inventory transaction failed; uncommitted items retained", error);
@@ -599,7 +726,10 @@ public final class PubgInventoryService {
                 if (!committed) {
                     spawned.forEach(GroundLootEntity::discard);
                     if (wroteInventory) {
-                        for (int i = 0; i < 41; i++) player.getInventory().setItem(i, original[i].copy());
+                        for (int i = 0; i < 41; i++) if (written[i]) {
+                            originalReferences[i].setCount(original[i].getCount());
+                            player.getInventory().setItem(i, originalReferences[i]);
+                        }
                         if (!ItemStack.matches(originalPack, BackpackService.equipped(player))) BackpackService.setEquipped(player, originalPack);
                         changed(player);
                     }
@@ -607,12 +737,65 @@ public final class PubgInventoryService {
             }
         }
         boolean groundCurrent(GroundLootEntity ground, ItemStack expected, int quantity, int amount) {
-            return nearby(player, ground) && ground.canBePickedUpBy(player) && amount > 0 && amount <= quantity
+            return nearby(player, ground) && ground.canBePickedUpFromInventory(player) && amount > 0 && amount <= quantity
                     && quantity == ground.getQuantity() && ItemStack.isSameItemSameComponents(expected, ground.getItem());
         }
         void apply() {
-            for (int i = 0; i < 41; i++) if (!ItemStack.matches(items[i], live(player, i))) player.getInventory().setItem(i, items[i]);
+            for (int i = 0; i < 41; i++) {
+                ItemStack current = live(player, i);
+                if (ItemStack.matches(items[i], current)) continue;
+                written[i] = true;
+                // Medicine and throwable uses track this exact object. Collecting more of
+                // the same supply must not replace it and reset an unrelated countdown.
+                if (!current.isEmpty() && !items[i].isEmpty() && ItemStack.isSameItemSameComponents(current, items[i]))
+                    current.setCount(items[i].getCount());
+                else player.getInventory().setItem(i, items[i]);
+            }
             if (!ItemStack.matches(originalPack, pack)) BackpackService.setEquipped(player, pack);
+        }
+        void reconcileActiveItem() {
+            if (player.isUsingItem() && (player.getUseItem().isEmpty()
+                    || player.getUseItem() != player.getItemInHand(player.getUsedItemHand()))) {
+                com.example.examplemod.vitals.PubgMedicineService.cancelUse(player);
+                com.example.examplemod.throwables.ThrowableService.cancel(player);
+                player.stopUsingItem();
+            }
+            ItemStack previous = original[selected], current = player.getMainHandItem();
+            if (ItemStack.matches(previous, current)) {
+                // Native per-round reload scripts can cache their available reserve. Rearranging
+                // the same rounds is safe, but removing any compatible reserve invalidates it.
+                if (reloadReserveReduced(current)) PubgInventoryHeldActions.gunChanged(player);
+                return;
+            }
+            if (com.example.examplemod.vitals.PubgMedicineService.pendingContinuation(player)
+                    && originalReferences[selected] != current)
+                com.example.examplemod.vitals.PubgMedicineService.cancelUse(player);
+            if (com.example.examplemod.throwables.ThrowableService.cooking(player)
+                    && originalReferences[selected] != current)
+                com.example.examplemod.throwables.ThrowableService.cancel(player);
+            if (previous.getItem() instanceof IGun || current.getItem() instanceof IGun)
+                PubgInventoryHeldActions.gunChanged(player);
+        }
+        boolean reloadReserveReduced(ItemStack gun) {
+            if (!(gun.getItem() instanceof IGun api) || api.useDummyAmmo(gun)) return false;
+            var operator = IGunOperator.fromLivingEntity(player);
+            var holder = operator.getDataHolder();
+            if ((holder.reloadTimestamp < 0 && !holder.reloadStateType.isReloading()) || !operator.needCheckAmmo()) return false;
+            var index = TimelessAPI.getCommonGunIndex(api.getGunId(gun)).orElse(null);
+            if (index != null && index.getGunData().getReloadData() != null && index.getGunData().getReloadData().isInfinite()) return false;
+            return reserveAmmo(gun, items) < reserveAmmo(gun, original);
+        }
+        long reserveAmmo(ItemStack gun, ItemStack[] contents) {
+            long rounds = 0;
+            for (ItemStack item : contents) {
+                if (item.getItem() instanceof IAmmo ammo && ammo.isAmmoOfGun(gun, item))
+                    rounds += Math.max(0, item.getCount());
+                if (item.getItem() instanceof IAmmoBox box && box.isAmmoBoxOfGun(gun, item)) {
+                    if (box.isCreative(item) || box.isAllTypeCreative(item)) return Long.MAX_VALUE;
+                    rounds += Math.max(0, box.getAmmoCount(item));
+                }
+            }
+            return rounds;
         }
     }
 }
