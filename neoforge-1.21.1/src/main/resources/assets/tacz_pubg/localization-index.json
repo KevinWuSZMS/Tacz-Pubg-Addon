@@ -2655,5 +2655,7 @@
   "7bf5ff720c98": "screen.tacz_pubg.combat.attack_message",
   "7f415bbee723": "screen.tacz_pubg.combat.headshot_message",
   "586aa7d73cf6": "screen.tacz_pubg.combat.finally_eliminated",
-  "df83dc74a565": "screen.tacz_pubg.combat.assist_message"
+  "df83dc74a565": "screen.tacz_pubg.combat.assist_message",
+  "19b74ddbd3f5": "screen.tacz_pubg.battle_settings.field.hud.health_critical_red",
+  "e7bf3e4ec53f": "screen.tacz_pubg.battle_settings.field.hud.health_flash_ticks"
 }

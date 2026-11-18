@@ -1360,13 +1360,13 @@
   "screen.tacz_pubg.battle_settings.field.hud.fuse_track_color": "引信弧轨道颜色",
   "screen.tacz_pubg.battle_settings.field.hud.fuse_warning_color": "引信弧警戒颜色",
   "screen.tacz_pubg.battle_settings.field.hud.fuse_warning_fraction": "引信警戒剩余比例",
-  "screen.tacz_pubg.battle_settings.field.hud.health_apricot": "中低生命杏色",
-  "screen.tacz_pubg.battle_settings.field.hud.health_apricot_threshold": "杏色生命阈值（比例）",
+  "screen.tacz_pubg.battle_settings.field.hud.health_apricot": "中低生命浅黄色",
+  "screen.tacz_pubg.battle_settings.field.hud.health_apricot_threshold": "浅黄生命上界（不含，比例）",
   "screen.tacz_pubg.battle_settings.field.hud.health_full": "满生命灰色",
   "screen.tacz_pubg.battle_settings.field.hud.health_height": "生命条高度",
   "screen.tacz_pubg.battle_settings.field.hud.health_next_step": "下一步恢复预告颜色",
   "screen.tacz_pubg.battle_settings.field.hud.health_red": "低生命红色",
-  "screen.tacz_pubg.battle_settings.field.hud.health_red_threshold": "红色生命阈值（比例）",
+  "screen.tacz_pubg.battle_settings.field.hud.health_red_threshold": "红色生命上界（不含，比例）",
   "screen.tacz_pubg.battle_settings.field.hud.health_reference": "75%斜纹颜色",
   "screen.tacz_pubg.battle_settings.field.hud.health_treatment": "治疗目标覆盖颜色",
   "screen.tacz_pubg.battle_settings.field.hud.health_white": "未满生命白色",
@@ -2796,5 +2796,7 @@
   "screen.tacz_pubg.medicine.action_first_aid": "正在使用急救包",
   "screen.tacz_pubg.medicine.action_med_kit": "正在使用医疗箱",
   "screen.tacz_pubg.medicine.action_painkiller": "正在服用止痛药",
-  "screen.tacz_pubg.medicine.cancel": "取消"
+  "screen.tacz_pubg.medicine.cancel": "取消",
+  "screen.tacz_pubg.battle_settings.field.hud.health_critical_red": "危急生命闪烁亮红色",
+  "screen.tacz_pubg.battle_settings.field.hud.health_flash_ticks": "危急生命换色间隔（刻）"
 }

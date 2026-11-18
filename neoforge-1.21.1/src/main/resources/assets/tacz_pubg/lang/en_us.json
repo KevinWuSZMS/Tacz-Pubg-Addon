@@ -1360,13 +1360,13 @@
   "screen.tacz_pubg.battle_settings.field.hud.fuse_track_color": "Fuse track color",
   "screen.tacz_pubg.battle_settings.field.hud.fuse_warning_color": "Fuse warning color",
   "screen.tacz_pubg.battle_settings.field.hud.fuse_warning_fraction": "Fuse warning fraction",
-  "screen.tacz_pubg.battle_settings.field.hud.health_apricot": "Health apricot",
-  "screen.tacz_pubg.battle_settings.field.hud.health_apricot_threshold": "Health apricot threshold",
+  "screen.tacz_pubg.battle_settings.field.hud.health_apricot": "Health pale yellow",
+  "screen.tacz_pubg.battle_settings.field.hud.health_apricot_threshold": "Pale-yellow health upper bound (exclusive ratio)",
   "screen.tacz_pubg.battle_settings.field.hud.health_full": "Health full",
   "screen.tacz_pubg.battle_settings.field.hud.health_height": "Health height",
   "screen.tacz_pubg.battle_settings.field.hud.health_next_step": "Health next step",
   "screen.tacz_pubg.battle_settings.field.hud.health_red": "Health red",
-  "screen.tacz_pubg.battle_settings.field.hud.health_red_threshold": "Health red threshold",
+  "screen.tacz_pubg.battle_settings.field.hud.health_red_threshold": "Red health upper bound (exclusive ratio)",
   "screen.tacz_pubg.battle_settings.field.hud.health_reference": "Health reference",
   "screen.tacz_pubg.battle_settings.field.hud.health_treatment": "Health treatment",
   "screen.tacz_pubg.battle_settings.field.hud.health_white": "Health white",
@@ -2796,5 +2796,7 @@
   "screen.tacz_pubg.medicine.action_first_aid": "Using first aid kit",
   "screen.tacz_pubg.medicine.action_med_kit": "Using med kit",
   "screen.tacz_pubg.medicine.action_painkiller": "Taking painkillers",
-  "screen.tacz_pubg.medicine.cancel": "Cancel"
+  "screen.tacz_pubg.medicine.cancel": "Cancel",
+  "screen.tacz_pubg.battle_settings.field.hud.health_critical_red": "Critical health flash red",
+  "screen.tacz_pubg.battle_settings.field.hud.health_flash_ticks": "Critical health color interval (ticks)"
 }

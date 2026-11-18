@@ -77,6 +77,47 @@ public final class PubgMedicineChecks {
         inputPaths();
         System.out.println("PubgMedicineChecks: " + checks + " checks passed; no game launched.");
     }
+    private static void healthWarningColors(com.example.examplemod.vitals.client.PubgVitalsLayout.Style style) {
+        check(style.red() == 0xFFE85B4F && style.criticalRed() == 0xFFE82F28
+                && style.apricot() == 0xFFFCE6AB && style.white() == 0xFFF2F2F2,
+                "Health colors match the supplied screenshot fill samples");
+        check(style.flashTicks() == 5, "User-selected warning alternates every quarter-second");
+        for (long tick : new long[]{0, 4, 5, 9, 10, 14, 15, 19, 20, 1_000_005}) {
+            int warning = tick % 10 < 5 ? style.red() : style.criticalRed();
+            check(com.example.examplemod.vitals.client.PubgVitalsLayout.healthColor(Math.nextDown(.1), style, tick) == warning,
+                    "Below 10% alternates exactly at each five-tick boundary");
+            check(com.example.examplemod.vitals.client.PubgVitalsLayout.healthColor(.1, style, tick) == style.red(),
+                    "Exactly 10% is steady soft red at every animation phase");
+            check(com.example.examplemod.vitals.client.PubgVitalsLayout.healthColor(0, style, tick) == style.red(),
+                    "Zero health cannot flash a living fill");
+            for (double ratio : new double[]{.25, .499, .5, .999, 1})
+                check(com.example.examplemod.vitals.client.PubgVitalsLayout.healthColor(ratio, style, tick)
+                        == com.example.examplemod.vitals.client.PubgVitalsLayout.healthColor(ratio, style),
+                        "Noncritical colors stay steady through the warning cycle");
+        }
+        for (double maximum : new double[]{20, 40}) {
+            var soft = com.example.examplemod.vitals.client.PubgVitalsLayout.bars(640, 360, maximum * .05, maximum,
+                    maximum * .2, 40, 0, maximum * .75, maximum * .15, style, 0);
+            var bright = com.example.examplemod.vitals.client.PubgVitalsLayout.bars(640, 360, maximum * .05, maximum,
+                    maximum * .2, 40, 0, maximum * .75, maximum * .15, style, 5);
+            check(soft.size() == bright.size(), "Warning never changes health/forecast geometry");
+            int changes = 0;
+            for (int i = 0; i < soft.size(); i++) {
+                var a = soft.get(i); var b = bright.get(i);
+                check(a.left() == b.left() && a.top() == b.top() && a.right() == b.right() && a.bottom() == b.bottom(),
+                        "All geometry remains identical at the phase switch");
+                if (a.color() != b.color()) {
+                    changes++;
+                    check(a.color() == style.red() && b.color() == style.criticalRed(),
+                            "Only actual remaining health flashes, not the damage trail, forecast or boost");
+                }
+            }
+            check(changes == 1, "Exactly the actual health fill alternates");
+            check(com.example.examplemod.vitals.client.PubgVitalsLayout.healthColor(
+                    com.example.examplemod.vitals.client.PubgVitalsLayout.fraction(maximum * .1, maximum), style, 5) == style.red(),
+                    "Ten-percent boundary scales with actual maximum health");
+        }
+    }
     private static void fivePulseSchedule(PubgMedicineModel.Kind kind, double health, double maximum,
                                           int[] deadlines, double amount, double expectedHealth) {
         var recovery = new PubgMedicineModel.Recovery(kind.healingBudget(health, maximum), kind.ceiling(),
@@ -144,10 +185,12 @@ public final class PubgMedicineChecks {
         near(finishedTarget.total(), 12, "Finished or canceled healing leaves no total forecast");
         near(finishedTarget.next(), 12, "Finished or canceled healing leaves no next-pulse forecast");
         var style = com.example.examplemod.vitals.client.PubgVitalsLayout.Style.defaults();
-        check(com.example.examplemod.vitals.client.PubgVitalsLayout.healthColor(.25, style) == style.red(), "25% is red");
-        check(com.example.examplemod.vitals.client.PubgVitalsLayout.healthColor(.250001, style) == style.apricot(), "Just above 25% is apricot");
-        check(com.example.examplemod.vitals.client.PubgVitalsLayout.healthColor(.399999, style) == style.apricot(), "Below 40% remains apricot");
-        check(com.example.examplemod.vitals.client.PubgVitalsLayout.healthColor(.4, style) == style.white(), "40% is ordinary white");
+        check(com.example.examplemod.vitals.client.PubgVitalsLayout.healthColor(Math.nextDown(.25), style) == style.red(), "Below 25% is red");
+        check(com.example.examplemod.vitals.client.PubgVitalsLayout.healthColor(.25, style) == style.apricot(), "Exactly 25% is pale yellow");
+        check(com.example.examplemod.vitals.client.PubgVitalsLayout.healthColor(Math.nextDown(.5), style) == style.apricot(), "Below 50% remains pale yellow");
+        check(com.example.examplemod.vitals.client.PubgVitalsLayout.healthColor(.5, style) == style.white(), "Exactly 50% is ordinary white");
+        check(com.example.examplemod.vitals.client.PubgVitalsLayout.healthColor(Math.nextDown(1.0), style) == style.white(), "Every value below 100% remains white");
+        healthWarningColors(style);
         check(com.example.examplemod.vitals.client.PubgVitalsLayout.healthColor(1, style) == style.full()
                 && (style.full() >>> 24) < (style.white() >>> 24), "Full HP is greyer and more transparent");
         for (int[] viewport : new int[][]{{220,160},{320,240},{640,360},{1920,1080}}) {

@@ -102,9 +102,10 @@ public record PubgSettings(Map<String, Double> values) {
         n(f,"hud.row_height",24,18,40,true); n(f,"hud.equipment_gap",2,0,10,true);
         n(f,"hud.health_height",10,6,18,true); n(f,"hud.boost_height",2,1,6,true);
         n(f,"hud.bar_gap",2,0,8,true); n(f,"hud.bottom_margin",28,8,120,true);
-        n(f,"hud.health_red_threshold",.25,.05,.5,false); n(f,"hud.health_apricot_threshold",.4,.1,.75,false);
-        c(f,"hud.health_red",0xFFE65F57L); c(f,"hud.health_apricot",0xFFFFDC9FL);
-        c(f,"hud.health_white",0xF2E8E9E7L); c(f,"hud.health_full",0xA5B0B2B0L);
+        n(f,"hud.health_red_threshold",.25,.05,.5,false); n(f,"hud.health_apricot_threshold",.5,.1,.75,false);
+        c(f,"hud.health_red",0xFFE85B4FL); c(f,"hud.health_apricot",0xFFFCE6ABL);
+        c(f,"hud.health_white",0xFFF2F2F2L); c(f,"hud.health_full",0xA5B0B2B0L);
+        c(f,"hud.health_critical_red",0xFFE82F28L); n(f,"hud.health_flash_ticks",5,1,40,true);
         c(f,"hud.health_reference",0x65A6A8AAL); c(f,"hud.health_treatment",0x6F9DA1A3L);
         c(f,"hud.health_next_step",0xACBCBEC0L); c(f,"hud.boost_color",0xFFF09A27L); c(f,"hud.panel_color",0x66212427L);
         n(f,"hud.icon_inactive_alpha",.4,.1,1,false); n(f,"hud.weapon_stack_width",96,64,180,true);

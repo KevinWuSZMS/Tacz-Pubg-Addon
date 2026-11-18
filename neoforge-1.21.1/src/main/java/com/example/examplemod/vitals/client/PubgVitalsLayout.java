@@ -8,7 +8,9 @@ public final class PubgVitalsLayout {
     /** Vanilla Gui.renderItemHotbar uses a 182px outer frame, centred with integer division first. */
     public static final int WIDTH = 182, HEALTH_BOTTOM = 28, BOOST_BOTTOM = 40;
     public static final int BACKGROUND = 0x66212427, BORDER = 0x80494D50;
-    public static final int HEALTH = 0xF2E8E9E7, LOW_HEALTH = 0xFFE65F57, APRICOT = 0xFFFFDC9F;
+    public static final int HEALTH = 0xFFF2F2F2, LOW_HEALTH = 0xFFE85B4F, APRICOT = 0xFFFCE6AB;
+    public static final int CRITICAL_HEALTH = 0xFFE82F28;
+    public static final double CRITICAL_THRESHOLD = .10;
     public static final int DAMAGE_TRAIL = 0xC9AA403D, ABSORPTION = 0xFF9ED6E7, BOOST = 0xFFF09A27;
     public static final int DOWNED_HEALTH = 0xFFF22424, DOWNED_DAMAGE_TRAIL = 0xFF9D2025;
     public static final int DOWNED_FILL_HATCH = 0x24FFFFFF, DOWNED_TRAIL_HATCH = 0x76FF7777,
@@ -17,9 +19,11 @@ public final class PubgVitalsLayout {
     public record Rectangle(int left, int top, int right, int bottom, int color) {}
     public record Style(int width, int healthHeight, int boostHeight, int gap, int bottom, int rowHeight,
                         double redThreshold, double apricotThreshold, int red, int apricot, int white,
-                        int full, int reference, int treatment, int nextStep, int boost, int background) {
-        public static Style defaults() { return new Style(WIDTH, 10, 2, 2, 28, 24, .25, .40,
-                LOW_HEALTH, APRICOT, HEALTH, 0xA5B0B2B0, 0x65A6A8AA, 0x6F9DA1A3, 0xACBCBEC0, BOOST, BACKGROUND); }
+                        int full, int reference, int treatment, int nextStep, int boost, int background,
+                        int criticalRed, int flashTicks) {
+        public static Style defaults() { return new Style(WIDTH, 10, 2, 2, 28, 24, .25, .50,
+                LOW_HEALTH, APRICOT, HEALTH, 0xA5B0B2B0, 0x65A6A8AA, 0x6F9DA1A3, 0xACBCBEC0, BOOST, BACKGROUND,
+                CRITICAL_HEALTH, 5); }
     }
     public record Frame(int left, int top, int width, int healthTop, int boostTop, int rowTop, int rowHeight, int height) {}
     private PubgVitalsLayout() {}
@@ -37,8 +41,16 @@ public final class PubgVitalsLayout {
                 healthTop + style.healthHeight() - boostTop);
     }
     public static int healthColor(double ratio, Style style) {
-        return ratio <= style.redThreshold() ? style.red() : ratio < style.apricotThreshold() ? style.apricot()
-                : ratio >= 1 - 1e-6 ? style.full() : style.white();
+        return healthColor(ratio, style, 0);
+    }
+    /** Only the living red fill flashes; exact 10%, 25%, 50% and 100% boundaries enter their next band. */
+    public static int healthColor(double ratio, Style style, long animationTicks) {
+        if (ratio >= 1) return style.full();
+        if (ratio < style.redThreshold()) {
+            boolean brightPhase = Math.floorMod(animationTicks, 2L * Math.max(1, style.flashTicks())) >= Math.max(1, style.flashTicks());
+            return ratio > 0 && ratio < CRITICAL_THRESHOLD && brightPhase ? style.criticalRed() : style.red();
+        }
+        return ratio < style.apricotThreshold() ? style.apricot() : style.white();
     }
     public static List<Rectangle> bars(int screenWidth, int screenHeight, double health, double maximum,
                                      double damageTrail, double boost, double absorption) {
@@ -46,6 +58,11 @@ public final class PubgVitalsLayout {
     }
     public static List<Rectangle> bars(int screenWidth, int screenHeight, double health, double maximum,
                                      double damageTrail, double boost, double absorption, double target, double next, Style style) {
+        return bars(screenWidth, screenHeight, health, maximum, damageTrail, boost, absorption, target, next, style, 0);
+    }
+    public static List<Rectangle> bars(int screenWidth, int screenHeight, double health, double maximum,
+                                     double damageTrail, double boost, double absorption, double target, double next, Style style,
+                                     long animationTicks) {
         var f = frame(screenWidth, screenHeight, style);
         int left = f.left(), width = f.width(), top = f.healthTop(), bottom = top + style.healthHeight();
         var rectangles = new ArrayList<Rectangle>();
@@ -65,7 +82,7 @@ public final class PubgVitalsLayout {
         add(rectangles, left + actual, top, left + predicted, bottom, style.treatment());
         // Two ordinary grey overlays retain the underlying hatch through alpha.
         add(rectangles, left + actual, top, left + nextStep, bottom, style.nextStep());
-        add(rectangles, left, top, left + actual, bottom, healthColor(ratio, style));
+        add(rectangles, left, top, left + actual, bottom, healthColor(ratio, style, animationTicks));
         if (absorption > 0) add(rectangles, left, top, left + pixels(width, fraction(absorption, maximum)), top + 2, ABSORPTION);
         addBoost(rectangles, f, boost, style);
         return List.copyOf(rectangles);

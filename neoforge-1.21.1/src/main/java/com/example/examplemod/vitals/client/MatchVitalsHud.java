@@ -20,6 +20,7 @@ import net.neoforged.neoforge.common.NeoForge;
 public final class MatchVitalsHud {
     private static MatchVitalsPayloads.Snapshot current;
     private static int packetAge, trailHoldTicks;
+    private static long healthAnimationTicks;
     private static float damageTrail, lastObservedHealth;
     private static final DownedHealthTrail downedTrail = new DownedHealthTrail();
     private static boolean wasDowned;
@@ -49,6 +50,7 @@ public final class MatchVitalsHud {
         if (next == null || !next.active()) { clear(); return; }
         boolean sameSession = current != null && current.sessionId().equals(next.sessionId());
         if (!sameSession) {
+            healthAnimationTicks = 0;
             var player = Minecraft.getInstance().player;
             lastObservedHealth = damageTrail = player == null ? next.health() : player.getHealth();
             trailHoldTicks = 0;
@@ -62,6 +64,7 @@ public final class MatchVitalsHud {
     private static void clear() {
         current = null;
         packetAge = trailHoldTicks = 0;
+        healthAnimationTicks = 0;
         damageTrail = lastObservedHealth = 0;
         downedTrail.clear();
         wasDowned = false;
@@ -91,6 +94,8 @@ public final class MatchVitalsHud {
         if (mc.isPaused()) return;
         if (++packetAge > 100) { clear(); return; }
         if (current.paused()) return;
+        // Gameplay ticks freeze the warning during both integrated-server and match pauses.
+        healthAnimationTicks++;
         if (downed) {
             downedTrail.tick(combat.downedHealth(), combat.downedMaxHealth(), combat.downCount());
             return;
@@ -202,7 +207,7 @@ public final class MatchVitalsHud {
                     downedTrail.value(health, maximum, combat.downCount()), CombatHudStyle.vitals())
                 : PubgVitalsLayout.bars(graphics.guiWidth(), graphics.guiHeight(),
                     health, maximum, observing ? health : damageTrail, state.boost(),
-                    observing ? state.absorption() : mc.player.getAbsorptionAmount(), target.total(), target.next(), CombatHudStyle.vitals());
+                    observing ? state.absorption() : mc.player.getAbsorptionAmount(), target.total(), target.next(), CombatHudStyle.vitals(), healthAnimationTicks);
         for (var rectangle : rectangles)
             graphics.fill(rectangle.left(), rectangle.top(), rectangle.right(), rectangle.bottom(), rectangle.color());
         }

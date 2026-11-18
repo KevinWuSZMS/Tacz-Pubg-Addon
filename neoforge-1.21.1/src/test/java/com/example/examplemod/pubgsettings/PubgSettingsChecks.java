@@ -15,6 +15,24 @@ public final class PubgSettingsChecks {
     public static void main(String[] args) {
         var initial=PubgSettings.initial();
         check(initial.values().isEmpty()&&initial.toJson().equals("{}"),"Old worlds retain all versioned defaults without verbose overrides");
+        check(initial.number("hud.health_red_threshold")==.25&&initial.number("hud.health_apricot_threshold")==.5,
+                "Reference health color bands end at 25 and 50 percent");
+        check(initial.color("hud.health_red")==0xFFE85B4F&&initial.color("hud.health_apricot")==0xFFFCE6AB
+                &&initial.color("hud.health_white")==0xFFF2F2F2&&initial.color("hud.health_critical_red")==0xFFE82F28,
+                "Default health colors match the screenshot fill samples");
+        check(initial.integer("hud.health_flash_ticks")==5,"Critical health switches color every quarter second at 20 ticks per second");
+        var customHealth=initial.with("hud.health_critical_red",0xA0123456L).with("hud.health_flash_ticks",11);
+        check(PubgSettings.parse(customHealth.toJson()).equals(customHealth),"Custom flash interval and critical color retain their exact values and alpha");
+        check(round(PubgSettingsPayloads.State.CODEC,new PubgSettingsPayloads.State(0,3,customHealth,0)).settings().equals(customHealth),
+                "Critical color and flash interval reach clients unchanged");
+        var oldHealth=PubgSettings.parse("{\"hud.health_apricot_threshold\":0.4,\"hud.health_red\":4293287767}");
+        check(oldHealth.number("hud.health_apricot_threshold")==.4&&oldHealth.color("hud.health_red")==0xFFE65F57,
+                "Explicit old health overrides remain custom instead of being migrated");
+        check(initial.with("hud.health_flash_ticks",1).integer("hud.health_flash_ticks")==1
+                &&initial.with("hud.health_flash_ticks",40).integer("hud.health_flash_ticks")==40,"Flash timing accepts both administrator range endpoints");
+        rejects(()->initial.with("hud.health_flash_ticks",0));
+        rejects(()->initial.with("hud.health_flash_ticks",41));
+        rejects(()->initial.with("hud.health_flash_ticks",5.5));
         check(initial.integer("medicine.bandage_recovery_ticks")==58&&initial.integer("medicine.first_aid_recovery_ticks")==40,"PC 42.1 recovery durations are 2.9 and 2 seconds at 20 ticks per second");
         check(initial.integer("medicine.bandage_use_ticks")==60&&initial.integer("medicine.first_aid_use_ticks")==120
                 &&initial.integer("medicine.med_kit_use_ticks")==120,"PC 42.1 medicine use durations are 3, 6 and 6 seconds");
