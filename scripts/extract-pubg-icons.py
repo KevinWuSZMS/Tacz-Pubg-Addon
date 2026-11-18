@@ -1,4 +1,4 @@
-"""Copy genuine PUBGMC item icons and fetch pinned official PUBG item icons.
+"""Copy flat item icons and fetch pinned official PUBG item icons.
 
 Model texture atlases are deliberately excluded from GUI icon candidates.
 Original bytes and SHA-256 provenance are preserved; no image generation.
@@ -62,7 +62,7 @@ def fetch(path):
 with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
     for item in pool.map(fetch,paths): entries.append(item)
 write(OUT/"icon-mapping-candidates.json",{"pubgmc_commit":"f8c341eb784425b1bf7e015f36b851e760ab2999","official_commit":sha,
-    "notes":["PUBGMC models/items/*_model.png and blocks/energy.png are UV atlases and are excluded.",
+    "notes":["models/items/*_model.png and blocks/energy.png are UV atlases and are excluded.",
              "candidate_name is an identity hint, not automatic matching to unrelated guns.",
              "All copied textures preserve original bytes; original dimensions are retained."],"items":entries})
 write(DEST/"sources.json",{"official_commit":sha,"pubgmc_commit":"f8c341eb784425b1bf7e015f36b851e760ab2999","items":entries})

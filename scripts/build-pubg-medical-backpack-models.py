@@ -1,7 +1,7 @@
-"""Original cuboid models, informed by archived PUBG/PUBGMC visual references.
+"""Build cuboid item models and their procedural materials.
 
-Reproducible geometry and original procedural material textures. This does not
-copy PUBGMC models or official artwork into these 3D model textures.
+The geometry and textures are generated together
+so the model faces use the matching atlas.
 """
 from pathlib import Path
 import json, random, hashlib
@@ -240,6 +240,6 @@ def main():
                         "cuboids":len(model["elements"]),"model":str(jp.relative_to(ROOT)).replace("\\","/"),
                         "texture":str(tp.relative_to(ROOT)).replace("\\","/"),
                         "model_sha256":hashlib.sha256(jp.read_bytes()).hexdigest()})
-    (OUT/"original-models.json").write_text(json.dumps({"style_zh":"像素硬核","style_en":"Pixel Hardcore","reference":"Archived official icons and PUBGMC geometry viewed as shape/color references; authored geometry and texture are independent.","items":entries},ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+    (OUT/"original-models.json").write_text(json.dumps({"style_zh":"像素硬核","style_en":"Pixel Hardcore","reference":"Reference images guide shape and color; geometry and textures are authored separately.","items":entries},ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     print(f"Wrote {len(entries)} original 3D models ({sum(x['cuboids'] for x in entries)} cuboids).")
 if __name__=="__main__":main()

@@ -7,7 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 RES = ROOT / "neoforge-1.21.1/src/main/resources"
 manifest = json.loads((ROOT / "assets-workbench/pubgmc-reference/icon-mapping-candidates.json").read_text(encoding="utf-8"))
-official = {x["item_name"].lower(): x for x in manifest["items"] if x["source"] != "PUBGMC"}
+official = {x["item_name"].lower(): x for x in manifest["items"] if x["source"] == "PUBG official api-assets"}
 icons = {}
 
 
@@ -26,7 +26,7 @@ def add(kind, ids, original):
 
 
 for source in manifest["items"]:
-    if source["source"] != "PUBGMC":
+    if source["source"] == "PUBG official api-assets":
         for own_id in source.get("known_mod_ids", []):
             add("item", own_id, source["item_name"])
 add("item", "tacz_pubg:parachute", "Item_Back_B_01_StartParachutePack_C")

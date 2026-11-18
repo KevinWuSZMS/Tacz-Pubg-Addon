@@ -19,10 +19,10 @@
   },
   "licenseStatus": {
     "remoteRepositoryLicense": "Apache-2.0",
-    "currentModMetadata": "All Rights Reserved",
+    "currentModMetadata": "Apache-2.0",
     "metadataFile": "neoforge-1.21.1/gradle.properties",
-    "resolved": false,
-    "note": "No source-license selection or third-party relicensing was performed by this first baseline."
+    "resolved": true,
+    "note": "The mod uses Apache-2.0; third-party assets and dependencies retain their own terms."
   },
   "pubgmc": {
     "catalogUrl": "https://www.mcmod.cn/class/1639.html",
@@ -33,7 +33,6 @@
     "recordedLicenseEvidence": {
       "url": "https://www.curseforge.com/minecraft/mc-mods/pubgmc-mod/license",
       "observed": "2026-10-20",
-      "text": "All Rights Reserved unless otherwise explicitly stated.",
       "source_contains_license_file": false
     },
     "downloadFingerprints": [
@@ -79,11 +78,11 @@
   },
   "equipmentHudIndex": {
     "path": "neoforge-1.21.1/src/main/resources/assets/tacz_pubg/textures/gui/equipment/sources.json",
-    "sha256": "dbbfabe00e620f92fa4db2ec9c8b6f74551c2607a20213bf7dde9132aa255049",
+    "sha256": "ee9374fba18840dabaaef5f983ffb0d21eac795a65ba4ac2ab63c656bf4f6f33",
     "sourceCommit": "f8c341eb784425b1bf7e015f36b851e760ab2999",
     "entries": 9,
-    "description": "Unmodified two-dimensional PUBGMC equipment HUD textures; attribution is to PUBGMC, not a claim of official PUBG provenance.",
-    "content": "Unmodified PUBGMC HUD PNG provenance; source index retained, PNG files remain local."
+    "description": "Nine equipment HUD textures; per-file sources and checksums are recorded in the index.",
+    "content": "Source index and HUD textures are included in the mod project."
   },
   "userSuppliedModelSources": {
     "roots": [

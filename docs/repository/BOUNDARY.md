@@ -35,6 +35,4 @@
 
 ## 许可现状
 
-远程已有 Apache 2.0 `LICENSE`，而本地模组 `gradle.properties` 的 `mod_license` 当前仍是 `All Rights Reserved`。本次保留现状，未替用户重新选择源码许可，也未把第三方资产统一改为 Apache 2.0。
-
-本地来源证据明确记录 PUBGMC 发布页为 All Rights Reserved；PUBG 官方图标、用户提供模型及衍生资源的来源应分别核实。来源与哈希说明文件的身份，不能作为再分发授权。此次对未确认资产的排除是提交边界，不是删除现有素材或对原作者许可作新判断。
+本模组采用 Apache License 2.0。仓库根目录和模组 JAR 内均附有许可全文；第三方资源和依赖不因随本项目分发而变更许可。

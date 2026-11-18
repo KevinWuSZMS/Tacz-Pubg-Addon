@@ -6,7 +6,7 @@
 
 构建模组只需 `neoforge-1.21.1/` 目录及 Java 21。在该目录运行 `.\\gradlew.bat jar`（Linux/macOS：`./gradlew jar`），成品在 `build/libs/`。首次构建需要下载 Gradle 和标准 NeoForge 工具链；项目专用编译库已固定在 `libs/`，不打入成品。最终贴图、网格、模型等随源代码发布，无需游戏实例、原稿或检查用快照。完整开发检查仍需要本地 `test-inputs/` 和部分运行组件。GitHub Actions 在 main 推送后构建并提供成品下载。
 
-边界、依赖与恢复项见 [仓库边界说明](docs/repository/BOUNDARY.md)、[依赖清单](docs/repository/dependencies.json)和[资源来源清单](docs/repository/asset-provenance.json)。根目录 `LICENSE` 延续远程已有文件；第三方内容与模组现有许可元数据的差异见边界说明。
+边界、依赖与恢复项见 [仓库边界说明](docs/repository/BOUNDARY.md)、[依赖清单](docs/repository/dependencies.json)和[资源来源清单](docs/repository/asset-provenance.json)。本模组采用 [Apache License 2.0](LICENSE)；第三方素材与依赖保留各自的许可。
 
 本工作区包含离线教程、可构建的 Minecraft 1.21.1 开发项目，以及 **TaCZ PUBG Addon**（`tacz_pubg`）。源码包名仍为 `com.example.examplemod`；旧模板方块、食物与 `examplemod` 注册内容已移除，当前实践入口是物资区域标记、配置、生成与地图工具。
 

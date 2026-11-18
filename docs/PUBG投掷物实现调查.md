@@ -11,7 +11,6 @@
 | [UNOFFICIAL LesRaisins Tactical Equipements](https://modrinth.com/mod/lr-tactical-1.21.1) | 0.4.3，2026-08-27；MC 1.21.1 / NeoForge | TaCZ 战术装备附属，支持可配置投掷物 | 版本和方向匹配；优先研究接入，尚未验证运行 |
 | [Counter Strike Grenades](https://modrinth.com/mod/counterstrikegrenade) | 作者项目支持 MC 1.20.1 / Forge；[CF 最新 1.5.2](https://www.curseforge.com/minecraft/mc-mods/counter-strike-grenades) | CS2 高爆、闪光、烟雾、燃烧、诱饵；可与 TaCZ 互动 | 功能参考价值高；没有核实到作者发布的 1.21.1 NeoForge 版本 |
 | [TaCZ Throwable Thing](https://www.curseforge.com/minecraft/customization/tacz-throwable-thing) | `throwable_thing_v1.4.0-1.1.5.zip`，2025-05-11；页面标 1.18.2 / 1.19.2 / 1.20.1 | 旧 TaCZ 枪包，含手雷、M18 烟雾等；作者已停更并推荐 LR Tactical | 需要单独转换审计；不是 1.21.1 即装即用方案，优先级低 |
-| [PUBGMC](https://www.curseforge.com/minecraft/mc-mods/pubgmc-mod) | 1.10.7，2025-04-27；MC 1.12.2 / Forge | 明确复刻 PUBG，包含温雷、近远投掷、烟雾、燃烧弹等 | 确有 PUBG 专用实现，但不是当前版本的 TaCZ 附属；只能作为设计研究来源 |
 | [Counter-Strike Guns / Strike Arsenal](https://www.curseforge.com/minecraft/mc-mods/cs-guns) | 作者当前支持 1.21.8 至 26.3 的多个加载器 | 整套 CS2 武器和投掷物 | 没有本项目的 1.21.1 文件，不作为当前安装候选 |
 
 这里要区分 **JAR 模组**与 **ZIP 枪包**。TaCZ Pack Upgrader 可以转换其支持的旧枪包资源数据，例如配方目录、材料和物品组件；它不迁移 Lua API，也不能把 Forge 1.20.1 的任意 JAR 自动变成 NeoForge 1.21.1 模组。LR 移植作者也明确要求旧枪包额外处理。见 [LR 发布说明](https://www.curseforge.com/minecraft/mc-mods/lr-tactical-1-21-1)、[Upgrader 项目](https://modrinth.com/mod/tacz-pack-upgrader)。

@@ -1,5 +1,5 @@
 {
-  "description": "Balanced mod defaults adapted from PUBG patch notes and PUBGMC. Not official PUBG spawn percentages.",
+  "description": "Default loot weights for this mod, not official PUBG spawn percentages.",
   "profiles": {
     "very_low": {
       "categoryProbabilities": {

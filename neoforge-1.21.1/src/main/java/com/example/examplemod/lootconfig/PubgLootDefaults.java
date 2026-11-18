@@ -6,7 +6,6 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-/** Balanced mod defaults informed by PUBG patches and PUBGMC, not official PUBG percentages. */
 public final class PubgLootDefaults {
     private static final Map<String, LootConfigModel.TierProfile> PROFILES = load();
     private static final Map<String, Double> LEGACY = Map.of(

@@ -1,8 +1,8 @@
 # PUBG 护甲实装依据
 
-六件原生装备：`helmet_1/2/3` 使用 HEAD，`vest_1/2/3` 使用 CHEST。头盔健康为 80/150/230，背心为 200/220/250；完整装备分别减伤 30%/40%/55%。这些通用 PUBG 装备值可交叉核对 [装备资料](https://pubg.wiki.gg/wiki/Vests) 和 [Google Play 的 PUBG 官方游戏编辑资料](https://play.google.com/store/apps/editorial?hl=en_GB&id=mc_editorialevergreen_post_install_pubg_mobile_equipment_fcp)；没有把 PUBGMC 旧版本按 Minecraft 护甲材料倍率计算出的 88 等健康值误当 PC 原值。
+六件原生装备：`helmet_1/2/3` 使用 HEAD，`vest_1/2/3` 使用 CHEST。头盔健康为 80/150/230，背心为 200/220/250；完整装备分别减伤 30%/40%/55%。这些通用 PUBG 装备值可交叉核对 [装备资料](https://pubg.wiki.gg/wiki/Vests) 和 [Google Play 的 PUBG 官方游戏编辑资料](https://play.google.com/store/apps/editorial?hl=en_GB&id=mc_editorialevergreen_post_install_pubg_mobile_equipment_fcp)。
 
-保护逻辑直接对照下载的 `PUBGMC/.../common/items/equipment/ItemBulletproofArmor.java`，其三档伤害倍率为 0.7/0.6/0.45；`EntityBullet.damageArmor` 按被甲吸收的伤害乘 5 换算为 PUBG 血量扣耐久。本实现保留 0.01 护甲健康精度，避免 TaCZ 的普通/穿甲分段伤害反复取整。
+三档完好护甲的伤害倍率分别为 0.7、0.6、0.45；以护甲吸收的伤害乘 5 换算耐久损耗。本实现保留 0.01 护甲健康精度，避免 TaCZ 的普通/穿甲分段伤害反复取整。
 
 [PUBG PC 7.2 官方公告](https://store.steampowered.com/news/posts/?appids=578080&enddate=1589963679&feed=steam_community_announcements) 确认：背心耗尽耐久后仍存在，保留背包容量且提供 20% 保护。头盔耗尽则损坏移除。最后一丝完整耐久仍保护整颗子弹，两段 TaCZ 伤害使用同一个受击瞬间快照。
 

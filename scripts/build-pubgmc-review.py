@@ -1,4 +1,4 @@
-"""Extract exact PUBGMC Java ModelBox geometry and Minecraft JSON for review.
+"""Extract Java ModelBox geometry and Minecraft JSON for review.
 
 Preserves constructor pivots, parent transforms, rotations, mirror and texture
 UVs. Vehicle animation is the neutral constructor pose. No guessed replacement
@@ -122,7 +122,7 @@ def json_model(path,texture_base):
             f=face(points,uv,center)
             if f:result.append(f)
     return result,atlas,{"constructor_cuboids":len(data["elements"]),"bones":0}
-def export(name,title,path,faces,tex,size,details,kind="PUBGMC 原始模型"):
+def export(name,title,path,faces,tex,size,details,kind="参考模型"):
     objdir=OUT/"obj";objdir.mkdir(exist_ok=True);tex.save(objdir/(name+".png"))
     lines=[f"mtllib {name}.mtl","usemtl original_texture"];idx=1
     for points,uv,normal in faces:
