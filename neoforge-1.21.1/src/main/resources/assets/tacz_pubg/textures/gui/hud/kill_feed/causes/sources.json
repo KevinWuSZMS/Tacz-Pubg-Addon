@@ -1,0 +1,20 @@
+{
+  "source": "https://github.com/pubg/api-assets",
+  "revision": "32b13b51128b8d8909ae5e77f3b833e01230b24d",
+  "directory": "Assets/Icons/Killfeed",
+  "terms": "https://developer.pubg.com/tos",
+  "icons": {
+    "Bluezone.png": {
+      "texture": "blue_zone.png",
+      "sha256": "ee726daea498cbb7df3e7c6e079861c68f78e114067852c42daaed74e8dc7a9b"
+    },
+    "Fall.png": {
+      "texture": "fall.png",
+      "sha256": "a2e44e1304b1ad32dddb21b8edcb0f0f3f21f726bceeaeb8caa412ec0136b205"
+    },
+    "Drown.png": {
+      "texture": "drown.png",
+      "sha256": "ac8c0f6ad491bbbeeb210576c77ecbab49b9761a6b472fd9ab39f7f49ffa30d6"
+    }
+  }
+}

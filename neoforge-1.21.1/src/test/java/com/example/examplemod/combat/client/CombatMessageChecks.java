@@ -14,11 +14,25 @@ public final class CombatMessageChecks {
     private static final Actor VICTIM = new Actor(new UUID(0, 3), "Eve", 2, 0);
 
     public static void main(String[] args) {
+        for (String cause : List.of("blue_zone", "fall", "drown")) {
+            Event knock = new Event(SESSION, 1, "knock", Actor.NONE, VICTIM, "", false, cause, 0, 0);
+            Event direct = new Event(SESSION, 2, "elimination", Actor.NONE, VICTIM, "", false, cause, 0, 0, false);
+            Event finish = new Event(SESSION, 3, "elimination", DOWNER, VICTIM, "", false, cause, 1, 0, true);
+            for (Event event : List.of(knock, direct, finish)) {
+                expect(CombatFeedRow.hazardIcon(event).getPath(), "textures/gui/hud/kill_feed/causes/" + cause + ".png");
+                if (CombatMessageRenderer.showsWeapon(event)) throw new AssertionError("Hazard displayed as weapon: " + cause);
+                expect(CombatFeedRow.statusIcon(event, false).getPath(), "textures/gui/hud/kill_feed/"
+                        + (event == direct ? "eliminated.png" : "downed.png"));
+            }
+        }
+        Event grenade = new Event(SESSION, 4, "knock", DOWNER, VICTIM, "tacz_pubg:blue_zone_grenade", false, "throwable", 0, 0);
+        if (CombatFeedRow.hazardIcon(grenade) != null || !CombatMessageRenderer.showsWeapon(grenade))
+            throw new AssertionError("Blue zone grenade must retain its own weapon icon");
         for (String locale : List.of("zh_cn", "en_us")) {
             Language.inject(TestLanguages.language(TestLanguages.catalog(locale)));
             boolean zh = locale.equals("zh_cn");
             String finallyMessage = zh ? "你终于淘汰了 Eve" : "You finally eliminated Eve";
-            for (String cause : List.of("bleedout", "drown", "team_wipe", "disconnect", "boundary", "environment")) {
+            for (String cause : List.of("bleedout", "blue_zone", "fall", "drown", "team_wipe", "disconnect", "boundary", "environment")) {
                 Event event = new Event(SESSION, 1, "elimination", DOWNER, VICTIM, "", false, cause, 1, 0, true);
                 expect(CombatMessageRenderer.message(event, DOWNER.id(), 0xFF0000).getString(), finallyMessage);
                 expect(CombatFeedRow.actionLabel(event), "");

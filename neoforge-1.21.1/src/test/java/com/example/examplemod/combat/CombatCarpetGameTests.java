@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.DoubleConsumer;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.PacketSendListener;
@@ -41,6 +42,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.Items;
@@ -293,6 +295,31 @@ public final class CombatCarpetGameTests {
                     && !death.bleedout() && !death.friendlyFire() && death.kills() == 1
                     && f.capture(f.victim).snapshot.viewerTeam() == death.attacker().team(), "Wrong direct kill: " + death);
             f.close(); helper.succeed();
+        });
+    }
+
+    @GameTest(template = "empty", templateNamespace = "combat_dbno", batch = "combat_dbno", timeoutTicks = 600)
+    public static void hazardFeedUsesTheCauseOfEachKnockAndElimination(GameTestHelper helper) throws Exception {
+        Fixture f = new Fixture(helper);
+        f.later(65, () -> {
+            f.victim.hurt(f.victim.damageSources().fall(), 1000);
+            var events = f.capture(f.ally).events;
+            var knock = events.getLast();
+            helper.assertTrue(knock.type().equals("knock") && knock.cause().equals("fall")
+                    && knock.attacker().equals(CombatPayloads.Actor.NONE), "Wrong fall knock: " + knock);
+            f.later((int) f.setting("dbno.protection_ticks") + 2, () -> {
+                var zone = f.server.registryAccess().registryOrThrow(Registries.DAMAGE_TYPE).getHolderOrThrow(MatchService.BLUE_ZONE);
+                f.victim.hurt(new DamageSource(zone), 1000);
+                var finish = events.getLast();
+                helper.assertTrue(finish.type().equals("elimination") && finish.wasDowned()
+                        && finish.cause().equals("blue_zone") && finish.weaponId().isEmpty(),
+                        "Zone finish reused the fall knock: " + finish);
+                f.enemy.hurt(f.enemy.damageSources().drown(), 1000);
+                var direct = events.getLast();
+                helper.assertTrue(direct.directElimination() && direct.cause().equals("drown")
+                        && direct.attacker().equals(CombatPayloads.Actor.NONE), "Wrong direct drowning: " + direct);
+                f.close(); helper.succeed();
+            });
         });
     }
 

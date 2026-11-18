@@ -31,7 +31,7 @@ public final class CombatWireChecks {
         check(bleed.friendlyFire() && bleed.bleedout() && !bleed.firearm(), "Friendly bleedout has a downer without the original weapon");
         check(bleed.wasDowned() && !bleed.directElimination(), "Legacy bleedout construction cannot select the direct-kill icon");
         check(!gun.directElimination(), "A headshot knock never selects the direct-kill icon");
-        for (String cause : List.of("gun", "gun_blast", "throwable", "unarmed", "item", "boundary", "disconnect")) {
+        for (String cause : List.of("gun", "gun_blast", "throwable", "unarmed", "item", "blue_zone", "fall", "drown", "boundary", "disconnect")) {
             for (boolean wasDowned : List.of(false, true)) {
                 for (var endVictim : List.of(victim, teammate)) {
                     var end = new CombatPayloads.Event(session, 54, "elimination", actor, endVictim,

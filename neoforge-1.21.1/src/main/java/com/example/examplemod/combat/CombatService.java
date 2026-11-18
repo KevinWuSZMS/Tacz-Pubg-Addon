@@ -62,6 +62,9 @@ public final class CombatService {
     private static final Set<UUID> FINISHING = new HashSet<>();
     private record Hit(UUID attacker, String weapon, boolean headshot, String cause, String gunType) {}
     private static final Hit ENVIRONMENT = new Hit(null, "", false, "environment", "");
+    private static final Hit BLUE_ZONE = new Hit(null, "", false, "blue_zone", "");
+    private static final Hit FALL = new Hit(null, "", false, "fall", "");
+    private static final Hit DROWN = new Hit(null, "", false, "drown", "");
     private static final class Damage { double amount; long tick; Damage(double amount,long tick) { this.amount=amount;this.tick=tick; } }
     private static final class Player {
         int kills,assists,knocks,downs; boolean eliminated, directDeath=true;
@@ -173,7 +176,15 @@ public final class CombatService {
         if (direct instanceof me.xjqsh.lrtactical.entity.ThrowableItemEntity projectile) {
             return new Hit(attacker, itemId(projectile.getItem()), false, "throwable", "");
         }
-        if (owner == null) return ENVIRONMENT;
+        if (owner == null) {
+            // The play zone and a player's blue-zone grenade use the same damage type.
+            if (direct == null) {
+                if (source.is(MatchService.BLUE_ZONE)) return BLUE_ZONE;
+                if (source.is(DamageTypes.FALL)) return FALL;
+                if (source.is(DamageTypes.DROWN)) return DROWN;
+            }
+            return ENVIRONMENT;
+        }
         if (direct != null && direct != owner) {
             return new Hit(attacker, BuiltInRegistries.ENTITY_TYPE.getKey(direct.getType()).toString(), false, "item", "");
         }
@@ -195,6 +206,7 @@ public final class CombatService {
         return BuiltInRegistries.ITEM.getKey(item).toString();
     }
     private static Hit participantHit(Game game, Hit hit) {
+        if (hit == BLUE_ZONE || hit == FALL || hit == DROWN) return hit;
         return game.players.containsKey(hit.attacker) ? hit : ENVIRONMENT;
     }
     private static void damaged(LivingDamageEvent.Post e) {
@@ -412,7 +424,7 @@ public final class CombatService {
                 if(p.isUnderWater())down.underwater++;else down.underwater=0;
                 boolean healing=enabled(server,"rescue.pause_bleeding")&&g.rescues.values().stream().anyMatch(r->r.target.equals(p.getUUID()));
                 down.hp=CombatRules.bleed(down.hp,down.max,bleedSeconds(server,state.downs,moving),healing);
-                if(down.underwater>=number(server,"dbno.underwater_seconds")*20)finish(p,g,new Hit(null,"",false,"drown",""));
+                if(down.underwater>=number(server,"dbno.underwater_seconds")*20)finish(p,g,DROWN);
                 else if(down.hp<=0)finish(p,g,new Hit(null,"",false,"bleedout",""));
                 else syncDownedHealth(p,down);
             }

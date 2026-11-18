@@ -17,6 +17,9 @@ final class CombatFeedRow {
     private static final ResourceLocation ELIMINATED_FIGURE = icon("eliminated_figure");
     private static final ResourceLocation ELIMINATED_CROSS = icon("eliminated_cross");
     private static final ResourceLocation FIST = icon("fist");
+    private static final ResourceLocation BLUE_ZONE = icon("causes/blue_zone");
+    private static final ResourceLocation FALL = icon("causes/fall");
+    private static final ResourceLocation DROWN = icon("causes/drown");
 
     private CombatFeedRow() {}
 
@@ -34,13 +37,15 @@ final class CombatFeedRow {
         int color = CombatHudClient.alpha(settings.color(tint), opacity);
         if ((color >>> 24) < 4) return;
         int iconHeight = Math.max(6, row - 3);
-        boolean weapon = CombatMessageRenderer.showsWeapon(event);
+        ResourceLocation hazard = hazardIcon(event);
+        boolean weapon = hazard == null && CombatMessageRenderer.showsWeapon(event);
         ResourceLocation status = statusIcon(event, weapon);
         boolean headshot = weapon && event.firearm() && event.headshot();
-        String action = weapon ? "" : actionLabel(event);
+        String action = weapon || hazard != null ? "" : actionLabel(event);
         var weaponId = weapon ? ResourceLocation.tryParse(event.weaponId()) : null;
         var gunIcon = weapon && event.firearm() ? KillFeedWeaponIcons.gunIcon(weaponId) : null;
         int sourceWidth = weapon ? sourceWidth(font, event, iconHeight, gunIcon != null) : font.width(action);
+        if (hazard != null) sourceWidth = Math.round(iconHeight * 164f / 104f);
         String flag = friendly ? CombatMessageRenderer.text("friendly_fire").getString() : "";
         int icons = padded(sourceWidth) + padded(headshot ? iconHeight : 0) + padded(status != null ? iconHeight * 3 / 2 : 0);
         int fixed = 6 + padded(badgeWidth(font, attacker)) + badgeWidth(font, event.victim())
@@ -62,7 +67,9 @@ final class CombatFeedRow {
         x += padded(badge(g, attacker, x, row, friendly, color, opacity));
         g.drawString(font, left, x, y, color);
         x += font.width(left) + 2;
-        if (weapon) {
+        if (hazard != null) {
+            CombatHudTextures.draw(g, hazard, x, 1, sourceWidth, iconHeight, color);
+        } else if (weapon) {
             boolean drawn;
             if (event.unarmed()) {
                 CombatHudTextures.draw(g, FIST, x, 1, sourceWidth, iconHeight, color);
@@ -78,11 +85,10 @@ final class CombatFeedRow {
                 String label = font.plainSubstrByWidth(CombatMessageRenderer.weaponName(event).getString(), sourceWidth);
                 g.drawString(font, label, x + (sourceWidth - font.width(label)) / 2, y, color);
             }
-            x += padded(sourceWidth);
         } else if (!action.isEmpty()) {
             g.drawString(font, action, x, y, color);
-            x += padded(sourceWidth);
         }
+        x += padded(sourceWidth);
         if (headshot) {
             CombatHudTextures.draw(g, HEADSHOT, x, 1, iconHeight, iconHeight, color);
             x += padded(iconHeight);
@@ -123,6 +129,16 @@ final class CombatFeedRow {
         if (event.directElimination()) return ELIMINATED;
         if (event.type().equals("knock") || event.type().equals("elimination") && !weapon) return DOWNED;
         return null;
+    }
+
+    static ResourceLocation hazardIcon(Event event) {
+        if (!event.type().equals("knock") && !event.type().equals("elimination")) return null;
+        return switch (event.cause()) {
+            case "blue_zone" -> BLUE_ZONE;
+            case "fall" -> FALL;
+            case "drown" -> DROWN;
+            default -> null;
+        };
     }
 
     static String eliminationCrossColor(Event event, int viewerTeam) {

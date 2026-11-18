@@ -26,6 +26,29 @@ sourceSets.main.resources {
     exclude("src/generated/**/.cache") // datagen cache files
 }
 
+// The pinned workspace mirror supplies these three original PUBG kill-feed textures.
+tasks.named('processResources', ProcessResources) {
+    def target = 'assets/tacz_pubg/textures/gui/hud/kill_feed/causes'
+    def manifest = layout.projectDirectory.file("src/main/resources/${target}/sources.json")
+    def source = new groovy.json.JsonSlurper().parseText(providers.fileContents(manifest).asText.get())
+    def iconDir = file("../external/pubg-api-assets/${source.directory}")
+    def rawBase = "https://raw.githubusercontent.com/pubg/api-assets/${source.revision}/${source.directory}"
+    def icons = source.icons
+    from(iconDir) {
+        include(icons.keySet())
+        into(target)
+        rename { name -> icons[name].texture }
+    }
+    doFirst {
+        icons.each { name, icon ->
+            def png = new File(iconDir, name)
+            if (!png.isFile() || java.security.MessageDigest.getInstance('SHA-256').digest(png.bytes).encodeHex().toString() != icon.sha256) {
+                throw new GradleException("Expected PUBG icon ${png} with SHA-256 ${icon.sha256}. Get it from ${rawBase}/${name}")
+            }
+        }
+    }
+}
+
 repositories {
     // Add here additional repositories if required by some of the dependencies below.
 }
