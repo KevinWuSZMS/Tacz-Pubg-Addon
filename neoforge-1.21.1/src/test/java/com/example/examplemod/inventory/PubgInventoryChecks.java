@@ -4,6 +4,12 @@ package com.example.examplemod.inventory;
 public final class PubgInventoryChecks {
     private static int assertions;
     public static void main(String[] args) {
+        check(PubgInventoryTargets.firstCandidate(1, slot -> true) == 1, "held second gun precedes first gun");
+        check(PubgInventoryTargets.firstCandidate(2, slot -> true) == 2, "held handgun has equal priority");
+        check(PubgInventoryTargets.firstCandidate(1, slot -> slot != 1) == 0, "incompatible held gun falls back");
+        check(PubgInventoryTargets.firstCandidate(0, slot -> slot == 1) == 1, "identical installed part can be excluded");
+        check(PubgInventoryTargets.firstCandidate(8, slot -> slot < 2) == 0, "holding a non-gun uses stable gun order");
+        check(PubgInventoryTargets.firstCandidate(1, slot -> false) == -1, "no eligible gun has no default target");
         check(PubgInventoryRules.withinNearby(0, 0, 0), "feet origin");
         check(PubgInventoryRules.withinNearby(1, 0, 0), "inclusive radius boundary");
         check(!PubgInventoryRules.withinNearby(Math.nextUp(1.0), 0, 0), "just outside radius");

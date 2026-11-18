@@ -2843,5 +2843,16 @@
   "gui.tacz_pubg.pickup_action": "拾取 %s ×%s",
   "message.tacz_pubg.flight.jump_action": "跳伞",
   "message.tacz_pubg.flight.deploy_action": "展开降落伞",
-  "screen.tacz_pubg.throwable.cook_control": "[%s] 温雷"
+  "screen.tacz_pubg.throwable.cook_control": "[%s] 温雷",
+  "screen.tacz_pubg.inventory.pubg.action.pickup": "拾取",
+  "screen.tacz_pubg.inventory.pubg.action.attach": "安装",
+  "screen.tacz_pubg.inventory.pubg.action.equip": "装备",
+  "screen.tacz_pubg.inventory.pubg.action.unload": "卸下",
+  "screen.tacz_pubg.inventory.pubg.action.use": "使用",
+  "screen.tacz_pubg.inventory.pubg.refit_hint": "左键：改装",
+  "screen.tacz_pubg.inventory.pickup": "拾取",
+  "screen.tacz_pubg.inventory.pubg_direct_equip": "附近右键：%s",
+  "screen.tacz_pubg.inventory.pickup_equip": "直接装备",
+  "screen.tacz_pubg.inventory.pickup_store": "先存库存",
+  "screen.tacz_pubg.inventory.pubg_direct_equip_hint": "选择右键附近物品时的默认拾取方式。拖拽到指定位置仍按目标操作。"
 }

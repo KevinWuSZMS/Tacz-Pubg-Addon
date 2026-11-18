@@ -75,9 +75,8 @@ public final class PubgRefitChecks {
         }
         check(frame && icons && calls(draw, "net/minecraft/client/gui/GuiGraphics", "renderItem"),
                 "slot drawing uses the original TaCZ frame/type atlas and native item rendering");
-        check(!calls(draw, "net/minecraft/client/gui/GuiGraphics", "fill")
-                        && !calls(draw, "net/minecraft/client/gui/GuiGraphics", "drawString"),
-                "attachment artwork is not approximated with drawn glyphs or placeholder rectangles");
+        check(!calls(draw, "net/minecraft/client/gui/GuiGraphics", "drawString"),
+                "native attachment artwork is retained underneath the target highlight, without text placeholders");
         check(!calls(draw, "net/neoforged/neoforge/network/PacketDistributor", "sendToServer"),
                 "native slot presentation cannot trigger native automatic attachment mutations");
         imageSize("assets/tacz/textures/gui/refit_slot.png", 18, 18);

@@ -71,7 +71,7 @@ public final class PubgAttachmentSlots {
     }
 
     public static void draw(GuiGraphics graphics, ItemStack gun, AttachmentType type,
-                            int x, int y, int size, boolean hover, boolean compatible) {
+                            int x, int y, int size, boolean hover, boolean compatible, boolean preferred) {
         if (size <= 0 || !supports(gun, type)) return;
         int nativeSize = GunRefitScreen.SLOT_SIZE;
         graphics.flush();
@@ -89,6 +89,7 @@ public final class PubgAttachmentSlots {
                 graphics.blit(GunRefitScreen.SLOT_TEXTURE, 0, 0, 0, 0, nativeSize, nativeSize, nativeSize, nativeSize);
             else
                 graphics.blit(GunRefitScreen.SLOT_TEXTURE, 1, 1, 1, 1, nativeSize - 2, nativeSize - 2, nativeSize, nativeSize);
+            if (preferred) graphics.fill(1, 1, nativeSize - 1, nativeSize - 1, 0xdde7e8e8);
             ItemStack part = displayed(gun, type);
             if (!part.isEmpty()) graphics.renderItem(part, 1, 1);
             else graphics.blit(GunRefitScreen.ICONS_TEXTURE, 2, 2, nativeSize - 4, nativeSize - 4,

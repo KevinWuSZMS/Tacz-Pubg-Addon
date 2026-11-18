@@ -40,15 +40,18 @@ public final class InventorySettingsScreen extends Screen {
     }
     @Override protected void init() {
         setDragging(false);
+        int tabWidth = (width - 32) / 3;
         addRenderableWidget(Button.builder(Component.translatable("screen.tacz_pubg.inventory.hotbar"), b -> switchPage(0))
-                .bounds(10, 34, (width - 26) / 2, 20).build()).active = page != 0;
+                .bounds(10, 34, tabWidth, 20).build()).active = page != 0;
         addRenderableWidget(Button.builder(Component.translatable("screen.tacz_pubg.inventory.ammo_stacks"), b -> switchPage(1))
-                .bounds(16 + (width - 26) / 2, 34, (width - 26) / 2, 20).build()).active = page != 1;
+                .bounds(16 + tabWidth, 34, tabWidth, 20).build()).active = page != 1;
+        addRenderableWidget(Button.builder(Component.translatable("screen.tacz_pubg.inventory.pickup"), b -> switchPage(2))
+                .bounds(22 + 2 * tabWidth, 34, tabWidth, 20).build()).active = page != 2;
         addRenderableWidget(Button.builder(Component.translatable("screen.tacz_pubg.inventory.apply_draft"), b -> commit())
                 .bounds(width - 126, height - 26, 116, 20).build());
         addRenderableWidget(Button.builder(Component.translatable("gui.cancel"), b -> onClose())
                 .bounds(10, height - 26, 90, 20).build());
-        if (page == 0) initHotbar(); else initAmmo();
+        if (page == 0) initHotbar(); else if (page == 1) initAmmo(); else initPickup();
     }
     private void initHotbar() {
         limit = null; list = null;
@@ -69,6 +72,16 @@ public final class InventorySettingsScreen extends Screen {
     }
     private Component label(int slot) {
         return Component.literal((slot + 1) + "  ").append(Component.translatable("screen.tacz_pubg.inventory.role." + draft.hotbar().get(slot)));
+    }
+    private void initPickup() {
+        limit = null; list = null;
+        Component mode = Component.translatable(draft.pubgDirectEquip()
+                ? "screen.tacz_pubg.inventory.pickup_equip" : "screen.tacz_pubg.inventory.pickup_store");
+        addRenderableWidget(Button.builder(Component.translatable("screen.tacz_pubg.inventory.pubg_direct_equip", mode), b -> {
+            draft = draft.withPubgDirectEquip(!draft.pubgDirectEquip());
+            rebuildWidgets();
+        }).bounds(14, 76, width - 28, 24).tooltip(Tooltip.create(
+                Component.translatable("screen.tacz_pubg.inventory.pubg_direct_equip_hint"))).build());
     }
     private void initAmmo() {
         int listWidth = Math.max(80, Math.min(Math.max(132, (width - 26) * 3 / 5), width - 102));
@@ -144,7 +157,7 @@ public final class InventorySettingsScreen extends Screen {
         graphics.drawCenteredString(font, title, width / 2, 12, 0xffffffff);
         if (page == 0) {
             graphics.drawString(font, Component.translatable("screen.tacz_pubg.inventory.match_only"), 14, 61, 0xffbcd4bd);
-        } else {
+        } else if (page == 1) {
             LootCatalog.Choice choice = ammo.stream().filter(value -> value.id().equals(selected)).findFirst().orElse(null);
             if (choice != null) {
                 graphics.renderItem(choice.preview(), right, 66);
@@ -154,6 +167,10 @@ public final class InventorySettingsScreen extends Screen {
             graphics.drawString(font, Component.translatable("screen.tacz_pubg.inventory.stack_limit"), right, 93, 0xffdddddd);
             graphics.drawWordWrap(font, Component.translatable("screen.tacz_pubg.inventory.stack_hint",
                     InventorySettings.DEFAULT_AMMO_STACK, InventorySettings.MAX_AMMO_STACK), right, 170, rightWidth, 0xffaaaaaa);
+        } else {
+            graphics.drawString(font, Component.translatable("screen.tacz_pubg.inventory.match_only"), 14, 61, 0xffbcd4bd);
+            graphics.drawWordWrap(font, Component.translatable("screen.tacz_pubg.inventory.pubg_direct_equip_hint"),
+                    14, 112, width - 28, 0xffaaaaaa);
         }
         if (!error.isEmpty()) graphics.drawString(font, font.plainSubstrByWidth(error, width - 20), 10, height - 43, 0xffff8888);
     }

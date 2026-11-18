@@ -109,8 +109,12 @@ public final class RoundLootService {
                 seen < c.serial() && c.map().dimension().equals(level.dimension().location()) && c.map().contains(entity.getX(), entity.getZ()));
         if (stale) { event.setCanceled(true); entity.discard(); return; }
         entity.getPersistentData().putLong(SEEN, data.serial);
-        for (var round : data.active.values()) if (round.map().dimension().equals(level.dimension().location())
-                && round.map().contains(entity.getX(), entity.getZ())) { mark(stack, round.token()); break; }
+        markCurrentRound(level, entity.getX(), entity.getZ(), stack);
+    }
+    /** Marks a detached drop before its spawn, so transaction snapshots include normal provenance. */
+    public static void markCurrentRound(ServerLevel level, double x, double z, ItemStack stack) {
+        for (var round : data(level.getServer()).active.values()) if (round.map().dimension().equals(level.dimension().location())
+                && round.map().contains(x, z)) { mark(stack, round.token()); break; }
     }
     private static void mark(ItemStack stack, String token) {
         if (!stack.isEmpty() && MARK != null && !stack.has(MARK))

@@ -2843,5 +2843,16 @@
   "gui.tacz_pubg.pickup_action": "Pick up %s ×%s",
   "message.tacz_pubg.flight.jump_action": "Jump",
   "message.tacz_pubg.flight.deploy_action": "Deploy parachute",
-  "screen.tacz_pubg.throwable.cook_control": "[%s] Cook"
+  "screen.tacz_pubg.throwable.cook_control": "[%s] Cook",
+  "screen.tacz_pubg.inventory.pubg.action.pickup": "Pick up",
+  "screen.tacz_pubg.inventory.pubg.action.attach": "Attach",
+  "screen.tacz_pubg.inventory.pubg.action.equip": "Equip",
+  "screen.tacz_pubg.inventory.pubg.action.unload": "Remove",
+  "screen.tacz_pubg.inventory.pubg.action.use": "Use",
+  "screen.tacz_pubg.inventory.pubg.refit_hint": "Left click: modify",
+  "screen.tacz_pubg.inventory.pickup": "Pickup",
+  "screen.tacz_pubg.inventory.pubg_direct_equip": "Nearby right-click: %s",
+  "screen.tacz_pubg.inventory.pickup_equip": "Equip directly",
+  "screen.tacz_pubg.inventory.pickup_store": "Store in inventory",
+  "screen.tacz_pubg.inventory.pubg_direct_equip_hint": "Choose the default action when right-clicking nearby items. Dragging still follows the chosen destination."
 }

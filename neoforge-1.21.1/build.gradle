@@ -400,6 +400,7 @@ tasks.named('check').configure { dependsOn droppedLootTransitionChecks }
         parachuteRopeLodChecks: 'com.example.examplemod.zones.match.flight.client.ParachuteRopeLodChecks',
         inventorySettingsChecks: 'com.example.examplemod.inventory.InventorySettingsChecks',
         pubgInventoryChecks: 'com.example.examplemod.inventory.PubgInventoryChecks',
+        pubgInventoryInteractionChecks: 'com.example.examplemod.inventory.client.PubgInventoryInteractionChecks',
         pubgInventoryLayoutChecks: 'com.example.examplemod.inventory.client.PubgInventoryLayoutChecks',
         pubgInventoryCharacterChecks: 'com.example.examplemod.inventory.client.PubgInventoryCharacterChecks',
         pubgRefitChecks: 'com.example.examplemod.inventory.client.PubgRefitChecks',

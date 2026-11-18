@@ -2700,5 +2700,16 @@
   "b3f89e6ba971": "screen.tacz_pubg.battle_settings.field.combat.counter_flash_opacity",
   "0d8d3ce04245": "message.tacz_pubg.flight.jump_action",
   "882f83ab1a3d": "message.tacz_pubg.flight.deploy_action",
-  "252927c26d79": "screen.tacz_pubg.throwable.cook_control"
+  "252927c26d79": "screen.tacz_pubg.throwable.cook_control",
+  "d116dde17255": "screen.tacz_pubg.inventory.pickup",
+  "f02ff2fb5898": "screen.tacz_pubg.inventory.pubg_direct_equip",
+  "3755e71acf33": "screen.tacz_pubg.inventory.pickup_equip",
+  "f9a5f60492cf": "screen.tacz_pubg.inventory.pickup_store",
+  "e6723c125753": "screen.tacz_pubg.inventory.pubg_direct_equip_hint",
+  "1472a9b9422d": "screen.tacz_pubg.inventory.pubg.action.pickup",
+  "14b1218abb57": "screen.tacz_pubg.inventory.pubg.action.attach",
+  "0c70b1c94dd5": "screen.tacz_pubg.inventory.pubg.action.equip",
+  "f1fafc912c0e": "screen.tacz_pubg.inventory.pubg.action.unload",
+  "2f0c1bea2c99": "screen.tacz_pubg.inventory.pubg.action.use",
+  "fead47989fe8": "screen.tacz_pubg.inventory.pubg.refit_hint"
 }

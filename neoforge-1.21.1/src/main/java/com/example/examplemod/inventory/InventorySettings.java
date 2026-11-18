@@ -11,9 +11,13 @@ import java.util.Set;
 /** Immutable world rules, shared by all loot tiers. Capacity is per individual item, not per stack. */
 public record InventorySettings(List<String> hotbar, Map<String, Double> capacityOverrides,
                                 Map<String, Integer> ammoStackLimits, boolean autoEquipmentReplacement,
-                                boolean autoAttachmentEquip) {
+                                boolean autoAttachmentEquip, boolean pubgDirectEquip) {
     public InventorySettings(List<String> hotbar, Map<String, Double> capacityOverrides, Map<String, Integer> ammoStackLimits) {
         this(hotbar, capacityOverrides, ammoStackLimits, false, false);
+    }
+    public InventorySettings(List<String> hotbar, Map<String, Double> capacityOverrides, Map<String, Integer> ammoStackLimits,
+                             boolean autoEquipmentReplacement, boolean autoAttachmentEquip) {
+        this(hotbar, capacityOverrides, ammoStackLimits, autoEquipmentReplacement, autoAttachmentEquip, true);
     }
     public static final int DEFAULT_AMMO_STACK = 999;
     public static final int MAX_AMMO_STACK = 4096;
@@ -53,28 +57,31 @@ public record InventorySettings(List<String> hotbar, Map<String, Double> capacit
             if (previous >= 3) values.set(previous, "free");
         }
         values.set(slot, role);
-        return new InventorySettings(values, capacityOverrides, ammoStackLimits, autoEquipmentReplacement, autoAttachmentEquip);
+        return new InventorySettings(values, capacityOverrides, ammoStackLimits, autoEquipmentReplacement, autoAttachmentEquip, pubgDirectEquip);
     }
     public InventorySettings withCapacity(String key, Double value) {
         var values = new LinkedHashMap<>(capacityOverrides);
         if (value == null) values.remove(key); else values.put(key, value);
-        return new InventorySettings(hotbar, values, ammoStackLimits, autoEquipmentReplacement, autoAttachmentEquip);
+        return new InventorySettings(hotbar, values, ammoStackLimits, autoEquipmentReplacement, autoAttachmentEquip, pubgDirectEquip);
     }
     public InventorySettings withAmmoLimit(String id, Integer value) {
         var values = new LinkedHashMap<>(ammoStackLimits);
         if (value == null) values.remove(id); else values.put(id, value);
-        return new InventorySettings(hotbar, capacityOverrides, values, autoEquipmentReplacement, autoAttachmentEquip);
+        return new InventorySettings(hotbar, capacityOverrides, values, autoEquipmentReplacement, autoAttachmentEquip, pubgDirectEquip);
     }
     public InventorySettings withAutoEquipmentReplacement(boolean enabled) {
-        return new InventorySettings(hotbar, capacityOverrides, ammoStackLimits, enabled, autoAttachmentEquip);
+        return new InventorySettings(hotbar, capacityOverrides, ammoStackLimits, enabled, autoAttachmentEquip, pubgDirectEquip);
     }
     public InventorySettings withAutoAttachmentEquip(boolean enabled) {
-        return new InventorySettings(hotbar, capacityOverrides, ammoStackLimits, autoEquipmentReplacement, enabled);
+        return new InventorySettings(hotbar, capacityOverrides, ammoStackLimits, autoEquipmentReplacement, enabled, pubgDirectEquip);
+    }
+    public InventorySettings withPubgDirectEquip(boolean enabled) {
+        return new InventorySettings(hotbar, capacityOverrides, ammoStackLimits, autoEquipmentReplacement, autoAttachmentEquip, enabled);
     }
     public static InventorySettings parse(JsonElement element) {
         if (element == null || element.isJsonNull()) return defaults();
         JsonObject root = element.getAsJsonObject();
-        if (!Set.of("hotbar", "capacityOverrides", "ammoStackLimits", "autoEquipmentReplacement", "autoAttachmentEquip").containsAll(root.keySet()))
+        if (!Set.of("hotbar", "capacityOverrides", "ammoStackLimits", "autoEquipmentReplacement", "autoAttachmentEquip", "pubgDirectEquip").containsAll(root.keySet()))
             throw new IllegalArgumentException("Unknown inventory setting");
         var hotbar = root.has("hotbar") ? new ArrayList<String>() : new ArrayList<>(defaults().hotbar());
         if (root.has("hotbar")) for (var value : root.getAsJsonArray("hotbar")) {
@@ -95,10 +102,13 @@ public record InventorySettings(List<String> hotbar, Map<String, Double> capacit
             limits.put(entry.getKey(), entry.getValue().getAsBigDecimal().intValueExact());
         });
         return new InventorySettings(hotbar, capacities, limits, flag(root, "autoEquipmentReplacement"),
-                flag(root, "autoAttachmentEquip"));
+                flag(root, "autoAttachmentEquip"), flag(root, "pubgDirectEquip", true));
     }
     private static boolean flag(JsonObject root, String key) {
-        if (!root.has(key)) return false;
+        return flag(root, key, false);
+    }
+    private static boolean flag(JsonObject root, String key, boolean fallback) {
+        if (!root.has(key)) return fallback;
         var value = root.get(key);
         if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isBoolean())
             throw new IllegalArgumentException(key + " must be boolean");

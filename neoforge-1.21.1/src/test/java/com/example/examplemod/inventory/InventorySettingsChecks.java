@@ -9,6 +9,7 @@ public final class InventorySettingsChecks {
     public static void main(String[] args) {
         var initial = InventorySettings.defaults();
         check(!initial.autoEquipmentReplacement() && !initial.autoAttachmentEquip(), "automatic features default off");
+        check(initial.pubgDirectEquip(), "PUBG nearby right-click defaults to direct equipment without enabling global automation");
         check(initial.hotbar().equals(List.of("long_gun", "long_gun", "handgun", "melee", "throwable", "free",
                 "med_kit", "first_aid_kit", "bandage")), "PC number defaults and free 6");
         var changed = initial.withRole(5, "med_kit");
@@ -25,6 +26,31 @@ public final class InventorySettingsChecks {
                 "editing hotbar, volume or ammunition keeps both independent toggles");
         check(!retained.withAutoEquipmentReplacement(false).autoEquipmentReplacement()
                 && retained.withAutoEquipmentReplacement(false).autoAttachmentEquip(), "equipment toggle cannot erase attachment choice");
+        var storeFirst = retained.withPubgDirectEquip(false).withRole(5, "boost")
+                .withCapacity("item:minecraft:stone", .5).withAmmoLimit("cbrg:ammo_762", 600)
+                .withAutoEquipmentReplacement(false).withAutoAttachmentEquip(false);
+        check(!storeFirst.pubgDirectEquip(), "hotbar, capacity, stack and legacy auto edits preserve explicit store-first choice");
+        check(retained.withPubgDirectEquip(false).autoEquipmentReplacement()
+                        && retained.withPubgDirectEquip(false).autoAttachmentEquip(),
+                "PUBG pickup choice does not alter existing automatic equipment or attachment preferences");
+        for (boolean equipment : new boolean[] {false, true}) for (boolean attachments : new boolean[] {false, true}) {
+            var legacy = new InventorySettings(initial.hotbar(), initial.capacityOverrides(), initial.ammoStackLimits(), equipment, attachments);
+            check(legacy.pubgDirectEquip() && legacy.autoEquipmentReplacement() == equipment && legacy.autoAttachmentEquip() == attachments,
+                    "legacy constructor adds the PUBG default without overwriting explicit auto flags");
+            for (boolean direct : new boolean[] {false, true}) {
+                var preference = legacy.withPubgDirectEquip(direct);
+                var world = new LootConfigModel.Document(LootConfigModel.General.defaults(), List.of(),
+                        LootConfigModel.GunSettings.defaults().withInventory(preference));
+                check(LootConfigModel.parse(LootConfigModel.toJson(world)).gunSettings().inventory().equals(preference),
+                        "world JSON roundtrip preserves every pickup/automation flag combination");
+                String wireJson = new com.google.gson.Gson().toJson(preference);
+                check(InventorySettings.parse(JsonParser.parseString(wireJson)).equals(preference),
+                        "inventory state JSON preserves the explicit pickup choice");
+                var oldJson = JsonParser.parseString(wireJson).getAsJsonObject(); oldJson.remove("pubgDirectEquip");
+                check(InventorySettings.parse(oldJson).equals(legacy),
+                        "an older inventory record migrates only the missing PUBG pickup preference");
+            }
+        }
         var document = new LootConfigModel.Document(LootConfigModel.General.defaults(), List.of(),
                 LootConfigModel.GunSettings.defaults().withInventory(changed).withOriginalIcons(true).withLowPolyModels(true));
         check(LootConfigModel.parse(LootConfigModel.toJson(document)).equals(document), "all per-item rules survive world JSON");
@@ -43,6 +69,8 @@ public final class InventorySettingsChecks {
         rejects(() -> InventorySettings.parse(JsonParser.parseString("{\"capacityOverrides\":{\"ammo:cbrg:ammo_762\":\"0.7\"}}")), "string capacity rejected");
         rejects(() -> InventorySettings.parse(JsonParser.parseString("{\"autoEquipmentReplacement\":\"true\"}")), "string auto toggle rejected");
         rejects(() -> InventorySettings.parse(JsonParser.parseString("{\"autoAttachmentEquip\":1}")), "numeric auto toggle rejected");
+        for (String invalid : new String[] {"\"true\"", "1", "null", "[]"})
+            rejects(() -> InventorySettings.parse(JsonParser.parseString("{\"pubgDirectEquip\":" + invalid + "}")), "nonboolean PUBG pickup preference rejected");
         System.out.println("Inventory setting checks passed: " + checks);
     }
     private static void rejects(Runnable run, String message) {

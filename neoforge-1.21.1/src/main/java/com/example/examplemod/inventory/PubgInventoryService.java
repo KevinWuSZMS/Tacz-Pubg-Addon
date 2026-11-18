@@ -182,36 +182,73 @@ public final class PubgInventoryService {
     }
 
     private static boolean pickup(ServerPlayer player, GroundLootEntity loot) {
-        ItemStack before = loot.getItem().copy(); int count = loot.getQuantity();
-        ItemStack[] guns = {live(player, 0).copy(), live(player, 1).copy(), live(player, 2).copy()};
-        loot.pickup(player);
-        boolean taken = loot.isRemoved() || count != loot.getQuantity() || !ItemStack.isSameItemSameComponents(before, loot.getItem());
-        if (taken) {
-            acquired(player, before);
-            if (before.getItem() instanceof IAttachment) for (int i = 0; i < 3; i++)
-                if (!ItemStack.matches(guns[i], live(player, i))) { sound(player, before, false, i); break; }
+        return pickup(player, loot, InventoryConfig.current(player).pubgDirectEquip());
+    }
+
+    private static boolean pickup(ServerPlayer player, GroundLootEntity loot, boolean directEquip) {
+        ItemStack source = loot.getItem();
+        if (directEquip) {
+            if (source.getItem() instanceof IAttachment attachment) {
+                int target = attachmentTarget(player, source, attachment.getType(source));
+                // Once selected, a failed replacement must not silently modify a different gun.
+                if (target >= 0) return attach(player, -1, target, loot, attachment.getType(source).name(), false);
+            }
+            int equipment = equipmentSlot(player, source);
+            if (equipment >= 0) return move(player, -1, equipment, loot);
+            if (MatchInventoryService.weapon(source)) {
+                int[] priority = PubgInventoryTargets.priority(player.getInventory().selected);
+                for (int target : priority) if (accepts(player, target, source) && live(player, target).isEmpty())
+                    return move(player, -1, target, loot);
+                int selected = player.getInventory().selected;
+                return selected < 3 && accepts(player, selected, source) && move(player, -1, selected, loot);
+            }
         }
-        return taken;
+        return storeGround(player, loot);
+    }
+
+    /** Explicitly collecting into the list never invokes passive auto-equipment hooks. */
+    private static boolean storeGround(ServerPlayer player, GroundLootEntity ground) {
+        if (MatchInventoryService.weapon(ground.getItem())) return false;
+        Plan plan = new Plan(player);
+        ItemStack source = ground.getItem().copy();
+        MatchInventoryService.prepareStack(player, source);
+        int low = 0, high = Math.min(ground.getQuantity(), 33 * Math.min(source.getMaxStackSize(),
+                player.getInventory().getMaxStackSize(source)));
+        ItemStack[] before = plan.copyItems();
+        // Find the largest quantity that satisfies both physical slots and final carrying limits.
+        while (low < high) {
+            int amount = low + (high - low + 1) / 2;
+            plan.restoreItems(before);
+            if (plan.store(source.copyWithCount(amount)) && plan.valid()) low = amount;
+            else high = amount - 1;
+        }
+        plan.restoreItems(before);
+        if (low == 0 || !plan.store(source.copyWithCount(low))) return false;
+        if (!plan.finish(ground, ground.getItem().copy(), low)) return false;
+        acquired(player, source); return true;
+    }
+
+    private static int equipmentSlot(Player player, ItemStack source) {
+        if (BackpackService.isBackpack(source)) return 41;
+        EquipmentSlot slot = player.getEquipmentSlotForItem(source);
+        return slot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR ? 36 + slot.getIndex() : -1;
+    }
+
+    private static int attachmentTarget(ServerPlayer player, ItemStack incoming, AttachmentType type) {
+        for (int slot : PubgInventoryTargets.priority(player.getInventory().selected)) {
+            ItemStack gun = live(player, slot);
+            if (!compatible(gun, incoming, type)) continue;
+            ItemStack old = ((IGun) gun.getItem()).getAttachment(player.registryAccess(), gun, type);
+            if (!ItemStack.isSameItemSameComponents(old, incoming)) return slot;
+        }
+        return -1;
     }
 
     private static boolean rightClick(ServerPlayer player, int from, ItemStack source) {
         if (from >= 36 && from <= 39) return move(player, from, -1, null);
         if (source.getItem() instanceof IAttachment attachment) {
-            List<Integer> priority = new ArrayList<>(); int selected = player.getInventory().selected;
-            if (selected < 3) priority.add(selected);
-            for (int i = 0; i < 3; i++) if (!priority.contains(i)) priority.add(i);
-            String rejectedReason = null;
-            for (int slot : priority) if (compatible(live(player, slot), source, attachment.getType(source))) {
-                FAILURE.remove(player.getUUID());
-                if (attach(player, from, slot, null, attachment.getType(source).name(), false)) {
-                    FAILURE.remove(player.getUUID());
-                    return true;
-                }
-                String reason = FAILURE.remove(player.getUUID());
-                if (rejectedReason == null) rejectedReason = reason;
-            }
-            if (rejectedReason != null) FAILURE.put(player.getUUID(), rejectedReason);
-            return false;
+            int target = attachmentTarget(player, source, attachment.getType(source));
+            return target >= 0 && attach(player, from, target, null, attachment.getType(source).name(), false);
         }
         if (source.getItem() instanceof BackpackItem || source.getItem() instanceof com.example.examplemod.zones.match.flight.ParachuteItem)
             return from == 41 ? removeBackpack(player) : move(player, from, 41, null);
@@ -221,65 +258,58 @@ public final class PubgInventoryService {
             MatchInventoryService.selectAndUse(player, BuiltInRegistries.ITEM.getKey(source.getItem()).getPath());
             return player.isUsingItem();
         }
+        // Gun cards reserve left-click for refitting and dragging for explicit slot changes.
+        if (MatchInventoryService.weapon(source)) return false;
         String role = MatchInventoryService.role(source); int target = InventoryConfig.current(player).slot(role);
         return target >= 0 && from != target && move(player, from, target, null);
     }
 
     private static boolean removeBackpack(ServerPlayer player) {
-        ItemStack before = BackpackService.equipped(player).copy();
-        BackpackService.removeToInventory(player);
-        return !before.isEmpty() && BackpackService.equipped(player).isEmpty();
+        return move(player, 41, -1, null);
     }
 
     private static boolean move(ServerPlayer player, int from, int to, GroundLootEntity ground) {
         if (to < -1 || to == 40 || to > 41 || ground == null && from == to) return false;
-        ItemStack source = ground == null ? live(player, from) : ground.getItem();
-        if (to == -1 && ground != null) return pickup(player, ground);
-        if (to == 41 && ground == null && from < 36) {
-            ItemStack before = BackpackService.equipped(player).copy(); BackpackService.equipInventory(player, from);
-            return !ItemStack.matches(before, BackpackService.equipped(player));
-        }
-        if (ground != null && MatchInventoryService.weapon(source) && to >= 0 && to < 3) {
-            ItemStack original = source.copy(); boolean result = ground.exchangeWeapon(player, to);
-            if (result) acquired(player, original); return result;
-        }
-        var category = EquipmentInventoryRules.category(source);
-        if (ground != null && category != null && (to == 41 && category == EquipmentInventoryRules.Category.BACKPACK
-                || category != EquipmentInventoryRules.Category.BACKPACK && to == 36 + category.slot.getIndex())) {
-            ItemStack original = source.copy(); boolean result = ground.exchangeEquipment(player, false);
-            if (result) acquired(player, original); return result;
-        }
-        if (to == 41) return false;
+        if (ground == null && (from < 0 || from > 41 || from == 40)) return false;
+        if (to == -1 && ground != null) return storeGround(player, ground);
+        ItemStack source = (ground == null ? live(player, from) : ground.getItem()).copy();
+        if (source.isEmpty()) return false;
         Plan plan = new Plan(player);
-        if (ground == null && from == 41) {
-            if (to != -1) return false;
-            return removeBackpack(player);
-        }
         if (ground == null && from >= 36 && !canRemove(player, source)) return false;
-        if (to >= 36 && !canRemove(player, plan.items[to])) return false;
+        if (to >= 36 && !canRemove(player, plan.get(to))) return false;
+        int amount = 0;
         if (to == -1) {
             if (from < 36) return false;
-            plan.items[from] = ItemStack.EMPTY;
-            if (!plan.store(source.copy())) return false;
+            plan.set(from, ItemStack.EMPTY);
+            plan.returnOrDrop(source);
         } else {
             if (!accepts(player, to, source)) return false;
-            int amount = to >= 36 || MatchInventoryService.weapon(source) ? 1 : source.getCount();
-            ItemStack old = plan.items[to];
-            if (ground == null) {
+            amount = to >= 36 || MatchInventoryService.weapon(source) ? 1 : source.getCount();
+            ItemStack old = plan.get(to).copy();
+            if (ground == null && to < 36 && from < 36) {
                 if (!old.isEmpty() && !accepts(player, from, old)) return false;
-                if (amount == source.getCount()) { plan.items[to] = source.copy(); plan.items[from] = old.copy(); }
-                else { plan.items[from].shrink(amount); plan.items[to] = source.copyWithCount(amount); if (!plan.store(old.copy())) return false; }
+                if (amount == source.getCount()) { plan.set(to, source); plan.set(from, old); }
+                else { plan.items[from].shrink(amount); plan.set(to, source.copyWithCount(amount)); plan.returnOrDrop(old); }
             } else {
-                plan.items[to] = source.copyWithCount(amount); if (!plan.store(old.copy())) return false;
-                if (!plan.valid() || !ground.consumeForInventory(player, source, amount)) return false;
-                plan.commit(); acquired(player, source); return true;
+                if (ground == null) {
+                    if (from >= 36) return false;
+                    plan.items[from].shrink(amount);
+                }
+                ItemStack replacement = source.copyWithCount(amount);
+                if (ground != null && MatchInventoryService.weapon(replacement))
+                    AutoAttachmentService.transferCompatibleAttachments(player, old, replacement);
+                plan.set(to, replacement);
+                plan.returnOrDrop(old);
             }
         }
-        if (!plan.valid()) return false; plan.commit(); return true;
+        if (!plan.finish(ground, source, amount)) return false;
+        if (ground != null) acquired(player, source);
+        return true;
     }
 
     private static boolean accepts(Player player, int slot, ItemStack item) {
         if (item.isEmpty()) return true;
+        if (slot == 41) return item.getCount() == 1 && BackpackService.isBackpack(item);
         if (slot < 0 || slot == 40 || slot > 39) return false;
         if (slot >= 36) return item.getCount() == 1 && !(item.getItem() instanceof BackpackItem)
                 && !(item.getItem() instanceof com.example.examplemod.zones.match.flight.ParachuteItem)
@@ -309,9 +339,10 @@ public final class PubgInventoryService {
         if (gun.getCount() != 1 || !(gun.getItem() instanceof IGun api) || api.hasAttachmentLock(gun)
                 || type == AttachmentType.NONE || !api.allowAttachmentType(gun, type)
                 || !DefaultAssets.isEmptyAttachmentId(api.getBuiltInAttachmentId(gun, type))) return false;
-        ItemStack old = api.getAttachment(player.registryAccess(), gun, type);
+        ItemStack old = api.getAttachment(player.registryAccess(), gun, type).copy();
         if (old.isEmpty() && !DefaultAssets.isEmptyAttachmentId(api.getAttachmentId(gun, type))) return false;
-        ItemStack incoming = unload ? ItemStack.EMPTY : ground == null ? live(player, from) : ground.getItem();
+        if (!old.isEmpty() && !physicalAttachment(old, type)) return false;
+        ItemStack incoming = unload ? ItemStack.EMPTY : (ground == null ? live(player, from) : ground.getItem()).copy();
         if (unload) {
             if (old.getCount() != 1 || !(old.getItem() instanceof IAttachment part) || part.getType(old) != type) return false;
             api.unloadAttachment(player.registryAccess(), gun, type);
@@ -325,9 +356,8 @@ public final class PubgInventoryService {
             if (ground == null) plan.items[from].shrink(1);
         }
         if (!preservesAmmunition(player, live(player, target), gun, api)) return false;
-        if (!plan.store(old.copy()) || !plan.valid()) return false;
-        if (ground != null && !ground.consumeForInventory(player, incoming, 1)) return false;
-        plan.commit();
+        plan.returnOrDrop(old);
+        if (!plan.finish(ground, incoming, 1)) return false;
         if (ground != null) acquired(player, incoming);
         sound(player, unload ? old : incoming, unload, target);
         return true;
@@ -350,27 +380,35 @@ public final class PubgInventoryService {
         if (attachment.getCount() != 1 || !(attachment.getItem() instanceof IAttachment part) || part.getType(attachment) != type) return false;
         api.unloadAttachment(player.registryAccess(), gun, type);
         if (!api.getAttachment(player.registryAccess(), gun, type).isEmpty()
-                || !DefaultAssets.isEmptyAttachmentId(api.getAttachmentId(gun, type))
-                || !preservesAmmunition(player, live(player, source), gun, api)) return false;
+                || !DefaultAssets.isEmptyAttachmentId(api.getAttachmentId(gun, type))) return false;
         if (target >= 0) {
             ItemStack destination = plan.items[target];
             if (!compatible(destination, attachment, type)) return false;
             IGun destinationApi = (IGun) destination.getItem();
             ItemStack displaced = destinationApi.getAttachment(player.registryAccess(), destination, type).copy();
             if (displaced.isEmpty() && !DefaultAssets.isEmptyAttachmentId(destinationApi.getAttachmentId(destination, type))
+                    || !displaced.isEmpty() && !physicalAttachment(displaced, type)
                     || ItemStack.isSameItemSameComponents(displaced, attachment)) return false;
             destinationApi.installAttachment(player.registryAccess(), destination, attachment.copy());
             if (!ItemStack.matches(attachment, destinationApi.getAttachment(player.registryAccess(), destination, type))
-                    || !preservesAmmunition(player, live(player, target), destination, destinationApi)
-                    || !plan.store(displaced)) return false;
+                    || !preservesAmmunition(player, live(player, target), destination, destinationApi)) return false;
+            if (!displaced.isEmpty() && compatible(gun, displaced, type)) {
+                api.installAttachment(player.registryAccess(), gun, displaced.copy());
+                if (!ItemStack.matches(displaced, api.getAttachment(player.registryAccess(), gun, type))) return false;
+            } else plan.returnOrDrop(displaced);
         }
-        if (!plan.valid() || !plan.stillCurrent()) return false;
-        if (target == -2) {
-            if (!commitDrop(player, attachment, plan)) return false;
-        } else plan.commit();
+        // A magazine exchange is checked after both final magazines are present, never at the
+        // temporary unloaded state, which may be smaller than either physical magazine.
+        if (!preservesAmmunition(player, live(player, source), gun, api)) return false;
+        if (target == -2) plan.drops.add(attachment.copy());
+        if (!plan.finish(null, ItemStack.EMPTY, 0)) return false;
         sound(player, attachment, true, source);
         if (target >= 0) sound(player, attachment, false, target);
         return true;
+    }
+
+    private static boolean physicalAttachment(ItemStack item, AttachmentType type) {
+        return item.getCount() == 1 && item.getItem() instanceof IAttachment attachment && attachment.getType(item) == type;
     }
 
     private static boolean preservesAmmunition(ServerPlayer player, ItemStack originalGun, ItemStack gun, IGun api) {
@@ -390,25 +428,28 @@ public final class PubgInventoryService {
         Plan plan = new Plan(player);
         if (from == 41) plan.pack = ItemStack.EMPTY;
         else plan.items[from] = ItemStack.EMPTY;
-        return plan.valid() && commitDrop(player, original, plan);
+        plan.drops.add(original.copy());
+        return plan.finish(null, ItemStack.EMPTY, 0);
     }
 
-    private static boolean commitDrop(ServerPlayer player, ItemStack original, Plan plan) {
+    private static GroundLootEntity prepareDrop(ServerPlayer player, ItemStack original) {
         // Keep vanilla ownership/pickup delay while checking the actual entity spawn result.
         var previousCapture = player.captureDrops(new ArrayList<>());
         net.minecraft.world.entity.item.ItemEntity dropped;
         try { dropped = player.drop(original.copy(), false, false); }
         finally { player.captureDrops(previousCapture); }
-        if (dropped == null) return false;
+        if (dropped == null) return null;
         var toss = new net.neoforged.neoforge.event.entity.item.ItemTossEvent(dropped, player);
-        if (net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(toss).isCanceled() || !plan.stillCurrent()) return false;
+        if (net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(toss).isCanceled()) return null;
         dropped = toss.getEntity();
+        // A callback may veto or alter metadata, but may not substitute/resize the physical item.
+        if (!ItemStack.matches(original, dropped.getItem())) return null;
         var data = new net.minecraft.nbt.CompoundTag();
         dropped.addAdditionalSaveData(data);
         int delay = data.getShort("PickupDelay");
-        if (!DroppedLootPolicy.legalDelay(delay) || !DroppedLootPolicy.legalQuantity(dropped.getItem().getCount())) return false;
+        if (!DroppedLootPolicy.legalDelay(delay) || !DroppedLootPolicy.legalQuantity(dropped.getItem().getCount())) return null;
         GroundLootEntity carrier = LootSpawnRegistration.GROUND_LOOT.get().create(player.level());
-        if (carrier == null) return false;
+        if (carrier == null) return null;
         // The authority creates the final carrier immediately; display never waits for pickup eligibility.
         carrier.initializeDrop(dropped.getItem(), player.blockPosition().below(), delay, dropped.getTarget());
         carrier.setPos(player.getX(), player.getY() + .2, player.getZ());
@@ -416,15 +457,8 @@ public final class PubgInventoryService {
         carrier.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
         carrier.setCustomName(dropped.getCustomName()); carrier.setCustomNameVisible(dropped.isCustomNameVisible());
         GroundLootWorldPhysics.prepareSpawn(carrier);
-        try {
-            if (!player.level().addFreshEntity(carrier)) { carrier.discard(); return false; }
-        } catch (RuntimeException error) {
-            carrier.discard();
-            com.example.examplemod.ExampleMod.LOGGER.warn("Inventory drop spawn failed; source retained", error);
-            return false;
-        }
-        if (!plan.stillCurrent()) { carrier.discard(); return false; }
-        plan.commit(); return true;
+        com.example.examplemod.lootspawn.RoundLootService.markCurrentRound(player.serverLevel(), carrier.getX(), carrier.getZ(), carrier.getItem());
+        return carrier;
     }
 
     private static final class Plan {
@@ -432,50 +466,96 @@ public final class PubgInventoryService {
         final ItemStack[] items = new ItemStack[41];
         final ItemStack[] original = new ItemStack[41];
         final ItemStack originalPack;
+        final ItemStack originalCursor;
+        final List<ItemStack> originalTemporary;
+        final int selected, beforeUsed, beforeCapacity, equipmentLimit;
+        final int[] beforeEquipment;
+        final InventorySettings settings;
+        final boolean active;
+        final List<ItemStack> drops = new ArrayList<>();
         ItemStack pack;
         Plan(ServerPlayer player) {
             this.player = player; originalPack = BackpackService.equipped(player).copy(); pack = originalPack.copy();
+            originalCursor = player.containerMenu.getCarried().copy(); selected = player.getInventory().selected;
+            originalTemporary = com.example.examplemod.backpack.BackpackOwnership.temporaryInputs(player).stream()
+                    .map(slot -> slot.getItem().copy()).toList();
+            beforeUsed = BackpackService.used(player); beforeCapacity = BackpackService.capacity(player);
+            equipmentLimit = EquipmentInventoryRules.limit(player); beforeEquipment = EquipmentInventoryRules.carried(player);
+            settings = InventoryConfig.current(player);
+            active = InventoryConfig.active(player);
             for (int i = 0; i < 41; i++) { original[i] = live(player, i).copy(); items[i] = original[i].copy(); }
+        }
+        ItemStack get(int slot) { return slot == 41 ? pack : items[slot]; }
+        void set(int slot, ItemStack value) { if (slot == 41) pack = value.copy(); else items[slot] = value.copy(); }
+        ItemStack[] copyItems() {
+            ItemStack[] copy = new ItemStack[items.length];
+            for (int i = 0; i < items.length; i++) copy[i] = items[i].copy();
+            return copy;
+        }
+        void restoreItems(ItemStack[] saved) { for (int i = 0; i < items.length; i++) items[i] = saved[i].copy(); }
+        void returnOrDrop(ItemStack returning) {
+            if (returning.isEmpty()) return;
+            ItemStack[] saved = copyItems();
+            if (store(returning.copy()) && valid()) return;
+            restoreItems(saved);
+            drops.add(returning.copy());
         }
         boolean store(ItemStack returning) {
             if (returning.isEmpty()) return true;
             MatchInventoryService.prepareStack(player, returning);
             if (MatchInventoryService.weapon(returning)) return false;
+            String role = MatchInventoryService.role(returning);
+            int dedicated = role.equals("free") ? -1 : settings.slot(role);
+            if (dedicated >= 3) put(dedicated, returning);
+            if (returning.isEmpty()) return true;
             for (int pass = 0; pass < 2; pass++) for (int index = 0; index < 33; index++) {
                 int slot = index < 27 ? index + 9 : index - 24;
                 if (!accepts(player, slot, returning)) continue;
                 ItemStack existing = items[slot];
                 if (existing.isEmpty() != (pass == 1) || !existing.isEmpty() && !ItemStack.isSameItemSameComponents(existing, returning)) continue;
-                int limit = Math.min(returning.getMaxStackSize(), player.getInventory().getMaxStackSize(returning));
-                int amount = Math.min(returning.getCount(), Math.max(0, limit - existing.getCount()));
-                if (amount == 0) continue;
-                if (existing.isEmpty()) items[slot] = returning.split(amount); else { existing.grow(amount); returning.shrink(amount); }
+                put(slot, returning);
                 if (returning.isEmpty()) return true;
             }
             return false;
         }
+        void put(int slot, ItemStack returning) {
+            ItemStack existing = items[slot];
+            if (!accepts(player, slot, returning) || !existing.isEmpty() && !ItemStack.isSameItemSameComponents(existing, returning)) return;
+            int limit = Math.min(returning.getMaxStackSize(), player.getInventory().getMaxStackSize(returning));
+            if (returning.getItem() instanceof com.tacz.guns.api.item.IAmmo) limit = Math.min(limit, InventoryConfig.ammoStackLimit(player, returning));
+            int amount = Math.min(returning.getCount(), Math.max(0, limit - existing.getCount()));
+            if (amount <= 0) return;
+            if (existing.isEmpty()) items[slot] = returning.split(amount);
+            else { existing.grow(amount); returning.shrink(amount); }
+        }
         boolean valid() {
-            long before = BackpackService.used(player), after = before;
-            for (int i = 0; i < 36; i++) after += (long) weight(i, items[i]) - weight(i, live(player, i));
+            long after = beforeUsed;
+            for (int i = 0; i < 36; i++) after += (long) weight(i, items[i]) - weight(i, original[i]);
             int tier = pack.getItem() instanceof BackpackItem backpack ? backpack.tier() : 0;
             int capacity = BackpackRules.capacity(tier, items[38].getItem() instanceof ArmorItem);
-            if (!PubgInventoryRules.capacityChange(before, after, BackpackService.capacity(player), capacity)) return false;
-            int limit = EquipmentInventoryRules.limit(player);
-            if (limit > 0) {
-                int[] beforeCounts = EquipmentInventoryRules.carried(player), next = beforeCounts.clone();
+            if (!PubgInventoryRules.capacityChange(beforeUsed, after, beforeCapacity, capacity)) return false;
+            if (equipmentLimit > 0) {
+                int[] next = beforeEquipment.clone();
                 for (int i = 0; i < 41; i++) {
-                    int[] old = EquipmentInventoryRules.counts(live(player, i)), now = EquipmentInventoryRules.counts(items[i]);
+                    int[] old = EquipmentInventoryRules.counts(original[i]), now = EquipmentInventoryRules.counts(items[i]);
                     for (int c = 0; c < 3; c++) next[c] += now[c] - old[c];
                 }
                 int[] oldPack = EquipmentInventoryRules.counts(originalPack), nextPack = EquipmentInventoryRules.counts(pack);
                 for (int c = 0; c < 3; c++) next[c] += nextPack[c] - oldPack[c];
-                for (int c = 0; c < 3; c++) if (next[c] > Math.max(limit, beforeCounts[c])) return false;
+                for (int c = 0; c < 3; c++) if (next[c] > Math.max(equipmentLimit, beforeEquipment[c])) return false;
             }
             return true;
         }
         boolean stillCurrent() {
-            if (!ItemStack.matches(originalPack, BackpackService.equipped(player))) return false;
+            if (!player.isAlive() || player.isSpectator() || player.containerMenu != player.inventoryMenu
+                    || selected != player.getInventory().selected || !settings.equals(InventoryConfig.current(player))
+                    || active != InventoryConfig.active(player)
+                    || !ItemStack.matches(originalCursor, player.containerMenu.getCarried())
+                    || !ItemStack.matches(originalPack, BackpackService.equipped(player))) return false;
             for (int i = 0; i < 41; i++) if (!ItemStack.matches(original[i], live(player, i))) return false;
+            var temporary = com.example.examplemod.backpack.BackpackOwnership.temporaryInputs(player);
+            if (temporary.size() != originalTemporary.size()) return false;
+            for (int i = 0; i < temporary.size(); i++) if (!ItemStack.matches(originalTemporary.get(i), temporary.get(i).getItem())) return false;
             return true;
         }
         int weight(int slot, ItemStack stack) {
@@ -484,10 +564,55 @@ public final class PubgInventoryService {
                     && !InventoryConfig.current(player).capacityOverrides().containsKey(InventoryConfig.key(stack));
             return melee ? 0 : BackpackWeights.weight(player, stack);
         }
-        void commit() {
+        boolean finish(GroundLootEntity ground, ItemStack expected, int amount) {
+            expected = expected.copy();
+            if (!valid() || !stillCurrent()) return false;
+            int quantity = ground == null ? 0 : ground.getQuantity();
+            if (ground != null && !groundCurrent(ground, expected, quantity, amount)) return false;
+            List<GroundLootEntity> spawned = new ArrayList<>();
+            List<ItemStack> expectedDrops = new ArrayList<>();
+            boolean committed = false, wroteInventory = false;
+            try {
+                for (ItemStack item : drops) {
+                    GroundLootEntity carrier = prepareDrop(player, item);
+                    if (carrier == null) return false;
+                    spawned.add(carrier);
+                    expectedDrops.add(carrier.getItem().copyWithCount(carrier.getQuantity()));
+                    if (!stillCurrent() || !player.level().addFreshEntity(carrier)) return false;
+                }
+                if (!stillCurrent() || !valid() || ground != null && !groundCurrent(ground, expected, quantity, amount)) return false;
+                for (int i = 0; i < spawned.size(); i++) {
+                    GroundLootEntity carrier = spawned.get(i); ItemStack item = expectedDrops.get(i);
+                    if (carrier.isRemoved() || carrier.getQuantity() != item.getCount()
+                            || !ItemStack.isSameItemSameComponents(carrier.getItem(), item)) return false;
+                }
+                wroteInventory = true;
+                apply();
+                if (ground != null && !ground.consumeForInventory(player, expected, amount)) return false;
+                committed = true;
+                changed(player);
+                return true;
+            } catch (RuntimeException error) {
+                com.example.examplemod.ExampleMod.LOGGER.warn("Inventory transaction failed; uncommitted items retained", error);
+                return false;
+            } finally {
+                if (!committed) {
+                    spawned.forEach(GroundLootEntity::discard);
+                    if (wroteInventory) {
+                        for (int i = 0; i < 41; i++) player.getInventory().setItem(i, original[i].copy());
+                        if (!ItemStack.matches(originalPack, BackpackService.equipped(player))) BackpackService.setEquipped(player, originalPack);
+                        changed(player);
+                    }
+                }
+            }
+        }
+        boolean groundCurrent(GroundLootEntity ground, ItemStack expected, int quantity, int amount) {
+            return nearby(player, ground) && ground.canBePickedUpBy(player) && amount > 0 && amount <= quantity
+                    && quantity == ground.getQuantity() && ItemStack.isSameItemSameComponents(expected, ground.getItem());
+        }
+        void apply() {
             for (int i = 0; i < 41; i++) if (!ItemStack.matches(items[i], live(player, i))) player.getInventory().setItem(i, items[i]);
             if (!ItemStack.matches(originalPack, pack)) BackpackService.setEquipped(player, pack);
-            changed(player);
         }
     }
 }
