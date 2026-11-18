@@ -56,7 +56,9 @@ public final class EquipmentPickupGameTests {
             player.setItemSlot(EquipmentSlot.HEAD, old.copy());
             ItemStack incoming = named(new ItemStack(ArmorRegistration.HELMET_2.get()), "replacement");
             GroundLootEntity source = f.ground(incoming, 1);
+            var pickupPosition = source.position();
             helper.assertTrue(source.exchangeEquipment(player, false), "F equipment replacement failed with a full inventory");
+            helper.assertTrue(source.position().equals(pickupPosition), "The replaced helmet moved away from the pickup position");
             helper.assertTrue(ItemStack.matches(player.getItemBySlot(EquipmentSlot.HEAD), incoming)
                     && source.getQuantity() == 1 && ItemStack.matches(source.getItem(), old),
                     "Single-carrier swap changed count, original damage, or components");
@@ -203,6 +205,9 @@ public final class EquipmentPickupGameTests {
             helper.assertTrue(source.exchangeEquipment(player, false) && source.getQuantity() == 2
                     && ItemStack.matches(incoming, player.getItemBySlot(EquipmentSlot.HEAD)),
                     "Unlimited spare rule stopped explicit F from equipping exactly one item");
+            helper.assertTrue(!player.level().getEntitiesOfClass(GroundLootEntity.class, source.getBoundingBox(),
+                    e -> e.position().equals(source.position()) && ItemStack.matches(e.getItem(), old)).isEmpty(),
+                    "The replaced helmet did not stay at the remaining pile's position");
             ItemStack first = named(new ItemStack(Items.CROSSBOW), "first gun");
             ItemStack second = named(new ItemStack(Items.CROSSBOW), "selected gun");
             second.setDamageValue(31);

@@ -305,7 +305,10 @@ public final class PubgInventoryService {
                 plan.set(to, replacement);
                 if (old.getItem() instanceof IGun) {
                     if (!stripGunForDrop(plan, old, to)) return false;
-                } else plan.returnOrDrop(old);
+                } else {
+                    if (to == 39 || to == 38 || to == 41) plan.equipmentDropSource = ground;
+                    plan.returnOrDrop(old);
+                }
             }
         }
         if (!plan.finish(ground, source, amount)) return false;
@@ -513,10 +516,10 @@ public final class PubgInventoryService {
         return plan.finish(null, ItemStack.EMPTY, 0);
     }
 
-    private static GroundLootEntity prepareDrop(ServerPlayer player, ItemStack original) {
+    private static GroundLootEntity prepareDrop(ServerPlayer player, ItemStack original, GroundLootEntity source) {
         Player previous = PREPARING_DROP.get();
         PREPARING_DROP.set(player);
-        try { return prepareDropEntity(player, original); }
+        try { return prepareDropEntity(player, original, source); }
         finally {
             if (previous == null) PREPARING_DROP.remove();
             else PREPARING_DROP.set(previous);
@@ -526,7 +529,7 @@ public final class PubgInventoryService {
     /** Toss callbacks may veto this preview; active-item cancellation waits for commit. */
     public static boolean isPreparingDrop(Player player) { return PREPARING_DROP.get() == player; }
 
-    private static GroundLootEntity prepareDropEntity(ServerPlayer player, ItemStack original) {
+    private static GroundLootEntity prepareDropEntity(ServerPlayer player, ItemStack original, GroundLootEntity source) {
         // Keep vanilla ownership/pickup delay while checking the actual entity spawn result.
         var previousCapture = player.captureDrops(new ArrayList<>());
         net.minecraft.world.entity.item.ItemEntity dropped;
@@ -546,17 +549,21 @@ public final class PubgInventoryService {
         if (carrier == null) return null;
         // The authority creates the final carrier immediately; display never waits for pickup eligibility.
         carrier.initializeDrop(dropped.getItem(), player.blockPosition().below(), delay, dropped.getTarget());
-        carrier.setPos(player.getX(), player.getY() + .2, player.getZ());
-        carrier.setYRot(DroppedLootPolicy.yaw(dropped)); carrier.yRotO = carrier.getYRot();
-        carrier.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+        if (source != null) carrier.placeAtSource(source);
+        else {
+            carrier.setPos(player.getX(), player.getY() + .2, player.getZ());
+            carrier.setYRot(DroppedLootPolicy.yaw(dropped)); carrier.yRotO = carrier.getYRot();
+            carrier.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+            GroundLootWorldPhysics.prepareSpawn(carrier);
+        }
         carrier.setCustomName(dropped.getCustomName()); carrier.setCustomNameVisible(dropped.isCustomNameVisible());
-        GroundLootWorldPhysics.prepareSpawn(carrier);
         com.example.examplemod.lootspawn.RoundLootService.markCurrentRound(player.serverLevel(), carrier.getX(), carrier.getZ(), carrier.getItem());
         return carrier;
     }
 
     private static final class Plan {
         final ServerPlayer player;
+        GroundLootEntity equipmentDropSource;
         final ItemStack[] items = new ItemStack[41];
         final ItemStack[] original = new ItemStack[41];
         final ItemStack[] originalReferences = new ItemStack[41];
@@ -702,7 +709,7 @@ public final class PubgInventoryService {
             boolean committed = false, wroteInventory = false;
             try {
                 for (ItemStack item : drops) {
-                    GroundLootEntity carrier = prepareDrop(player, item);
+                    GroundLootEntity carrier = prepareDrop(player, item, equipmentDropSource);
                     if (carrier == null) return false;
                     spawned.add(carrier);
                     expectedDrops.add(carrier.getItem().copyWithCount(carrier.getQuantity()));

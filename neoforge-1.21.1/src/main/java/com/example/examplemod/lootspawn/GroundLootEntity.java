@@ -384,15 +384,15 @@ public final class GroundLootEntity extends Entity {
     private boolean commitExchange(Player player, ItemStack replacement, ItemStack previous, ItemStack rollback,
             java.util.function.Consumer<ItemStack> equip) {
         int quantity = getQuantity();
-        LootSpawnPlacement.Slot offset = previous.isEmpty() ? null : LootSpawnPlacement.replacementDrop(this, previous);
+        LootSpawnPlacement.Slot offset = !previous.isEmpty() && com.example.examplemod.inventory.MatchInventoryService.weapon(replacement)
+                ? LootSpawnPlacement.replacementDrop(this, previous) : null;
         GroundLootEntity displaced = null;
         if (!previous.isEmpty() && quantity > 1) {
             displaced = LootSpawnRegistration.GROUND_LOOT.get().create(level());
             if (displaced == null) return false;
             displaced.initializeDrop(previous, offset == null ? anchor : offset.floor(), 10, null);
-            displaced.setPos(position());
-            displaced.setYRot(getYRot());
-            if (offset != null) displaced.placeReplacement(offset);
+            if (offset == null) displaced.placeAtSource(this);
+            else displaced.placeReplacement(offset);
         }
         try {
             // Spawn cancellation leaves source and worn item completely untouched.
@@ -422,10 +422,21 @@ public final class GroundLootEntity extends Entity {
 
     private void placeReplacement(LootSpawnPlacement.Slot slot) {
         setPos(slot.x(), slot.y(), slot.z());
+        setYRot(slot.yaw());
         setDeltaMovement(Vec3.ZERO);
         setOnGround(true);
         setPhysicsState(RESTING);
         hasImpulse = true;
+    }
+
+    public void placeAtSource(GroundLootEntity source) {
+        anchor = source.anchor;
+        setPos(source.position());
+        setYRot(source.getYRot());
+        setDeltaMovement(source.getDeltaMovement());
+        setOnGround(source.onGround());
+        setPhysicsState(source.entityData.get(PHYSICS_STATE));
+        setOldPosAndRot();
     }
 
     private static int physicalCapacity(Inventory inventory, ItemStack stack) {
