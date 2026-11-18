@@ -99,8 +99,9 @@ public final class GroundGunModelRenderer {
         }
     }
     private static void inventoryRotation(PoseStack poses, float turn) {
+        // BedrockModel already converts authored Y-up coordinates to Y-down, matching GUI space.
+        // Keep the muzzle (authored -Z) pointing left without flipping the magazine above the gun.
         poses.mulPose(Axis.YP.rotationDegrees(90 + turn));
-        poses.scale(1, -1, 1);
     }
 
     static AABB bounds(ItemStack stack, BakedModel bakedModel) {

@@ -2,9 +2,11 @@ package com.example.examplemod.vitals.client;
 
 import com.example.examplemod.hud.client.HudLayoutClient;
 import com.example.examplemod.hud.client.HudLayoutModel;
+import com.example.examplemod.inventory.client.PubgInventoryScreen;
 import com.example.examplemod.pubgsettings.PubgSettingsService;
 import com.example.examplemod.keybindings.client.BindingVisuals;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.tacz.guns.client.gui.GunRefitScreen;
 import java.util.ArrayList;
 import java.util.List;
 import me.xjqsh.lrtactical.api.item.IThrowable;
@@ -71,6 +73,7 @@ public final class WeaponStackRenderer {
     public static void render(GuiGraphics g) {
         var mc = Minecraft.getInstance();
         if (!MatchVitalsHud.active() || mc.player == null || mc.options.hideGui) return;
+        if (mc.screen instanceof PubgInventoryScreen || mc.screen instanceof GunRefitScreen) return;
         var b = bounds(g.guiWidth(), g.guiHeight());
         draw(g, b, false);
     }

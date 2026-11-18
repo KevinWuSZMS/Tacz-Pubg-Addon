@@ -1,6 +1,5 @@
 package com.example.examplemod.inventory.client;
 
-import com.example.examplemod.backpack.client.BackpackClient;
 import com.example.examplemod.inventory.InventoryConfig;
 import com.example.examplemod.keybindings.BindingInput;
 import com.example.examplemod.keybindings.mixin.KeyMappingAccess;
@@ -8,7 +7,6 @@ import com.example.examplemod.lean.client.LeanClient;
 import com.example.examplemod.movement.client.MovementClient;
 import com.tacz.guns.api.client.gameplay.IClientPlayerGunOperator;
 import com.tacz.guns.api.item.IGun;
-import com.tacz.guns.client.gui.GunRefitScreen;
 import com.tacz.guns.client.input.AimKey;
 import com.tacz.guns.client.input.FireSelectKey;
 import com.tacz.guns.client.input.InspectKey;
@@ -22,6 +20,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.player.Input;
 import net.minecraft.network.chat.Component;
@@ -44,9 +43,9 @@ public final class PubgInventoryInput {
         registered = true;
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, (ScreenEvent.Opening event) -> {
             refreshMatch();
-            if (event.getNewScreen() instanceof InventoryScreen && inMatch() && !preferVanilla)
+            if (vanillaInventory(event.getNewScreen()) && inMatch() && !preferVanilla)
                 event.setNewScreen(new PubgInventoryScreen());
-            if (event.getNewScreen() instanceof PubgInventoryScreen) {
+            if (event.getNewScreen() instanceof PubgInventoryScreen || event.getNewScreen() instanceof PubgGunRefitScreen) {
                 combatReleaseRequired = true;
                 PRESSED.clear();
                 closeKeyReady = !inventoryKeyHeld();
@@ -54,7 +53,7 @@ public final class PubgInventoryInput {
             }
         });
         NeoForge.EVENT_BUS.addListener((ScreenEvent.Init.Post event) -> {
-            if (event.getScreen() instanceof InventoryScreen screen && inMatch())
+            if (vanillaInventory(event.getScreen()) && event.getScreen() instanceof AbstractContainerScreen<?> screen && inMatch())
                 event.addListener(Button.builder(Component.literal("PUBG"), b -> openPubg())
                         .bounds(Math.min(screen.width - 48, screen.getGuiLeft() + screen.getXSize() + 3),
                                 screen.getGuiTop() + 27, 45, 20).build());
@@ -62,7 +61,7 @@ public final class PubgInventoryInput {
         NeoForge.EVENT_BUS.addListener(EventPriority.HIGHEST, (ClientTickEvent.Pre event) -> {
             refreshMatch();
             var mc = Minecraft.getInstance();
-            if (activeScreen()) {
+            if (activeScreen() || mc.screen instanceof PubgGunRefitScreen) {
                 if (!inventoryKeyHeld()) closeKeyReady = true;
                 combatReleaseRequired = true;
                 stopCombat();
@@ -92,6 +91,10 @@ public final class PubgInventoryInput {
     }
 
     public static boolean activeScreen() { return Minecraft.getInstance().screen instanceof PubgInventoryScreen; }
+
+    private static boolean vanillaInventory(net.minecraft.client.gui.screens.Screen screen) {
+        return screen instanceof InventoryScreen || screen instanceof CreativeModeInventoryScreen;
+    }
 
     public static boolean acceptsMovement() {
         var mc = Minecraft.getInstance();
@@ -157,20 +160,23 @@ public final class PubgInventoryInput {
         mc.setScreen(new InventoryScreen(mc.player));
     }
 
-    /** Keep TaCZ's actual screen and its refit transform, audio and laser-color close behavior. */
+    /** The ordinary refit key still edits the selected gun. */
     public static boolean openRefit() {
         var mc = Minecraft.getInstance();
-        if (mc.player == null || !mc.player.isAlive() || mc.player.isSpectator()) return false;
-        var stack = mc.player.getMainHandItem();
+        return mc.player != null && openRefit(mc.player.getInventory().selected);
+    }
+
+    /** TaCZ's native refit reads main hand; select and synchronize this exact hotbar gun first. */
+    public static boolean openRefit(int slot) {
+        var mc = Minecraft.getInstance();
+        if (mc.player == null || mc.getConnection() == null || !inMatch() || mc.player.isSpectator()
+                || slot < 0 || slot >= 9 || !(mc.screen instanceof PubgInventoryScreen previous)) return false;
+        var stack = mc.player.getInventory().getItem(slot);
         var gun = IGun.getIGunOrNull(stack);
         if (gun == null || gun.hasAttachmentLock(stack)) return false;
-        var previous = mc.screen;
-        mc.setScreen(new GunRefitScreen() {
-            @Override public void onClose() {
-                super.onClose();
-                if (previous instanceof PubgInventoryScreen && inMatch()) Minecraft.getInstance().setScreen(previous);
-            }
-        });
+        mc.player.getInventory().selected = slot;
+        mc.getConnection().send(new ServerboundSetCarriedItemPacket(slot));
+        mc.setScreen(new PubgGunRefitScreen(previous, slot));
         return true;
     }
 
@@ -179,7 +185,7 @@ public final class PubgInventoryInput {
         var mc = Minecraft.getInstance();
         boolean fresh = PRESSED.add(((long) key << 32) ^ (scan & 0xffffffffL));
         if (mc.screen.getFocused() instanceof EditBox box && box.canConsumeInput()) return false;
-        if (mc.options.keyInventory.matches(key, scan) || BackpackClient.matchesOpenKey(key, scan)) {
+        if (mc.options.keyInventory.matches(key, scan)) {
             if (fresh && closeKeyReady) mc.screen.onClose();
             return true;
         }
@@ -244,10 +250,12 @@ public final class PubgInventoryInput {
     }
 
     private static boolean inventoryKeyHeld() {
-        return BindingInput.pollKeyboardHeld(Minecraft.getInstance().options.keyInventory) || BackpackClient.openKeyHeld();
+        return BindingInput.pollKeyboardHeld(Minecraft.getInstance().options.keyInventory);
     }
 
-    public static boolean blocksCombat() { return activeScreen() || combatReleaseRequired; }
+    public static boolean blocksCombat() {
+        return activeScreen() || Minecraft.getInstance().screen instanceof PubgGunRefitScreen || combatReleaseRequired;
+    }
 
     private static boolean combatHeld() {
         var mc = Minecraft.getInstance();

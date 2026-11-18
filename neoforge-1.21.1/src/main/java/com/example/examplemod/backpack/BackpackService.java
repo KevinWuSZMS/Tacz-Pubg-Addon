@@ -3,7 +3,6 @@ package com.example.examplemod.backpack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -201,13 +200,6 @@ public final class BackpackService {
         setEquipped(player, ItemStack.EMPTY);
         player.getInventory().setItem(empty, old);
     }
-    public static void open(ServerPlayer player) {
-        if (player.isSpectator() || !player.isAlive()) return;
-        player.openMenu(new SimpleMenuProvider((id, inventory, owner) -> new BackpackMenu(id, inventory),
-                Component.translatable("container.tacz_pubg.backpack")));
-        sync(player, true);
-    }
-
     /**
      * Reject external transfers before vanilla mutates either source or destination.
      * Deliberately do not roll back crafting or transaction callbacks after execution.

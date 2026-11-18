@@ -61,7 +61,9 @@ def main():
     usage = {key: [] for key in en}
     for path in (MAIN / 'java').rglob('*.java'):
         source = path.read_text(encoding='utf-8')
-        for match in re.finditer(r'Texts\.(tr|of|matches)\("([^"]+)"', source):
+        # A concatenated prefix is not a complete key. Validate whole literal arguments here;
+        # computed keys are still covered by the catalog and transport-index checks above.
+        for match in re.finditer(r'Texts\.(tr|of|matches)\("([^"]+)"(?=\s*[,\)])', source):
             kind, key = match.groups()
             # Native components may reuse vanilla or another mod's language catalog.
             # String transport keys still require our own stable index below.

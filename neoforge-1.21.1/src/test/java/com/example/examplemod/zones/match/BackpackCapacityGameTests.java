@@ -5,6 +5,7 @@ import com.example.examplemod.backpack.BackpackRegistration;
 import com.example.examplemod.backpack.BackpackService;
 import com.example.examplemod.backpack.BackpackWeights;
 import com.example.examplemod.inventory.InventorySettings;
+import com.example.examplemod.inventory.PubgInventoryService;
 import com.example.examplemod.lootconfig.LootConfigModel;
 import com.example.examplemod.lootconfig.LootConfigStore;
 import com.example.examplemod.lootspawn.GroundLootEntity;
@@ -25,6 +26,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -36,6 +38,7 @@ import net.minecraft.world.item.component.BundleContents;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.util.FakePlayer;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -188,6 +191,81 @@ public final class BackpackCapacityGameTests {
                     "Removing a 400-space pack into a 70-space inventory bypassed capacity");
             helper.succeed();
         }
+    }
+
+    @GameTest(template = "empty", templateNamespace = "tacz_pubg")
+    public static void pubgInventoryDropsCarriedArmorAndIndependentBackpack(GameTestHelper helper) throws Exception {
+        try (Fixture f = new Fixture(helper)) {
+            for (int slot : new int[] {9, 39, 41}) {
+                f.player.getInventory().clearContent();
+                BackpackService.setEquipped(f.player, ItemStack.EMPTY);
+                ItemStack original = named(slot == 9 ? new ItemStack(Items.STONE, 64)
+                        : slot == 39 ? new ItemStack(Items.IRON_HELMET) : item("backpack_2"), "PUBG drop " + slot);
+                if (slot == 41) BackpackService.setEquipped(f.player, original);
+                else f.player.getInventory().setItem(slot, original);
+                ItemStack unrelated = new ItemStack(Items.DIRT, 5);
+                f.player.getInventory().setItem(10, unrelated.copy());
+                helper.assertTrue(pubgDrop(f.player, slot), "PUBG drop rejected source slot " + slot);
+                helper.assertTrue((slot == 41 ? BackpackService.equipped(f.player) : f.player.getInventory().getItem(slot)).isEmpty()
+                                && ItemStack.matches(unrelated, f.player.getInventory().getItem(10)),
+                        "PUBG drop retained its source or changed unrelated inventory at " + slot);
+                var drops = f.itemDrops(original);
+                helper.assertTrue(drops.size() == 1 && ItemStack.matches(original, drops.getFirst().getItem()),
+                        "PUBG drop did not preserve one complete source stack at " + slot);
+                ItemEntity dropped = drops.getFirst();
+                helper.assertTrue(dropped.position().distanceToSqr(f.player.position().add(0, .2, 0)) < 1.0e-12
+                                && dropped.getDeltaMovement().lengthSqr() == 0,
+                        "PUBG inventory drop retained the forward throw trajectory at " + slot);
+                var saved = new net.minecraft.nbt.CompoundTag();
+                dropped.addAdditionalSaveData(saved);
+                helper.assertTrue(saved.getShort("PickupDelay") > 0,
+                        "Dropping at the feet erased the vanilla pickup delay at " + slot);
+            }
+            helper.succeed();
+        }
+    }
+
+    @GameTest(template = "empty", templateNamespace = "tacz_pubg")
+    public static void pubgEquipmentDropsRespectRemainingCapacityAndSpawnCancellation(GameTestHelper helper) throws Exception {
+        try (Fixture f = new Fixture(helper)) {
+            for (int slot : new int[] {38, 41}) {
+                f.player.getInventory().clearContent();
+                BackpackService.setEquipped(f.player, ItemStack.EMPTY);
+                ItemStack original = named(slot == 38 ? new ItemStack(Items.IRON_CHESTPLATE) : item("backpack_3"),
+                        "blocked PUBG drop " + slot);
+                if (slot == 41) BackpackService.setEquipped(f.player, original);
+                else f.player.getInventory().setItem(slot, original);
+                f.player.getInventory().setItem(9, new ItemStack(Items.STONE, 64));
+                f.player.getInventory().setItem(10, new ItemStack(Items.STONE, 16));
+                helper.assertTrue(!pubgDrop(f.player, slot)
+                                && ItemStack.matches(original, slot == 41 ? BackpackService.equipped(f.player) : f.player.getInventory().getItem(slot))
+                                && BackpackService.used(f.player) == 80_000 && f.itemDrops(original).isEmpty(),
+                        "Dropping equipment bypassed the smaller remaining capacity at " + slot);
+                f.player.getInventory().setItem(10, ItemStack.EMPTY);
+                Consumer<ItemTossEvent> tossVeto = event -> {
+                    if (event.getPlayer() == f.player) event.setCanceled(true);
+                };
+                NeoForge.EVENT_BUS.addListener(tossVeto);
+                try { helper.assertTrue(!pubgDrop(f.player, slot), "Canceled toss reported success"); }
+                finally { NeoForge.EVENT_BUS.unregister(tossVeto); }
+                Consumer<EntityJoinLevelEvent> spawnVeto = event -> {
+                    if (event.getEntity() instanceof ItemEntity entity && ItemStack.matches(entity.getItem(), original)) event.setCanceled(true);
+                };
+                NeoForge.EVENT_BUS.addListener(spawnVeto);
+                try { helper.assertTrue(!pubgDrop(f.player, slot), "Canceled entity spawn reported success"); }
+                finally { NeoForge.EVENT_BUS.unregister(spawnVeto); }
+                helper.assertTrue(ItemStack.matches(original, slot == 41 ? BackpackService.equipped(f.player) : f.player.getInventory().getItem(slot))
+                                && BackpackService.used(f.player) == 64_000 && f.itemDrops(original).isEmpty(),
+                        "Canceled equipment drop lost or duplicated the equipped item at " + slot);
+            }
+            helper.succeed();
+        }
+    }
+
+    private static boolean pubgDrop(ServerPlayer player, int slot) throws Exception {
+        var method = PubgInventoryService.class.getDeclaredMethod("drop", ServerPlayer.class, int.class);
+        method.setAccessible(true);
+        return (boolean) method.invoke(null, player, slot);
     }
 
     private static ItemStack item(String id) {

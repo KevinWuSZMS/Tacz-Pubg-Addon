@@ -333,12 +333,14 @@ public final class PubgInventoryService {
     }
 
     private static boolean drop(ServerPlayer player, int from) {
-        if (from < 0 || from > 39) return false;
+        if (from < 0 || from > 41 || from == 40) return false;
         ItemStack original = live(player, from);
         if (original.isEmpty() || from >= 36 && !canRemove(player, original)) return false;
-        Plan plan = new Plan(player); plan.items[from] = ItemStack.EMPTY;
+        Plan plan = new Plan(player);
+        if (from == 41) plan.pack = ItemStack.EMPTY;
+        else plan.items[from] = ItemStack.EMPTY;
         if (!plan.valid()) return false;
-        // Capture the vanilla trajectory without letting ServerPlayer silently ignore spawn failure.
+        // Keep vanilla ownership/pickup delay while checking the actual entity spawn result.
         var previousCapture = player.captureDrops(new ArrayList<>());
         net.minecraft.world.entity.item.ItemEntity dropped;
         try { dropped = player.drop(original.copy(), false, false); }
@@ -347,6 +349,9 @@ public final class PubgInventoryService {
         var toss = new net.neoforged.neoforge.event.entity.item.ItemTossEvent(dropped, player);
         if (net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(toss).isCanceled() || !plan.stillCurrent()) return false;
         dropped = toss.getEntity();
+        // Inventory-to-nearby drops settle at the player's feet; ordinary Q drops keep their trajectory.
+        dropped.setPos(player.getX(), player.getY() + .2, player.getZ());
+        dropped.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
         if (!player.level().addFreshEntity(dropped)) { dropped.discard(); return false; }
         if (!plan.stillCurrent()) { dropped.discard(); return false; }
         plan.commit(); return true;
@@ -356,9 +361,10 @@ public final class PubgInventoryService {
         final ServerPlayer player;
         final ItemStack[] items = new ItemStack[41];
         final ItemStack[] original = new ItemStack[41];
-        final ItemStack pack;
+        final ItemStack originalPack;
+        ItemStack pack;
         Plan(ServerPlayer player) {
-            this.player = player; pack = BackpackService.equipped(player).copy();
+            this.player = player; originalPack = BackpackService.equipped(player).copy(); pack = originalPack.copy();
             for (int i = 0; i < 41; i++) { original[i] = live(player, i).copy(); items[i] = original[i].copy(); }
         }
         boolean store(ItemStack returning) {
@@ -391,12 +397,14 @@ public final class PubgInventoryService {
                     int[] old = EquipmentInventoryRules.counts(live(player, i)), now = EquipmentInventoryRules.counts(items[i]);
                     for (int c = 0; c < 3; c++) next[c] += now[c] - old[c];
                 }
+                int[] oldPack = EquipmentInventoryRules.counts(originalPack), nextPack = EquipmentInventoryRules.counts(pack);
+                for (int c = 0; c < 3; c++) next[c] += nextPack[c] - oldPack[c];
                 for (int c = 0; c < 3; c++) if (next[c] > Math.max(limit, beforeCounts[c])) return false;
             }
             return true;
         }
         boolean stillCurrent() {
-            if (!ItemStack.matches(pack, BackpackService.equipped(player))) return false;
+            if (!ItemStack.matches(originalPack, BackpackService.equipped(player))) return false;
             for (int i = 0; i < 41; i++) if (!ItemStack.matches(original[i], live(player, i))) return false;
             return true;
         }
@@ -408,6 +416,7 @@ public final class PubgInventoryService {
         }
         void commit() {
             for (int i = 0; i < 41; i++) if (!ItemStack.matches(items[i], live(player, i))) player.getInventory().setItem(i, items[i]);
+            if (!ItemStack.matches(originalPack, pack)) BackpackService.setEquipped(player, pack);
             changed(player);
         }
     }

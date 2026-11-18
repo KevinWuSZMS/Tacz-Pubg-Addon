@@ -123,6 +123,11 @@ public final class MedicineUseToast {
     }
 
     private static void render(GuiGraphics graphics) {
+        if (InventoryActionHud.usesInventoryForeground()) return;
+        renderContents(graphics);
+    }
+
+    static void renderContents(GuiGraphics graphics) {
         var mc = Minecraft.getInstance();
         if (!valid() || mc.options.hideGui || mc.getCameraEntity() != mc.player) return;
         Component text = current.label();

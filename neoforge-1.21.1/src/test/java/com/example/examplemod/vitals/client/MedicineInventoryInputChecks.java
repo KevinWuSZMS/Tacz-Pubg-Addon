@@ -2,7 +2,10 @@ package com.example.examplemod.vitals.client;
 
 import java.io.InputStream;
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.JumpInsnNode;
+import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 
@@ -51,7 +54,59 @@ public final class MedicineInventoryInputChecks {
         check(!MedicineInputRules.acceptsContinuation(gap, true, true, false, true, false, false, false), "75 percent cap stops the chain");
         check(!MedicineInputRules.acceptsContinuation(gap, true, true, false, true, false, true, true), "another item use cannot be replaced");
         wiring();
-        System.out.println("MedicineInventoryInputChecks: " + checks + " chain-gap, cancellation, movement and client wiring checks passed; no game launched.");
+        hudWiring();
+        System.out.println("MedicineInventoryInputChecks: " + checks + " chain-gap, cancellation, movement and foreground HUD checks passed; no game launched.");
+    }
+
+    private static void hudWiring() throws Exception {
+        String vitals = "com/example/examplemod/vitals/client/";
+        String throwable = "com/example/examplemod/throwables/client/ThrowableClient";
+        String foreground = vitals + "InventoryActionHud";
+        gatedDraw(method(read(vitals + "PubgMedicineHud"), "render"), foreground, vitals + "PubgMedicineHud", "renderContents", false);
+        gatedDraw(method(read(vitals + "MedicineUseToast"), "render"), foreground, vitals + "MedicineUseToast", "renderContents", false);
+        gatedDraw(method(read(throwable), "render"), foreground, throwable, "renderStatus", false);
+        var pass = method(read(foreground), "renderForeground");
+        gatedDraw(pass, foreground, vitals + "PubgMedicineHud", "renderContents", true);
+        check(callCount(pass, vitals + "PubgMedicineHud", "renderContents") == 1
+                        && callCount(pass, throwable, "renderInventoryStatus") == 1
+                        && callCount(pass, vitals + "MedicineUseToast", "renderContents") == 1,
+                "inventory foreground draws medicine/rescue, throwable status and use messages exactly once");
+        check(!calls(pass, "net/minecraft/client/gui/Gui", "render")
+                        && !calls(pass, vitals + "WeaponStackRenderer", "render"),
+                "foreground does not redraw the whole HUD or weapon thumbnails");
+        boolean explicitDepth = false;
+        for (var instruction : pass.instructions)
+            if (instruction instanceof LdcInsnNode constant && constant.cst instanceof Number number && number.doubleValue() == 1000)
+                explicitDepth = true;
+        check(explicitDepth && calls(pass, "com/mojang/blaze3d/vertex/PoseStack", "translate"),
+                "foreground has explicit depth above the inventory model");
+        int medicine = callIndex(pass, vitals + "PubgMedicineHud", "renderContents");
+        int toast = callIndex(pass, vitals + "MedicineUseToast", "renderContents");
+        int firstFlush = callIndex(pass, "net/minecraft/client/gui/GuiGraphics", "flush");
+        int lastFlush = lastCallIndex(pass, "net/minecraft/client/gui/GuiGraphics", "flush");
+        check(firstFlush >= 0 && firstFlush < medicine && lastFlush > toast,
+                "foreground flushes before and after drawing so buffered translucent geometry is not reordered");
+        var screen = method(read("com/example/examplemod/inventory/client/PubgInventoryScreen"), "render");
+        int foregroundCall = callIndex(screen, foreground, "renderForeground");
+        int tooltip = callIndex(screen, "net/minecraft/client/gui/GuiGraphics", "renderTooltip");
+        check(callCount(screen, foreground, "renderForeground") == 1 && tooltip > foregroundCall,
+                "inventory calls the foreground pass once before item/action tooltips");
+        check(callIndex(screen, "com/mojang/blaze3d/vertex/PoseStack", "popPose") < foregroundCall,
+                "inventory restores a pose before entering the HUD pass");
+    }
+
+    /** Check the compiled branch, not a source-text marker: the other render pass must return. */
+    private static void gatedDraw(MethodNode method, String gateOwner, String drawOwner, String drawName, boolean foreground) {
+        int gate = callIndex(method, gateOwner, "usesInventoryForeground");
+        int draw = callIndex(method, drawOwner, drawName);
+        check(gate >= 0 && draw > gate, method.name + " checks foreground ownership before drawing");
+        var cursor = method.instructions.get(gate).getNext();
+        while (cursor != null && cursor.getOpcode() < 0) cursor = cursor.getNext();
+        check(cursor instanceof JumpInsnNode branch && branch.getOpcode() == (foreground ? Opcodes.IFNE : Opcodes.IFEQ),
+                method.name + " selects the exclusive " + (foreground ? "inventory" : "ordinary HUD") + " pass");
+        cursor = cursor.getNext();
+        while (cursor != null && cursor.getOpcode() < 0) cursor = cursor.getNext();
+        check(cursor != null && cursor.getOpcode() == Opcodes.RETURN, method.name + " skips the other pass without drawing");
     }
 
     private static void wiring() throws Exception {
@@ -100,6 +155,20 @@ public final class MedicineInventoryInputChecks {
             index++;
         }
         return -1;
+    }
+    private static int lastCallIndex(MethodNode method, String owner, String name) {
+        int result = -1, index = 0;
+        for (var instruction : method.instructions) {
+            if (instruction instanceof MethodInsnNode call && call.owner.equals(owner) && call.name.equals(name)) result = index;
+            index++;
+        }
+        return result;
+    }
+    private static int callCount(MethodNode method, String owner, String name) {
+        int result = 0;
+        for (var instruction : method.instructions)
+            if (instruction instanceof MethodInsnNode call && call.owner.equals(owner) && call.name.equals(name)) result++;
+        return result;
     }
     private static void check(boolean pass, String scenario) {
         checks++;

@@ -401,6 +401,7 @@ tasks.named('check').configure { dependsOn droppedLootTransitionChecks }
         inventorySettingsChecks: 'com.example.examplemod.inventory.InventorySettingsChecks',
         pubgInventoryChecks: 'com.example.examplemod.inventory.PubgInventoryChecks',
         pubgInventoryLayoutChecks: 'com.example.examplemod.inventory.client.PubgInventoryLayoutChecks',
+        pubgRefitChecks: 'com.example.examplemod.inventory.client.PubgRefitChecks',
         pubgInventoryInputAbiChecks: 'com.example.examplemod.inventory.PubgInventoryInputAbiChecks',
         inventoryTransferChecks: 'com.example.examplemod.inventory.InventoryTransferChecks',
         matchGunInteractionAbiChecks: 'com.example.examplemod.inventory.MatchGunInteractionAbiChecks',

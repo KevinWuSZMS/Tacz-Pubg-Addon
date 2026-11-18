@@ -47,8 +47,4 @@ public final class BackpackScreen extends AbstractContainerScreen<BackpackMenu> 
         if (mouseX >= leftPos + 6 && mouseX < leftPos + 170 && mouseY >= topPos + 49 && mouseY < topPos + 69)
             graphics.renderTooltip(font, Component.translatable("screen.tacz_pubg.backpack.hint"), mouseX, mouseY);
     }
-    @Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (BackpackClient.OPEN.matches(keyCode, scanCode)) { onClose(); return true; }
-        return super.keyPressed(keyCode, scanCode, modifiers);
-    }
 }

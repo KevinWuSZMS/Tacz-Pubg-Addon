@@ -87,6 +87,10 @@ public final class PubgMedicineHud {
                 Component.keybind("key.tacz_pubg.cancel_use"));
     }
     static void render(GuiGraphics graphics) {
+        if (InventoryActionHud.usesInventoryForeground()) return;
+        renderContents(graphics);
+    }
+    static void renderContents(GuiGraphics graphics) {
         var mc = Minecraft.getInstance();
         var player = mc.player;
         if (player == null || mc.options.hideGui) return;

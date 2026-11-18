@@ -372,6 +372,14 @@ public final class ThrowableClient {
         wasSwimming = swimming;
     }
     private static void render(GuiGraphics graphics) {
+        if (com.example.examplemod.vitals.client.InventoryActionHud.usesInventoryForeground()) return;
+        renderStatus(graphics);
+    }
+    /** Preserve any outstanding fuse/C4 status while the inventory owns the foreground pass. */
+    public static void renderInventoryStatus(GuiGraphics graphics) {
+        if (com.example.examplemod.vitals.client.InventoryActionHud.usesInventoryForeground()) renderStatus(graphics);
+    }
+    private static void renderStatus(GuiGraphics graphics) {
         var mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null) return;
         PubgThrowableItem item = mc.player.isUsingItem() && mc.player.getUseItem().getItem() instanceof PubgThrowableItem throwable

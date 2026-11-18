@@ -14,7 +14,15 @@ public final class PubgInventoryLayoutChecks {
                 require(layout.equipmentY(4) + layout.equipmentSize() < layout.listBottom(), "fifth slot outside viewport");
                 require(layout.weaponTop(3) < layout.listBottom() - 30, "melee and throwable inaccessible");
                 require(layout.visibleRows() >= 6, "inventory rows inaccessible");
-                checks += 7;
+                require(layout.capacityX() > layout.inventoryX() + layout.listWidth()
+                        && layout.capacityX() + 3 < layout.equipmentX(), "capacity bar overlaps inventory or armor");
+                require(layout.capacityTop() + layout.capacityHeight() + 16 < layout.listBottom(), "capacity label clipped");
+                require(layout.overNearby(layout.margin(), layout.listTop()), "nearby leading edge cannot accept a drop");
+                require(!layout.overNearby(layout.margin() - 1, layout.listTop()), "left margin accidentally drops items");
+                require(!layout.overNearby(layout.margin() + layout.listWidth(), layout.listTop()), "column gap accidentally drops items");
+                require(!layout.overNearby(layout.margin(), layout.listTop() - 1), "header accidentally drops items");
+                require(!layout.overNearby(layout.margin(), layout.listBottom()), "footer accidentally drops items");
+                checks += 14;
             }
         }
         System.out.println("PUBG inventory layout: " + checks + " viewport checks passed");

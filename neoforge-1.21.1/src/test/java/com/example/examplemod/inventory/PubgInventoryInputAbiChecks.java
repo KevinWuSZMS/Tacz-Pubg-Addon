@@ -38,10 +38,13 @@ public final class PubgInventoryInputAbiChecks {
             method(read(jar, "com/tacz/guns/api/client/gameplay/IClientPlayerGunOperator"), "getDataHolder", "()L" + GAMEPLAY + "LocalPlayerDataHolder;");
             var refit = read(jar, "com/tacz/guns/client/gui/GunRefitScreen");
             method(refit, "<init>", "()V");
+            method(refit, "init", "()V");
+            method(refit, "render", "(Lnet/minecraft/client/gui/GuiGraphics;IIF)V");
             method(refit, "onClose", "()V");
             mixin("PubgInventoryShootMixin", shoot);
             mixin("PubgInventoryAimMixin", aim);
             mixin("PubgInventoryMeleeMixin", melee);
+            refitRenderMixin(read(jar, "com/tacz/guns/client/event/FirstPersonRenderGunEvent"));
         }
         var minecraft = read("net/minecraft/client/Minecraft");
         method(minecraft, "startAttack", "()Z");
@@ -49,6 +52,23 @@ public final class PubgInventoryInputAbiChecks {
         method(minecraft, "startUseItem", "()V");
         mixin("PubgInventoryCombatMixin", minecraft);
         System.out.println("PubgInventoryInputAbiChecks: " + checks + " installed TaCZ r7 / Minecraft ABI checks passed; no game launched.");
+    }
+    private static void refitRenderMixin(ClassNode target) throws Exception {
+        var nativeMethod = method(target, "applyFirstPersonGunTransform",
+                "(Lnet/minecraft/client/player/LocalPlayer;Lnet/minecraft/world/item/ItemStack;"
+                        + "Lcom/mojang/blaze3d/vertex/PoseStack;Lcom/tacz/guns/client/model/BedrockGunModel;F)V");
+        check((nativeMethod.access & Opcodes.ACC_STATIC) != 0, "refit transform is a static native render entry");
+        var node = read(MIXINS + "PubgGunRefitRenderMixin");
+        var mixin = annotation(node.invisibleAnnotations, "Lorg/spongepowered/asm/mixin/Mixin;");
+        check(List.of(Type.getObjectType(target.name)).equals(value(mixin, "value")), "refit scale targets installed native renderer");
+        var handler = method(node, "taczPubg$scaleRefitPreview", nativeMethod.desc.substring(0, nativeMethod.desc.length() - 2)
+                + "Lorg/spongepowered/asm/mixin/injection/callback/CallbackInfo;)V");
+        check((handler.access & Opcodes.ACC_STATIC) != 0, "refit scale handler is static");
+        var injection = annotation(handler.visibleAnnotations, "Lorg/spongepowered/asm/mixin/injection/Inject;");
+        check(List.of(nativeMethod.name).equals(value(injection, "method")), "refit scale selector resolves to native transform");
+        @SuppressWarnings("unchecked") var sites = (List<AnnotationNode>) value(injection, "at");
+        check(sites.size() == 1 && "TAIL".equals(value(sites.getFirst(), "value")), "refit scale follows all native camera transforms");
+        check(!Boolean.TRUE.equals(value(injection, "cancellable")), "refit scale cannot suppress native rendering");
     }
     private static void mixin(String name, ClassNode target) throws Exception {
         var node = read(MIXINS + name);

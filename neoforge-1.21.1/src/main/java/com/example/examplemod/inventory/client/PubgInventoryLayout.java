@@ -18,4 +18,10 @@ public record PubgInventoryLayout(int width, int height, int margin, int listWid
     public int equipmentY(int index) { return equipmentTop + index * (equipmentSize + 7); }
     public int weaponTop(int slot) { return listTop + slot * weaponHeight(); }
     public int weaponHeight() { return Math.max(54, (listBottom - listTop) * 25 / 100); }
+    public int capacityX() { return equipmentX - 10; }
+    public int capacityTop() { return equipmentY(1); }
+    public int capacityHeight() { return equipmentY(4) + equipmentSize - capacityTop(); }
+    public boolean overNearby(double x, double y) {
+        return x >= margin && x < margin + listWidth && y >= listTop && y < listBottom;
+    }
 }
