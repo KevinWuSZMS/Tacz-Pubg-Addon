@@ -5,6 +5,10 @@
   "method": "ImageGen reference redraw, then white alpha-mask cleanup and resize; not an original pixel extraction.",
   "prompt_summary": "Extract and redraw only the crossed-out kneeling man symbol: big diagonal X, kneeling legs and round head; flat crisp white tintable pictogram on transparent background, no glow.",
   "generated_source": "exec-166a7d10-da0a-4d69-974e-c4a7b38ac46a.png",
+  "color_layers": {
+    "eliminated_cross.png": "Isolated X from the original alpha mask. At alpha >= 64 the X is a separate connected component. Fainter edge pixels follow their nearest component.",
+    "eliminated_figure.png": "Remaining pixels of eliminated.png, aligned to the same canvas. Compositing the two layers restores the original silhouette."
+  },
   "size": [
     96,
     64

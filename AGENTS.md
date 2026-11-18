@@ -28,3 +28,8 @@
 分次治疗在使用完成时固定总恢复预算，分成 5 等份，最后一次在总恢复时长结束时完成。急救包预算为当前生命到 75% 的缺口；后续受伤不扩大已完成治疗的预算。管理员已有的有效自定义时长继续保留；历史绷带4刻极限值迁移为5刻，以容纳5次独立回血。
 
 HUD 的使用进度、总治疗预览、下一次回血段和治疗中状态，须与实际服务端药品时序及比例换算对应。检验结果须区分离线检查、服务端场景和游戏内视觉验收；保持用户正在运行的游戏，除非用户要求关闭或重启。
+
+## PUBG PC 击杀栏参考
+
+- 用户认可的官方素材与伤害来源字典以 [PUBG API Assets 固定版本](https://github.com/pubg/api-assets/tree/32b13b51128b8d8909ae5e77f3b833e01230b24d) 为准。工作区副本位于 `external/pubg-api-assets/`，可直接查阅 `Assets/Icons/Killfeed/` 和 `dictionaries/telemetry/`。素材使用依上游 README 所列条款。
+- 用户认可 [DeepWiki 击杀栏集成指南](https://deepwiki.com/pubg/api-assets/6.1-killfeed-integration) 为事件字段和素材映射的参考。核对端游界面行为时查对应版本的官方补丁，区分击倒者、补杀者、获得击杀者时查 [PUBG 官方遥测事件](https://documentation.pubg.com/en/telemetry-events.html#logplayerkillv2)。本项目的击杀和助攻归属沿用用户指定的队伍规则。

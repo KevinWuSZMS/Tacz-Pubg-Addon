@@ -49,7 +49,8 @@ public final class CombatHudClient {
         HudLayoutClient.registerPreview("combat_messages",(w,h)->new HudLayoutModel.Rect(Math.max(0,w/2-140),(int)(h*.72)-48,280,70),
                 (g,r,s)-> {
                     var settings = PubgSettingsService.client();
-                    CombatMessageRenderer.draw(g, sample(false), false, r.x()+r.width()/2, r.y()+8, r.width(),
+                    Event preview = sample(false);
+                    CombatMessageRenderer.draw(g, preview, preview.attacker().id(), r.x()+r.width()/2, r.y()+8, r.width(),
                             settings.color("combat.text_color"), settings.color("combat.kill_color"), 1);
                     centered(g,text("kills",2),r.x()+r.width()/2,r.y()+32,settings.color("combat.kill_color"),1.4F);
                 });
@@ -83,7 +84,10 @@ public final class CombatHudClient {
         boolean own=value.attacker().id().equals(mc.player.getUUID());
         if(value.type().equals("assist")&&!own) return;
         boolean friendlyVictim = value.friendlyFire() && value.victim().id().equals(mc.player.getUUID());
-        boolean accepted = timeline.offer(value.session(), value.sequence(), value, own || friendlyVictim, !value.type().equals("assist"));
+        boolean personal = own || friendlyVictim;
+        boolean teammate = CombatMessageRenderer.teammateMessage(value, mc.player.getUUID(), current.viewerTeam());
+        boolean accepted = timeline.offer(value.session(), value.sequence(), value, personal || teammate,
+                !value.type().equals("assist"), personal);
         if (accepted && own && !value.friendlyFire())
             counterNotice.event(value.session(),value.type(),value.kills(),value.assists(),timeline.time());
     }
@@ -131,10 +135,9 @@ public final class CombatHudClient {
                 String textColor = event.friendlyFire() ? "combat.kill_color" : event.type().equals("assist")
                         ? "combat.assist_color" : i > 0 ? "combat.older_color" : "combat.text_color";
                 int red = alpha(s.color("combat.kill_color"), a);
-                boolean receiving = event.victim().id().equals(Minecraft.getInstance().player.getUUID());
                 g.pose().pushPose();
                 g.pose().translate(0,-row*positioned.slot(),0);
-                CombatMessageRenderer.draw(g, event, receiving, x + width/2, y + height - 25,
+                CombatMessageRenderer.draw(g, event, Minecraft.getInstance().player.getUUID(), x + width/2, y + height - 25,
                         width, alpha(s.color(textColor), a), red, (float)s.number("combat.message_scale"));
                 g.pose().popPose();
                 if (i == 0 && event.friendlyFire()) {

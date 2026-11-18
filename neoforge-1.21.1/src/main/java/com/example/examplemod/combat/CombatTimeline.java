@@ -19,12 +19,16 @@ public final class CombatTimeline<T> {
         return offer(incoming,order,value,own,true);
     }
     public boolean offer(UUID incoming,long order,T value,boolean own,boolean publicRow) {
+        return offer(incoming, order, value, own, publicRow, own);
+    }
+    public boolean offer(UUID incoming,long order,T value,boolean centerRow,boolean publicRow,boolean personalActivity) {
         if (!incoming.equals(session)||order<=sequence) return false;
         // Packets can arrive between rendered frames of the same game tick. Anchor their
         // push at the last displayed time rather than rewinding to the tick boundary.
         var entry=new MovingEntry<>(new Entry<>(value,tick),Math.max(tick,presentationTime));
         sequence=order; if(publicRow) {feed.add(0,entry); trim(feed,64);}
-        if (own) { personal.add(0,entry); trim(personal,12); markPersonal(); }
+        if (centerRow) { personal.add(0,entry); trim(personal,12); }
+        if (personalActivity) markPersonal();
         return true;
     }
     private static void trim(List<?> values,int count) { if(values.size()>count) values.subList(count,values.size()).clear(); }

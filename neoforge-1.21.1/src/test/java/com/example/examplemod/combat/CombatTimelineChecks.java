@@ -20,6 +20,10 @@ public final class CombatTimelineChecks {
         for(int i=0;i<200;i++)timeline.advance(false);
         check(timeline.personal(3,120).isEmpty()&&timeline.feed(64,120).isEmpty(),"Expired rows removed");
         check(timeline.personalAge()==200,"Personal message age follows personal activity");
+        timeline.offer(first,6,"teammate knock",true,true,false);
+        check(timeline.personal(3,120).getFirst().value().equals("teammate knock")
+                && timeline.feed(3,120).size()==1 && timeline.personalAge()==200,
+                "Teammate knock appears in both feeds without reopening personal counters");
         timeline.reset(second);check(timeline.feed(64,120).isEmpty()&&Double.isInfinite(timeline.personalAge()),"New match resets count presentation");
         check(timeline.offer(second,1,"new round",false),"New session accepts restarted sequence");
         for(int i=2;i<1000;i++)timeline.offer(second,i,"bounded",false);

@@ -4,6 +4,7 @@ import com.example.examplemod.combat.CombatPayloads.Event;
 import com.tacz.guns.api.TimelessAPI;
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.UUID;
 import me.xjqsh.lrtactical.api.LrTacticalAPI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -49,12 +50,20 @@ final class CombatMessageRenderer {
         return Component.literal(id.getPath().replace('_', ' '));
     }
 
-    static Component message(Event event, boolean receiving, int red) {
+    static boolean teammateMessage(Event event, UUID viewer, int team) {
+        return (event.type().equals("knock") || event.type().equals("elimination"))
+                && team > 0 && event.attacker().team() == team
+                && !event.attacker().id().equals(viewer) && !event.victim().id().equals(viewer)
+                // The finisher receives their own private assist separately.
+                && !event.feedAttacker().id().equals(viewer);
+    }
+
+    static Component message(Event event, UUID viewer, int red) {
         if (event.type().equals("revive")) return text("revive", event.victim().name());
         if (event.type().equals("assist")) return text("assist_message",
                 text("eliminate_verb").withColor(red & 0xFFFFFF), event.victim().name());
-        Component subject = receiving ? Component.literal(event.attacker().name()) : text("you_subject");
-        Component victim = receiving ? text("you_object") : Component.literal(event.victim().name());
+        Component subject = event.attacker().id().equals(viewer) ? text("you_subject") : Component.literal(event.attacker().name());
+        Component victim = event.victim().id().equals(viewer) ? text("you_object") : Component.literal(event.victim().name());
         if (!showsWeapon(event) || !event.attacker().id().equals(event.feedAttacker().id())) {
             if (event.type().equals("knock")) return text("knocked_without_weapon", subject, victim);
             return text("finally_eliminated", subject, text("eliminate_past").withColor(red & 0xFFFFFF), victim);
@@ -65,12 +74,12 @@ final class CombatMessageRenderer {
         return text(event.headshot() ? "headshot_message" : "attack_message", subject, weapon, action, victim);
     }
 
-    static void draw(GuiGraphics g, Event event, boolean receiving, int cx, int y, int maxWidth,
+    static void draw(GuiGraphics g, Event event, UUID viewer, int cx, int y, int maxWidth,
                      int base, int red, float scale) {
         if ((base >>> 24) < 4) return;
         var font = Minecraft.getInstance().font;
         var runs = new ArrayList<Run>();
-        message(event, receiving, red).visit((style, value) -> {
+        message(event, viewer, red).visit((style, value) -> {
             if (!value.isEmpty()) {
                 boolean framed = GUN_BADGE.equals(style.getInsertion());
                 int color = event.friendlyFire() || style.getColor() != null ? red : base;

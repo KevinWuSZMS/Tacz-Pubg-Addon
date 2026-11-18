@@ -20,12 +20,28 @@ import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 final class KillFeedWeaponIcons {
     private static final String BASE = "textures/gui/hud/kill_feed/";
     private static final ResourceLocation GUNS = asset("guns.png");
-    private static final ResourceLocation GENERIC_GUN = ResourceLocation.parse("tacz:m4a1");
-    private static Map<ResourceLocation, Sprite> gunSprites = Map.of();
+    private static Map<ResourceLocation, GunIcon> gunSprites = Map.of();
 
     private KillFeedWeaponIcons() {}
 
     private record Sprite(int u, int v, int width, int height, int textureWidth, int textureHeight) {}
+
+    record GunIcon(ResourceLocation texture, Sprite sprite, boolean mirrored) {
+        void draw(GuiGraphics graphics, int x, int y, int width, int height, int argb) {
+            if (!mirrored) {
+                KillFeedWeaponIcons.draw(graphics, texture, sprite, x, y, width, height, argb);
+                return;
+            }
+            graphics.pose().pushPose();
+            try {
+                graphics.pose().translate(2 * x + width, 0, 0);
+                graphics.pose().scale(-1, 1, 1);
+                KillFeedWeaponIcons.draw(graphics, texture, sprite, x, y, width, height, argb);
+            } finally {
+                graphics.pose().popPose();
+            }
+        }
+    }
 
     private static ResourceLocation asset(String name) {
         return ResourceLocation.fromNamespaceAndPath(ExampleMod.MODID, BASE + name);
@@ -41,11 +57,12 @@ final class KillFeedWeaponIcons {
             var root = JsonParser.parseReader(reader).getAsJsonObject();
             int width = root.get("width").getAsInt();
             int height = root.get("height").getAsInt();
-            var sprites = new HashMap<ResourceLocation, Sprite>();
+            var sprites = new HashMap<ResourceLocation, GunIcon>();
             for (var entry : root.getAsJsonObject("guns").entrySet()) {
                 var rect = entry.getValue().getAsJsonArray();
-                sprites.put(ResourceLocation.parse(entry.getKey()), new Sprite(rect.get(0).getAsInt(),
-                        rect.get(1).getAsInt(), rect.get(2).getAsInt(), rect.get(3).getAsInt(), width, height));
+                var sprite = new Sprite(rect.get(0).getAsInt(), rect.get(1).getAsInt(),
+                        rect.get(2).getAsInt(), rect.get(3).getAsInt(), width, height);
+                sprites.put(ResourceLocation.parse(entry.getKey()), new GunIcon(GUNS, sprite, false));
             }
             gunSprites = Map.copyOf(sprites);
         } catch (IOException | RuntimeException ex) {
@@ -54,30 +71,17 @@ final class KillFeedWeaponIcons {
         }
     }
 
-    static boolean drawGun(GuiGraphics graphics, ResourceLocation gunId, int x, int y, int width, int height, int argb) {
-        if (gunId == null) return false;
-        var sprite = gunSprites.get(gunId);
-        if (sprite == null) {
-            // Third-party packs installed after the atlas was built can supply their own TaCZ HUD.
-            var live = TimelessAPI.getClientGunIndex(gunId)
-                    .map(index -> index.getDefaultDisplay().getHUDTexture())
-                    .filter(id -> Minecraft.getInstance().getResourceManager().getResource(id).isPresent());
-            if (live.isPresent()) {
-                graphics.pose().pushPose();
-                try {
-                    graphics.pose().translate(2 * x + width, 0, 0);
-                    graphics.pose().scale(-1, 1, 1);
-                    draw(graphics, live.get(), new Sprite(0, 0, 39, 13, 39, 13), x, y, width, height, argb);
-                } finally {
-                    graphics.pose().popPose();
-                }
-                return true;
-            }
-            sprite = gunSprites.get(GENERIC_GUN);
-            if (sprite == null) return false;
-        }
-        draw(graphics, GUNS, sprite, x, y, width, height, argb);
-        return true;
+    static GunIcon gunIcon(ResourceLocation gunId) {
+        if (gunId == null) return null;
+        var icon = gunSprites.get(gunId);
+        if (icon != null) return icon;
+        // Third-party packs installed after the atlas was built can supply their own TaCZ HUD.
+        return TimelessAPI.getClientGunIndex(gunId)
+                .map(index -> index.getDefaultDisplay())
+                .map(display -> display.getHUDTexture())
+                .filter(id -> Minecraft.getInstance().getResourceManager().getResource(id).isPresent())
+                .map(id -> new GunIcon(id, new Sprite(0, 0, 39, 13, 39, 13), true))
+                .orElse(null);
     }
 
     static boolean drawThrowable(GuiGraphics graphics, ResourceLocation item, int x, int y, int width, int height, int argb) {
