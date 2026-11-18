@@ -1340,6 +1340,9 @@
   "screen.tacz_pubg.battle_settings.field.combat.center_row_height": "Center row height",
   "screen.tacz_pubg.battle_settings.field.combat.center_y": "Center y",
   "screen.tacz_pubg.battle_settings.field.combat.counter_scale": "Counter scale",
+  "screen.tacz_pubg.battle_settings.field.combat.older_opacity": "Older message opacity per row",
+  "screen.tacz_pubg.battle_settings.field.combat.counter_flash_seconds": "Counter highlight duration (seconds)",
+  "screen.tacz_pubg.battle_settings.field.combat.counter_flash_opacity": "Counter highlight opacity",
   "screen.tacz_pubg.battle_settings.field.combat.counter_seconds": "Counter seconds",
   "screen.tacz_pubg.battle_settings.field.combat.fade_in_seconds": "Fade in seconds",
   "screen.tacz_pubg.battle_settings.field.combat.fade_out_seconds": "Fade out seconds",
@@ -2835,5 +2838,10 @@
   "screen.tacz_pubg.medicine.cancel": "Cancel",
   "screen.tacz_pubg.battle_settings.field.hud.health_critical_red": "Critical health flash red",
   "screen.tacz_pubg.battle_settings.field.hud.health_flash_ticks": "Critical health color interval (ticks)",
-  "screen.tacz_pubg.hud_layout.component.player_stance": "Player stance indicator"
+  "screen.tacz_pubg.hud_layout.component.player_stance": "Player stance indicator",
+  "gui.tacz_pubg.interact_action": "Interact",
+  "gui.tacz_pubg.pickup_action": "Pick up %s ×%s",
+  "message.tacz_pubg.flight.jump_action": "Jump",
+  "message.tacz_pubg.flight.deploy_action": "Deploy parachute",
+  "screen.tacz_pubg.throwable.cook_control": "[%s] Cook"
 }

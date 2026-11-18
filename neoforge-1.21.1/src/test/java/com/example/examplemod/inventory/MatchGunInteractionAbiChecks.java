@@ -25,6 +25,7 @@ public final class MatchGunInteractionAbiChecks {
     private static final String MIXINS = "com/example/examplemod/inventory/mixin/";
     private static final String CALLBACK = "Lorg/spongepowered/asm/mixin/injection/callback/CallbackInfo;";
     private static final String EVENT = "Lnet/neoforged/neoforge/client/event/InputEvent$";
+    private static final String PROMPT_ARGS = "Lnet/minecraft/client/gui/GuiGraphics;IILnet/minecraft/client/gui/Font;Ljava/lang/String;Z";
     private static int checks;
 
     public static void main(String[] args) throws Exception {
@@ -48,6 +49,9 @@ public final class MatchGunInteractionAbiChecks {
                             + "Lnet/minecraft/client/Minecraft;)V", true);
             fieldSite(blockText, Opcodes.GETSTATIC, INTERACT, "INTERACT_KEY", "L" + KEY + ";", 1);
             fieldSite(entityText, Opcodes.GETSTATIC, INTERACT, "INTERACT_KEY", "L" + KEY + ";", 1);
+            target(overlay, "renderText", "(" + PROMPT_ARGS + ")V", true);
+            site(blockText, Opcodes.INVOKESTATIC, OVERLAY, "renderText", "(" + PROMPT_ARGS + ")V", 2);
+            site(entityText, Opcodes.INVOKESTATIC, OVERLAY, "renderText", "(" + PROMPT_ARGS + ")V", 1);
             MethodNode controller = target(interact, "onInteractControllerPress", "(Z)Z", true);
             check((controller.access & Opcodes.ACC_PUBLIC) != 0, "controller dispatcher is public");
             site(controller, Opcodes.INVOKESTATIC, INTERACT, "interactBlock",
@@ -91,6 +95,15 @@ public final class MatchGunInteractionAbiChecks {
         var redirect = annotation(labels.visibleAnnotations, "Lorg/spongepowered/asm/mixin/injection/Redirect;");
         check(Integer.valueOf(Opcodes.GETSTATIC).equals(value((AnnotationNode) value(redirect, "at"), "opcode")),
                 "hint redirect uses GETSTATIC field opcode");
+        inject(text, "taczPubg$alignInteractionPrompt", "(" + PROMPT_ARGS + CALLBACK + ")V", true, "renderText");
+        var aligned = method(text, "taczPubg$alignInteractionPrompt");
+        check(Boolean.FALSE.equals(value(annotation(aligned.visibleAnnotations,
+                "Lorg/spongepowered/asm/mixin/injection/Inject;"), "remap")), "shared hint uses installed Mojmap bytecode");
+        site(aligned, Opcodes.INVOKESTATIC, "com/example/examplemod/inventory/client/MatchGunInteractionClient",
+                "active", "()Z", 1);
+        site(aligned, Opcodes.INVOKESTATIC, "com/example/examplemod/hud/client/InteractionPromptHud", "render",
+                "(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/network/chat/Component;"
+                        + "Lnet/minecraft/network/chat/Component;Lnet/minecraft/network/chat/Component;)V", 1);
         ClassNode alias = type("com/example/examplemod/inventory/client/MatchGunInteractionClient");
         for (MethodNode method : alias.methods) for (var instruction : method.instructions) {
             if (instruction instanceof MethodInsnNode call)

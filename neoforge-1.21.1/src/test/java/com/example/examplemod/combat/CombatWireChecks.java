@@ -29,6 +29,28 @@ public final class CombatWireChecks {
         check(gun.friendlyFire() && gun.firearm() && !gun.bleedout(), "Team headshot knock retains attacker, gun and headshot");
         var bleed = new CombatPayloads.Event(session, 53, "elimination", actor, teammate, "", false, "bleedout", 0, 0);
         check(bleed.friendlyFire() && bleed.bleedout() && !bleed.firearm(), "Friendly bleedout has a downer without the original weapon");
+        check(bleed.wasDowned() && !bleed.directElimination(), "Legacy bleedout construction cannot select the direct-kill icon");
+        check(!gun.directElimination(), "A headshot knock never selects the direct-kill icon");
+        for (String cause : List.of("gun", "gun_blast", "throwable", "unarmed", "item", "boundary", "disconnect")) {
+            for (boolean wasDowned : List.of(false, true)) {
+                for (var endVictim : List.of(victim, teammate)) {
+                    var end = new CombatPayloads.Event(session, 54, "elimination", actor, endVictim,
+                            cause.equals("gun") ? "tacz:ak47" : "", cause.equals("gun"), cause, 1, 0, wasDowned);
+                    var decoded = round(CombatPayloads.Event.CODEC, end);
+                    check(decoded.equals(end) && decoded.directElimination() == !wasDowned,
+                            "Direct death and finishing retain distinct wire semantics for " + cause);
+                    check(decoded.friendlyFire() == (endVictim == teammate),
+                            "Previous DBNO state does not alter friendly-fire coloring");
+                }
+            }
+        }
+        var inconsistentBleed = new CombatPayloads.Event(session, 54, "elimination", actor, victim,
+                "", false, "bleedout", 1, 0, false);
+        check(!inconsistentBleed.directElimination(), "Bleedout cannot use the direct-kill icon even with an absent DBNO flag");
+        for (String type : List.of("assist", "revive")) {
+            check(!new CombatPayloads.Event(session, 54, type, actor, victim, "", false, "", 1, 0)
+                    .directElimination(), "Non-elimination messages cannot use the direct-kill icon");
+        }
         for (String cause : List.of("drown", "team_wipe", "disconnect", "boundary", "item")) {
             var end = new CombatPayloads.Event(session, 54, "elimination", actor, victim, "", false, cause, 1, 0);
             check(!end.bleedout() && !end.friendlyFire() && !end.firearm(), "Only loss of DBNO health over time counts as bleeding out");

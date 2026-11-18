@@ -94,6 +94,8 @@ public final class HudLayoutEditorScreen extends Screen {
     @Override public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         graphics.enableScissor(0, 0, width, height);
         for (String component : drawOrder()) {
+            // These two editable entries share one anchor; show only the selected action example.
+            if (component.equals("medicine_progress") && "loot_pickup".equals(id())) continue;
             boolean chosen = component.equals(id());
             var rectangle = HudLayoutClient.previewRect(component, width, height);
             HudLayoutClient.definition(component).preview().draw(graphics, rectangle, chosen);

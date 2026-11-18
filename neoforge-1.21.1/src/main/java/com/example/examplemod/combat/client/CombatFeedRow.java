@@ -13,6 +13,7 @@ import net.minecraft.resources.ResourceLocation;
 final class CombatFeedRow {
     private static final ResourceLocation HEADSHOT = icon("headshot");
     private static final ResourceLocation DOWNED = icon("downed");
+    private static final ResourceLocation ELIMINATED = icon("eliminated");
     private static final ResourceLocation FIST = icon("fist");
 
     private CombatFeedRow() {}
@@ -31,12 +32,13 @@ final class CombatFeedRow {
         if ((color >>> 24) < 4) return;
         int iconHeight = Math.max(6, row - 3);
         boolean downed = event.type().equals("knock") || event.bleedout();
+        boolean direct = event.directElimination();
         boolean headshot = event.firearm() && event.headshot();
         boolean source = !event.bleedout() && (event.firearm() || event.unarmed() || event.throwable()
                 || !event.weaponId().isEmpty() || !downed);
         int sourceWidth = source ? sourceWidth(font, event, iconHeight) : 0;
         String flag = friendly ? CombatMessageRenderer.text("friendly_fire").getString() : "";
-        int icons = padded(sourceWidth) + padded(headshot ? iconHeight : 0) + padded(downed ? iconHeight * 3 / 2 : 0);
+        int icons = padded(sourceWidth) + padded(headshot ? iconHeight : 0) + padded(downed || direct ? iconHeight * 3 / 2 : 0);
         int fixed = 6 + padded(badgeWidth(font, event.attacker())) + badgeWidth(font, event.victim())
                 + icons + padded(font.width(flag));
         String left = event.attacker().name();
@@ -79,8 +81,8 @@ final class CombatFeedRow {
             CombatHudTextures.draw(g, HEADSHOT, x, 1, iconHeight, iconHeight, color);
             x += padded(iconHeight);
         }
-        if (downed) {
-            CombatHudTextures.draw(g, DOWNED, x, 1, iconHeight * 3 / 2, iconHeight, color);
+        if (downed || direct) {
+            CombatHudTextures.draw(g, direct ? ELIMINATED : DOWNED, x, 1, iconHeight * 3 / 2, iconHeight, color);
             x += padded(iconHeight * 3 / 2);
         }
         if (friendly) {

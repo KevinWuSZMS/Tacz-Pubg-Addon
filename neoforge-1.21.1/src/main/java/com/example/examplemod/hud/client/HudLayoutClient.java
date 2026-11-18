@@ -81,6 +81,7 @@ public final class HudLayoutClient {
 
     static HudLayoutModel.Rect previewRect(String id, int width, int height) {
         ensureLoaded();
+        if (id.equals("loot_pickup")) return HudLayoutPreviews.defaults(id, width, height);
         if (id.equals("match_phase")) return mapHeader(width, height);
         if (id.equals("weapon_stack")) return com.example.examplemod.vitals.client.WeaponStackRenderer.bounds(width, height);
         if (id.equals("xaero_minimap") && XaeroHudBridge.available()) return XaeroHudBridge.bounds(width, height);
@@ -112,6 +113,11 @@ public final class HudLayoutClient {
     static void move(String id, double x, double y, int width, int height) {
         if (draft == null) return;
         var rect = previewRect(id, width, height);
+        if (id.equals("loot_pickup")) {
+            var medicine = previewRect("medicine_progress", width, height);
+            x = medicine.x() + x - rect.x(); y = medicine.y() + y - rect.y();
+            id = "medicine_progress"; rect = medicine;
+        }
         if (MinimapPlacementPolicy.mapChild(id)) {
             var map = mapBounds(width, height);
             x = map.x() + x - rect.x(); y = map.y() + y - rect.y();
@@ -129,6 +135,7 @@ public final class HudLayoutClient {
     }
     static void reset(String id) {
         if (draft == null) return;
+        if (id.equals("loot_pickup")) id = "medicine_progress";
         if (MinimapPlacementPolicy.mapChild(id)) id = "xaero_minimap";
         draft.remove(id);
         OBSERVED.remove(id);

@@ -53,36 +53,26 @@ public final class ActionCircleRenderer {
         return medicineLayout(PubgSettingsService.client().integer("medicine.circle_radius"), font.width(label),
                 font.width(cancelKey), font.width(Texts.of("screen.tacz_pubg.medicine.cancel")), font.lineHeight);
     }
+    /** The placement footprint is stable across medicine names and long rescue player names. */
+    public static MedicineLayout placementLayout() {
+        var font = Minecraft.getInstance().font;
+        Component longest = Component.empty();
+        for (var kind : com.example.examplemod.vitals.PubgMedicineModel.Kind.values()) {
+            var label = PubgMedicineHud.actionLabel(kind);
+            if (font.width(label) > font.width(longest)) longest = label;
+        }
+        return medicineLayout(longest, Component.keybind("key.tacz_pubg.cancel_use"));
+    }
     public static HudLayoutModel.Rect bounds(int width, int height, Component label, Component cancelKey, boolean rescue) {
-        if (rescue) return bounds(width, height, label);
-        return medicineBounds(width, height, PubgSettingsService.client().integer("medicine.circle_offset_y"), medicineLayout(label, cancelKey));
+        return medicineBounds(width, height, PubgSettingsService.client().integer("medicine.circle_offset_y"), placementLayout());
     }
     public static void draw(GuiGraphics graphics, HudLayoutModel.Rect bounds, ItemStack picture, boolean rescue,
                             int remaining, int duration, Component label, Component cancelKey) {
-        if (!rescue) {
-            drawMedicine(graphics, bounds, picture, remaining, duration, label, cancelKey);
-            return;
-        }
-        Component cancel = Texts.of("screen.tacz_pubg.medicine.action_cancel", cancelKey);
-        var settings = PubgSettingsService.client();
-        int radius = settings.integer("medicine.circle_radius"), cx = bounds.x() + radius + 1, cy = bounds.y() + radius + 1;
-        CombatHudDraw.disk(graphics, cx, cy, radius, settings.color("medicine.circle_background"));
-        CombatHudDraw.arc(graphics, cx, cy, radius, settings.number("medicine.circle_line_width"), 0, 360, settings.color("medicine.circle_track"));
-        CombatHudDraw.arc(graphics, cx, cy, radius, settings.number("medicine.circle_line_width"), 0,
-                progress(remaining, duration) * 360, settings.color("medicine.circle_progress"));
-        if (!picture.isEmpty()) OriginalIconClient.drawGui(graphics, picture, cx - 8, cy - 8, 16);
-        else if (rescue) CombatHudDraw.plus(graphics, cx - 8, cy - 8, 16, 0x707F817E);
-        graphics.pose().pushPose(); graphics.pose().translate(0, 0, 200);
-        CombatHudNumbers.drawCentered(graphics, String.format(Locale.ROOT, "%.1f", Math.max(0, remaining) / 20.0), cx, cy - 4.5f, 9, 0xFFFFFFFF);
-        graphics.pose().popPose();
-        var font = Minecraft.getInstance().font;
-        int textX = cx + radius + 9, maxWidth = Math.max(1, bounds.width() - radius * 2 - 12);
-        graphics.drawString(font, font.plainSubstrByWidth(label.getString(), maxWidth), textX, cy - 8, 0xFFE4E4E1);
-        graphics.drawString(font, font.plainSubstrByWidth(cancel.getString(), maxWidth), textX, cy + 5, 0xFFCACBC7);
+        drawMedicine(graphics, bounds, picture, rescue, remaining, duration, label, cancelKey);
     }
     private static void drawMedicine(GuiGraphics g, HudLayoutModel.Rect bounds, ItemStack picture,
-                                     int remaining, int duration, Component label, Component cancelKey) {
-        var layout = medicineLayout(label, cancelKey);
+                                     boolean rescue, int remaining, int duration, Component label, Component cancelKey) {
+        var layout = placementLayout();
         var settings = PubgSettingsService.client();
         var font = Minecraft.getInstance().font;
         int r = layout.radius(), center = r + 1;
@@ -97,6 +87,7 @@ public final class ActionCircleRenderer {
                     progress(remaining, duration) * 360, settings.color("medicine.circle_progress"));
             int iconSize = Math.round(r * 1.2F);
             if (!picture.isEmpty()) OriginalIconClient.drawGui(g, picture, center - iconSize / 2, center - iconSize / 2, iconSize);
+            else if (rescue) CombatHudDraw.plus(g, center - iconSize / 2, center - iconSize / 2, iconSize, 0x707F817E);
             String seconds = String.format(Locale.ROOT, "%.1f", Math.max(0, remaining) / 20.0);
             float numberHeight = r * .64F, numberTop = center - numberHeight / 2;
             g.pose().pushPose();
@@ -106,18 +97,18 @@ public final class ActionCircleRenderer {
                 CombatHudNumbers.drawVisibleCentered(g, seconds, center + dx * outline, numberTop + dy * outline, numberHeight, 0xE020221F);
             CombatHudNumbers.drawVisibleCentered(g, seconds, center, numberTop, numberHeight, 0xFFFFFFFF);
             g.pose().popPose();
+            float labelScale = Math.min(layout.textScale(),
+                    Math.max(1, layout.width() - layout.labelX() - 4) / (float) Math.max(1, font.width(label)));
             int padding = Math.max(1, Math.round(2 * layout.textScale()));
             g.fill(layout.labelX() - padding, layout.labelY() - padding,
-                    layout.labelX() + (int) Math.ceil(font.width(label) * layout.textScale()) + padding,
-                    layout.labelY() + (int) Math.ceil(font.lineHeight * layout.textScale()) + padding, 0x40302E29);
-            drawText(g, label, layout.labelX(), layout.labelY(), layout.textScale(), 0xFFE0E0DD);
-            int x = layout.keyX(), y = layout.keyY(), w = layout.keyWidth(), h = layout.keyHeight();
-            g.fill(x, y, x + w, y + h, 0xA020211E);
-            g.renderOutline(x, y, w, h, 0xBBD8D8D3);
-            drawText(g, cancelKey, x + (w - font.width(cancelKey) * layout.textScale()) / 2,
-                    y + (h - font.lineHeight * layout.textScale()) / 2, layout.textScale(), 0xFFFFFFFF);
-            drawText(g, Texts.of("screen.tacz_pubg.medicine.cancel"), x + w + Math.round(.2F * r),
-                    y + (h - font.lineHeight * layout.textScale()) / 2, layout.textScale(), 0xFFFFFFFF);
+                    layout.labelX() + (int) Math.ceil(font.width(label) * labelScale) + padding,
+                    layout.labelY() + (int) Math.ceil(font.lineHeight * labelScale) + padding, 0x40302E29);
+            drawText(g, label, layout.labelX(), layout.labelY(), labelScale, 0xFFE0E0DD);
+            int x = layout.keyX(), y = layout.keyY(), h = layout.keyHeight();
+            int w = Math.min(layout.width() - x, Math.max(h, (int) Math.ceil((font.width(cancelKey) + 6) * layout.textScale())));
+            com.example.examplemod.hud.client.InteractionPromptHud.drawRow(g, cancelKey,
+                    Texts.of("screen.tacz_pubg.medicine.cancel"), x, y, w, h, layout.textScale(),
+                    Math.round(.2F * r), layout.width() - x);
         } finally { g.pose().popPose(); }
     }
     private static void drawText(GuiGraphics g, Component text, float x, float y, float scale, int color) {

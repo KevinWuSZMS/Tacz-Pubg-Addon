@@ -244,7 +244,8 @@ public final class CombatCarpetGameTests {
                 helper.assertTrue(CombatService.downed(f.victim), "The follow-up unexpectedly finished the victim");
                 f.later(3, () -> {
                     var death = f.capture(f.enemy).events.getLast();
-                    helper.assertTrue(death.bleedout() && !death.firearm() && !death.headshot()
+                    helper.assertTrue(death.bleedout() && death.wasDowned() && !death.directElimination()
+                            && !death.firearm() && !death.headshot()
                             && death.weaponId().isEmpty() && death.attacker().id().equals(f.enemy.getUUID())
                             && death.kills() == 1, "Wrong bleedout credit or source: " + death);
                     f.close(); helper.succeed();
@@ -263,7 +264,8 @@ public final class CombatCarpetGameTests {
             f.later((int) f.setting("dbno.protection_ticks") + 2, () -> {
                 f.attack(f.ally, f.victim, 1000, false);
                 var death = f.capture(f.enemy).events.getLast();
-                helper.assertTrue(death.type().equals("elimination") && death.friendlyFire() && death.unarmed()
+                helper.assertTrue(death.type().equals("elimination") && death.wasDowned() && !death.directElimination()
+                        && death.friendlyFire() && death.unarmed()
                         && death.attacker().id().equals(f.ally.getUUID()) && death.kills() == 0
                         && f.capture(f.enemy).snapshot.kills() == 0, "Wrong friendly finish: " + death);
                 f.close(); helper.succeed();
@@ -279,7 +281,8 @@ public final class CombatCarpetGameTests {
             var events = f.capture(f.victim).events;
             helper.assertTrue(events.size() == 1, "Direct kill published extra rows: " + events);
             var death = events.getFirst();
-            helper.assertTrue(death.type().equals("elimination") && death.firearm() && death.headshot()
+            helper.assertTrue(death.type().equals("elimination") && !death.wasDowned() && death.directElimination()
+                    && death.firearm() && death.headshot()
                     && !death.bleedout() && !death.friendlyFire() && death.kills() == 1
                     && f.capture(f.victim).snapshot.viewerTeam() == death.attacker().team(), "Wrong direct kill: " + death);
             f.close(); helper.succeed();

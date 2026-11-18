@@ -31,7 +31,7 @@ public final class CombatHudClient {
     private static final CombatTimeline<Event> timeline=new CombatTimeline<>();
     private static Snapshot current=Snapshot.EMPTY;
     private static final CombatCounterNotice counterNotice=new CombatCounterNotice();
-    private static double renderFraction;
+    private static double renderFraction, renderTime;
     private CombatHudClient() {}
     public static Snapshot snapshot() { return current; }
     public static boolean hasStats(UUID session) { return session.equals(current.session())&&!CombatPayloads.NO_SESSION.equals(session); }
@@ -69,9 +69,10 @@ public final class CombatHudClient {
         return new Event(CombatPayloads.NO_SESSION, 0, knock ? "knock" : "elimination", attacker, victim,
                 "tacz:m4a1", knock, "gun", 2, 0);
     }
-    private static void clear() { current=Snapshot.EMPTY; timeline.reset(CombatPayloads.NO_SESSION); counterNotice.reset(CombatPayloads.NO_SESSION,0,0); CombatPayloads.clearClient(); }
+    private static void clear() { current=Snapshot.EMPTY; renderFraction=0; renderTime=0; timeline.reset(CombatPayloads.NO_SESSION); counterNotice.reset(CombatPayloads.NO_SESSION,0,0); CombatPayloads.clearClient(); }
     private static void accept(Snapshot next) {
         if(!next.session().equals(current.session())) {
+            renderFraction=0; renderTime=0;
             timeline.reset(next.session()); counterNotice.reset(next.session(),next.kills(),next.assists());
         } else if(counterNotice.snapshot(next.session(),next.kills(),next.assists(),timeline.time())) timeline.markPersonal();
         current=next;
@@ -93,10 +94,10 @@ public final class CombatHudClient {
         renderFraction=status.paused()||mc.isPaused()?0:mc.getTimer().getGameTimeDeltaPartialTick(false);
         var s=PubgSettingsService.client(); counters(g,status.playersAlive(),s); center(g,s); feed(g,s);
     }
-    private static double time() { return timeline.time()+renderFraction; }
+    private static double time() { renderTime=Math.max(renderTime,timeline.time()+renderFraction); return renderTime; }
     private static void counters(GuiGraphics g,int alive,PubgSettings s) {
         var font=Minecraft.getInstance().font;
-        double a=CombatTimeline.alpha(timeline.personalAge()+renderFraction,s.number("combat.counter_seconds")*20,0,s.number("combat.fade_out_seconds")*20);
+        double a=CombatTimeline.alpha(timeline.personalAge()+time()-timeline.time(),s.number("combat.counter_seconds")*20,0,s.number("combat.fade_out_seconds")*20);
         float scale=(float)s.number("combat.top_number_scale");
         String[] numbers={Integer.toString(current.kills()),Integer.toString(current.assists()),Integer.toString(alive)};
         String[] labels={text("kill_label").getString(),text("assist_label").getString(),Component.translatable("screen.tacz_pubg.pubg_hud.alive_label").getString()};
@@ -118,37 +119,41 @@ public final class CombatHudClient {
     }
     private static void center(GuiGraphics g,PubgSettings s) {
         double lifetime=s.number("combat.message_seconds")*20;
-        var rows=timeline.personal(s.integer("combat.message_rows"),lifetime);
+        var rows=timeline.positionedPersonal(time(),s.integer("combat.message_rows"),lifetime,s.number("combat.move_seconds")*20);
         int row=s.integer("combat.center_row_height"),width=Math.min(g.guiWidth()-16,320),height=row*s.integer("combat.message_rows")+25;
         int x=(g.guiWidth()-width)/2,y=(int)(g.guiHeight()*s.number("combat.center_y"))-height;
         try(var scope=HudLayoutClient.apply(g,"combat_messages",x,y,width,height)) {
             for(int i=0;i<rows.size();i++) {
-                var entry=rows.get(i);double age=time()-entry.born();
+                var positioned=rows.get(i);var entry=positioned.entry();double age=time()-entry.born();
                 double a=CombatTimeline.alpha(age,lifetime,s.number("combat.fade_in_seconds")*20,s.number("combat.fade_out_seconds")*20);
-                double slide=i==0?0:row*(1-CombatTimeline.smooth(time()-rows.get(0).born(),s.number("combat.move_seconds")*20));
+                a*=Math.pow(s.number("combat.older_opacity"),positioned.slot());
                 Event event = entry.value();
                 String textColor = event.friendlyFire() ? "combat.kill_color" : event.type().equals("assist")
                         ? "combat.assist_color" : i > 0 ? "combat.older_color" : "combat.text_color";
                 int red = alpha(s.color("combat.kill_color"), a);
                 boolean receiving = event.victim().id().equals(Minecraft.getInstance().player.getUUID());
-                CombatMessageRenderer.draw(g, event, receiving, x + width/2, y + height - 25 - i*row + (int)slide,
+                g.pose().pushPose();
+                g.pose().translate(0,-row*positioned.slot(),0);
+                CombatMessageRenderer.draw(g, event, receiving, x + width/2, y + height - 25,
                         width, alpha(s.color(textColor), a), red, (float)s.number("combat.message_scale"));
+                g.pose().popPose();
                 if (i == 0 && event.friendlyFire()) {
                     centered(g, text("friendly_fire"), x + width/2, y + height - 10, red,
                             (float)s.number("combat.counter_scale"));
                 }
             }
-            if (!rows.isEmpty() && rows.get(0).value().friendlyFire()) return;
-            double a=CombatTimeline.alpha(counterNotice.age(time()),s.number("combat.counter_seconds")*20,s.number("combat.fade_in_seconds")*20,s.number("combat.fade_out_seconds")*20);
+            if (!rows.isEmpty() && rows.get(0).entry().value().friendlyFire()) return;
+            var frame=counterNotice.frame(time(),s.number("combat.counter_seconds")*20,
+                    s.number("combat.fade_in_seconds")*20,s.number("combat.fade_out_seconds")*20,s.number("combat.move_seconds")*20,
+                    s.number("combat.counter_flash_seconds")*20,s.number("combat.counter_flash_opacity"));
             boolean assistCounter=counterNotice.assist();
-            int amount=counterNotice.amount();
-            if(amount>0&&a>0) centered(g,text(assistCounter?"assists":"kills",amount),x+width/2,y+height-10,
-                    alpha(s.color(assistCounter?"combat.assist_color":"combat.kill_color"),a),(float)s.number("combat.counter_scale"));
+            CombatCounterRenderer.draw(g,frame,assistCounter,x+width/2,y+height-10,width,
+                    s.color(assistCounter?"combat.assist_color":"combat.kill_color"),(float)s.number("combat.counter_scale"));
         }
     }
     private static void feed(GuiGraphics g,PubgSettings s) {
         double lifetime=s.number("combat.feed_seconds")*20;
-        var rows=timeline.feed(s.integer("combat.feed_rows"),lifetime);
+        var rows=timeline.positionedFeed(time(),s.integer("combat.feed_rows"),lifetime,s.number("combat.move_seconds")*20);
         float scale=(float)s.number("combat.feed_scale");int width=s.integer("combat.feed_width"),row=s.integer("combat.feed_row_height");
         int x=g.guiWidth()-Math.round(width*scale)-s.integer("combat.right_margin"),y=s.integer("combat.feed_top");
         var map=com.example.examplemod.zones.client.xaero.XaeroHudAnchor.minimap();
@@ -157,11 +162,13 @@ public final class CombatHudClient {
         try(var scope=HudLayoutClient.apply(g,"combat_feed",x,y,Math.round(width*scale),Math.round(row*s.integer("combat.feed_rows")*scale))) {
             g.pose().pushPose();g.pose().translate(x,y,0);g.pose().scale(scale,scale,1);
             for(int i=0;i<rows.size();i++) {
-                var entry=rows.get(i);var event=entry.value();double age=time()-entry.born();
+                var positioned=rows.get(i);var entry=positioned.entry();var event=entry.value();double age=time()-entry.born();
                 double a=CombatTimeline.alpha(age,lifetime,s.number("combat.fade_in_seconds")*20,s.number("combat.fade_out_seconds")*20);
                 if(a<.02)continue;
-                int top=i*row-(i==0?0:(int)(row*(1-CombatTimeline.smooth(time()-rows.get(0).born(),s.number("combat.move_seconds")*20))));
-                CombatFeedRow.draw(g,event,current.viewerTeam(),width,top,row,s,a);
+                g.pose().pushPose();
+                g.pose().translate(0,row*positioned.slot(),0);
+                CombatFeedRow.draw(g,event,current.viewerTeam(),width,0,row,s,a);
+                g.pose().popPose();
             }
             g.pose().popPose();
         }

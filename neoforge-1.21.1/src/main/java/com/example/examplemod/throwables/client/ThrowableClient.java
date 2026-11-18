@@ -371,6 +371,7 @@ public final class ThrowableClient {
         }
         wasSwimming = swimming;
     }
+    public static boolean hasPreparedThrowable() { return cookedHeld; }
     private static void render(GuiGraphics graphics) {
         if (com.example.examplemod.vitals.client.InventoryActionHud.usesInventoryForeground()) return;
         renderStatus(graphics);
@@ -385,6 +386,8 @@ public final class ThrowableClient {
         PubgThrowableItem item = mc.player.isUsingItem() && mc.player.getUseItem().getItem() instanceof PubgThrowableItem throwable
                 ? throwable : null;
         if (mc.options.hideGui || item == null && !cookedHeld) return;
+        com.example.examplemod.hud.client.InteractionPromptHud.render(graphics, CANCEL.getTranslatedKeyMessage(),
+                Texts.of("screen.tacz_pubg.medicine.cancel"));
         if (MatchVitalsHud.active() && cookedHeld && fuse >= 0) {
             var rectangle = fuseBounds(graphics.guiWidth(), graphics.guiHeight());
             ThrowableKind kind = cookedVisual.getItem() instanceof PubgThrowableItem visual ? visual.kind : item != null ? item.kind : ThrowableKind.FRAG;
@@ -403,7 +406,7 @@ public final class ThrowableClient {
                 : fuse >= 0 ? Texts.of("screen.tacz_pubg.throwable.fuse", seconds)
                 : Texts.of("screen.tacz_pubg.throwable.ready", mc.player.isShiftKeyDown()
                     ? Texts.of("screen.tacz_pubg.throwable.underhand") : Texts.of("screen.tacz_pubg.throwable.overhand"));
-        var controls = Texts.of("screen.tacz_pubg.throwable.controls", COOK.getTranslatedKeyMessage(), CANCEL.getTranslatedKeyMessage());
+        var controls = Texts.of("screen.tacz_pubg.throwable.cook_control", COOK.getTranslatedKeyMessage());
         int width = Math.max(mc.font.width(label), mc.font.width(controls));
         try (var layout = com.example.examplemod.hud.client.HudLayoutClient.apply(graphics, "throwable_status",
                 (graphics.guiWidth() - width) / 2, top - 22, width, 45)) {

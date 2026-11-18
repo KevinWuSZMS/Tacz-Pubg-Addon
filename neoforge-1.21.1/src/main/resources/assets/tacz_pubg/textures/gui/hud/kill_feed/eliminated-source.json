@@ -1,0 +1,13 @@
+{
+  "asset": "eliminated.png",
+  "created": "2026-11-18",
+  "reference": "User screenshot 屏幕截图 2026-11-18 164914.png",
+  "method": "ImageGen reference redraw, then white alpha-mask cleanup and resize; not an original pixel extraction.",
+  "prompt_summary": "Extract and redraw only the crossed-out kneeling man symbol: big diagonal X, kneeling legs and round head; flat crisp white tintable pictogram on transparent background, no glow.",
+  "generated_source": "exec-166a7d10-da0a-4d69-974e-c4a7b38ac46a.png",
+  "size": [
+    96,
+    64
+  ],
+  "sha256": "a8396bb8d6535deeb35a33e3cb07ea0458f23322d83789b865ff5ab2369abdc2"
+}
