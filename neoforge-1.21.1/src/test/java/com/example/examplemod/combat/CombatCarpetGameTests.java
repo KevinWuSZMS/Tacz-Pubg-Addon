@@ -8,11 +8,18 @@ import com.example.examplemod.pubgsettings.PubgSettingsService;
 import com.example.examplemod.throwables.ThrowableKind;
 import com.example.examplemod.throwables.ThrowableRegistration;
 import com.example.examplemod.zones.MapZoneModel;
+import com.example.examplemod.zones.bombing.BombingProjectile;
+import com.example.examplemod.zones.bombing.BombingService;
 import com.example.examplemod.zones.match.MatchConfigModel;
 import com.example.examplemod.zones.match.MatchEngine;
 import com.example.examplemod.zones.match.MatchService;
 import com.mojang.authlib.GameProfile;
+import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.event.common.EntityHurtByGunEvent;
+import com.tacz.guns.api.item.builder.GunItemBuilder;
+import com.tacz.guns.entity.EntityKineticBullet;
+import com.tacz.guns.resource.modifier.AttachmentPropertyManager;
+import com.tacz.guns.util.ExplodeUtil;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -311,6 +318,28 @@ public final class CombatCarpetGameTests {
         });
     }
 
+    @GameTest(template = "empty", templateNamespace = "combat_dbno", batch = "combat_dbno", timeoutTicks = 600)
+    public static void grenadeAndRocketBlastKeepLauncherAfterWeaponSwitch(GameTestHelper helper) throws Exception {
+        Fixture f = new Fixture(helper);
+        // Isolate the blast from teammates and neighbouring test cases.
+        f.victim.teleportTo(f.victim.getX(), f.victim.getY() + 32, f.victim.getZ());
+        f.later(65, () -> {
+            f.launcherBlast("tacz:m320");
+            var knock = f.capture(f.ally).events.getLast();
+            helper.assertTrue(knock.type().equals("knock") && knock.firearm() && !knock.headshot()
+                    && knock.attacker().id().equals(f.enemy.getUUID()) && knock.cause().equals("gun_blast")
+                    && knock.weaponId().equals("tacz:m320"), "Wrong grenade launcher attribution: " + knock);
+            f.later((int) f.setting("dbno.protection_ticks") + 2, () -> {
+                f.launcherBlast("tacz:rpg7");
+                var finish = f.capture(f.ally).events.getLast();
+                helper.assertTrue(finish.type().equals("elimination") && finish.firearm() && finish.kills() == 1
+                        && finish.attacker().id().equals(f.enemy.getUUID()) && finish.cause().equals("gun_blast")
+                        && finish.weaponId().equals("tacz:rpg7"), "Wrong rocket launcher attribution: " + finish);
+                f.close(); helper.succeed();
+            });
+        });
+    }
+
     @FunctionalInterface private interface CheckedAction { void run() throws Exception; }
 
     private static final class Fixture implements AutoCloseable {
@@ -319,7 +348,7 @@ public final class CombatCarpetGameTests {
         final Object state;
         final long mapId = MAP_IDS.getAndIncrement();
         final List<EntityPlayerMPFake> players = new ArrayList<>();
-        final EntityPlayerMPFake victim, ally, enemy;
+        final EntityPlayerMPFake victim, ally, enemy, enemyTeammate;
         final Vec3 allyOrigin;
         final MatchEngine game;
         boolean closed;
@@ -328,8 +357,12 @@ public final class CombatCarpetGameTests {
             this(helper, false);
         }
 
-        @SuppressWarnings("unchecked")
         Fixture(GameTestHelper helper, boolean friendlyFire) throws Exception {
+            this(helper, friendlyFire, false);
+        }
+
+        @SuppressWarnings("unchecked")
+        Fixture(GameTestHelper helper, boolean friendlyFire, boolean addEnemyTeammate) throws Exception {
             this.helper = helper;
             server = helper.getLevel().getServer();
             BlockPos origin = helper.absolutePos(BlockPos.ZERO);
@@ -358,7 +391,10 @@ public final class CombatCarpetGameTests {
             Method start = stateType.getDeclaredMethod("start", MapZoneModel.MapDefinition.class,
                     MatchConfigModel.Settings.class, List.class, long.class);
             start.setAccessible(true);
-            start.invoke(state, map, settings, List.of(member(victim, "A"), member(ally, "A"), member(enemy, "B")), 23L);
+            var roster = new ArrayList<>(List.of(member(victim, "A"), member(ally, "A"), member(enemy, "B")));
+            enemyTeammate = addEnemyTeammate ? create("b", center.add(0, 0, 6)) : null;
+            if (enemyTeammate != null) roster.add(member(enemyTeammate, "B"));
+            start.invoke(state, map, settings, roster, 23L);
             game = MatchService.participantGame(server, victim.getUUID());
             if (game == null) throw new AssertionError("Combat fixture was not registered");
         }
@@ -434,6 +470,24 @@ public final class CombatCarpetGameTests {
 
         void hitFromEnemy(float amount) {
             attack(enemy, victim, amount, false);
+        }
+
+        void launcherBlast(String launcherId) {
+            var id = ResourceLocation.parse(launcherId);
+            var launcher = GunItemBuilder.create().setId(id).build(enemy.registryAccess());
+            enemy.setItemSlot(EquipmentSlot.MAINHAND, launcher);
+            AttachmentPropertyManager.postChangeEvent(enemy, launcher);
+            var data = TimelessAPI.getCommonGunIndex(id).orElseThrow().getGunData();
+            var shot = new EntityKineticBullet(enemy.level(), enemy, launcher, data.getAmmoId(), id, false, data, data.getBulletData());
+            enemy.setItemSlot(EquipmentSlot.MAINHAND, Items.IRON_SWORD.getDefaultInstance());
+            Vec3 impact = victim.getBoundingBox().getCenter();
+            shot.setPos(impact);
+            boolean previous = server.isPvpAllowed();
+            try {
+                server.setPvpAllowed(true);
+                victim.invulnerableTime = 0;
+                ExplodeUtil.createExplosion(shot.getOwner(), shot, 1000, 2, false, false, impact);
+            } finally { server.setPvpAllowed(previous); }
         }
 
         void attack(ServerPlayer attacker, ServerPlayer target, float amount, boolean gunHeadshot) {
@@ -518,6 +572,54 @@ public final class CombatCarpetGameTests {
                 player.discard();
             }
         }
+    }
+
+    @GameTest(template = "empty", templateNamespace = "combat_dbno", batch = "combat_dbno", timeoutTicks = 600)
+    public static void teammateLauncherFinishReportsShooterAndCreditsDowner(GameTestHelper helper) throws Exception {
+        Fixture f = new Fixture(helper, false, true);
+        ServerPlayer downer = f.enemyTeammate;
+        f.victim.teleportTo(f.victim.getX(), f.victim.getY() + 64, f.victim.getZ());
+        f.later(65, () -> {
+            f.attack(downer, f.victim, 1000, false);
+            f.assertDowned(1);
+            f.later((int) f.setting("dbno.protection_ticks") + 2, () -> {
+                f.launcherBlast("tacz:rpg7");
+                var death = f.capture(f.ally).events.getLast();
+                helper.assertTrue(death.type().equals("elimination") && death.wasDowned() && death.kills() == 1
+                        && death.attacker().id().equals(downer.getUUID()) && death.feedAttacker().id().equals(f.enemy.getUUID())
+                        && death.firearm() && death.cause().equals("gun_blast") && death.weaponId().equals("tacz:rpg7"),
+                        "The launcher must be shown with its shooter while the teammate's knock earns the kill: " + death);
+                var finisher = f.capture(f.enemy);
+                helper.assertTrue(finisher.snapshot.assists() == 1 && finisher.snapshot.kills() == 0
+                        && f.capture(downer).snapshot.kills() == 1
+                        && finisher.events.stream().filter(e -> e.type().equals("assist")
+                                && e.attacker().id().equals(f.enemy.getUUID()) && e.victim().id().equals(f.victim.getUUID())).count() == 1,
+                        "The rocket finisher should receive exactly one assist for the teammate's knock");
+                f.close(); helper.succeed();
+            });
+        });
+    }
+
+    @GameTest(template = "empty", templateNamespace = "combat_dbno", batch = "combat_dbno", timeoutTicks = 600)
+    public static void unownedBombardmentFinishKeepsDownerWithoutLauncher(GameTestHelper helper) throws Exception {
+        Fixture f = new Fixture(helper);
+        f.later(65, () -> {
+            f.hitFromEnemy(1000);
+            f.assertDowned(1);
+            f.later((int) f.setting("dbno.protection_ticks") + 2, () -> {
+                var shell = new EntityKineticBullet(EntityKineticBullet.TYPE, helper.getLevel());
+                ((BombingProjectile) shell).taczPubg$configureBombingProjectile(ResourceLocation.parse("tacz:rpg_rocket"),
+                        ResourceLocation.parse("tacz:rpg7"), f.victim.position(), 2);
+                shell.getPersistentData().put(BombingService.MARKER, new net.minecraft.nbt.CompoundTag());
+                f.victim.hurt(f.victim.damageSources().explosion(shell, null), 1000);
+                var death = f.capture(f.ally).events.getLast();
+                helper.assertTrue(death.type().equals("elimination") && death.wasDowned() && !death.firearm()
+                        && death.weaponId().isEmpty() && death.attacker().id().equals(f.enemy.getUUID())
+                        && death.kills() == 1 && f.capture(f.enemy).snapshot.kills() == 1,
+                        "An unowned bombardment shell must preserve the knock credit and report no finishing weapon: " + death);
+                f.close(); helper.succeed();
+            });
+        });
     }
 
     private static final class CaptureConnection extends NetHandlerPlayServerFake {

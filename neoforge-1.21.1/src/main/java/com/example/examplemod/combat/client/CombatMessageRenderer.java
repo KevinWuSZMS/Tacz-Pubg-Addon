@@ -24,10 +24,17 @@ final class CombatMessageRenderer {
         return Component.translatable("screen.tacz_pubg.combat." + key, args);
     }
 
+    static boolean showsWeapon(Event event) {
+        if (event.feedAttacker().name().isEmpty() || event.bleedout() || event.cause().equals("environment")) return false;
+        if (event.unarmed()) return true;
+        var id = ResourceLocation.tryParse(event.weaponId());
+        return id != null && !id.getPath().isEmpty();
+    }
+
     static Component weaponName(Event event) {
         if (event.unarmed()) return text("fists");
         var id = ResourceLocation.tryParse(event.weaponId());
-        if (id == null || id.getPath().isEmpty()) return text("environment");
+        if (id == null || id.getPath().isEmpty()) return Component.empty();
         var gun = TimelessAPI.getClientGunIndex(id);
         if (gun.isPresent()) return Component.translatable(gun.get().getName());
         var item = BuiltInRegistries.ITEM.getOptional(id);
@@ -42,14 +49,16 @@ final class CombatMessageRenderer {
         return Component.literal(id.getPath().replace('_', ' '));
     }
 
-    private static Component message(Event event, boolean receiving, int red) {
+    static Component message(Event event, boolean receiving, int red) {
         if (event.type().equals("revive")) return text("revive", event.victim().name());
         if (event.type().equals("assist")) return text("assist_message",
                 text("eliminate_verb").withColor(red & 0xFFFFFF), event.victim().name());
         Component subject = receiving ? Component.literal(event.attacker().name()) : text("you_subject");
         Component victim = receiving ? text("you_object") : Component.literal(event.victim().name());
-        if (event.bleedout())
+        if (!showsWeapon(event) || !event.attacker().id().equals(event.feedAttacker().id())) {
+            if (event.type().equals("knock")) return text("knocked_without_weapon", subject, victim);
             return text("finally_eliminated", subject, text("eliminate_past").withColor(red & 0xFFFFFF), victim);
+        }
         Component action = event.type().equals("knock") ? text("knock_verb") : text("eliminate_verb").withColor(red & 0xFFFFFF);
         var weapon = weaponName(event).copy();
         if (event.firearm()) weapon.withStyle(style -> style.withInsertion(GUN_BADGE));

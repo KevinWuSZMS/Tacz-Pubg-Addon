@@ -61,6 +61,7 @@ public final class CombatService {
     private static final Map<DamageSource, Hit> GUN_HITS = new WeakHashMap<>();
     private static final Set<UUID> FINISHING = new HashSet<>();
     private record Hit(UUID attacker, String weapon, boolean headshot, String cause, String gunType) {}
+    private static final Hit ENVIRONMENT = new Hit(null, "", false, "environment", "");
     private static final class Damage { double amount; long tick; Damage(double amount,long tick) { this.amount=amount;this.tick=tick; } }
     private static final class Player {
         int kills,assists,knocks,downs; boolean eliminated, directDeath=true;
@@ -159,8 +160,12 @@ public final class CombatService {
         var owner = source.getEntity();
         UUID attacker = owner == null ? null : owner.getUUID();
         // TaCZ blast damage bypasses the gun-hit event but retains the projectile's launch-time gun ID.
-        if (direct instanceof EntityKineticBullet bullet && owner instanceof LivingEntity && bullet.getGunId() != null) {
-            return new Hit(attacker, bullet.getGunId().toString(), false, "gun_blast", "");
+        if (direct instanceof EntityKineticBullet bullet) {
+            if (com.example.examplemod.zones.bombing.BombingService.isBombing(bullet)) return ENVIRONMENT;
+            var shooter = bullet.getOwner() instanceof LivingEntity living ? living : owner;
+            if (shooter instanceof LivingEntity && bullet.getGunId() != null)
+                return new Hit(shooter.getUUID(), bullet.getGunId().toString(), false, "gun_blast", "");
+            if (shooter == null) return ENVIRONMENT;
         }
         if (direct instanceof PubgThrowableEntity projectile) {
             return new Hit(attacker == null ? projectile.throwerId() : attacker, "tacz_pubg:" + projectile.kind().id, false, "throwable", "");
@@ -168,6 +173,7 @@ public final class CombatService {
         if (direct instanceof me.xjqsh.lrtactical.entity.ThrowableItemEntity projectile) {
             return new Hit(attacker, itemId(projectile.getItem()), false, "throwable", "");
         }
+        if (owner == null) return ENVIRONMENT;
         if (direct != null && direct != owner) {
             return new Hit(attacker, BuiltInRegistries.ENTITY_TYPE.getKey(direct.getType()).toString(), false, "item", "");
         }
@@ -187,6 +193,9 @@ public final class CombatService {
         // A PUBG throwable can share LR's animation ID with a different explosive.
         if (!(item instanceof PubgThrowableItem) && item instanceof ICustomItem custom) return custom.getId(stack).toString();
         return BuiltInRegistries.ITEM.getKey(item).toString();
+    }
+    private static Hit participantHit(Game game, Hit hit) {
+        return game.players.containsKey(hit.attacker) ? hit : ENVIRONMENT;
     }
     private static void damaged(LivingDamageEvent.Post e) {
         if(!(e.getEntity() instanceof ServerPlayer p)||e.getNewDamage()<=0||FINISHING.contains(p.getUUID()))return;
@@ -212,7 +221,7 @@ public final class CombatService {
         if(refreshDirectDeath(g,p))return;
         e.setCanceled(true);p.setAbsorptionAmount(0);p.stopRiding();p.stopFallFlying();p.stopUsingItem();
         ThrowableService.cancel(p);
-        Player state=g.players.get(p.getUUID());state.downs++;state.down=new Down(hit(e.getSource()),g.engine.combatTicks(),(float)number(p.server,"dbno.health"),p.position());
+        Player state=g.players.get(p.getUUID());state.downs++;state.down=new Down(participantHit(g,hit(e.getSource())),g.engine.combatTicks(),(float)number(p.server,"dbno.health"),p.position());
         syncDownedHealth(p,state.down);
         MatchBotService.suspend(p);
         setPose(p);cancelRescues(g,p.getUUID());
@@ -257,7 +266,7 @@ public final class CombatService {
         // Incoming damage is handled by the DBNO pool, so vanilla never reaches its hurt feedback.
         p.hurtDuration=10;p.hurtTime=p.hurtDuration;
         p.serverLevel().broadcastDamageEvent(p,e.getSource());
-        if(down.hp<=0)finish(p,g,h);else {syncDownedHealth(p,down);pushAll(g,p.server);}
+        if(down.hp<=0)finish(p,g,participantHit(g,h));else {syncDownedHealth(p,down);pushAll(g,p.server);}
     }
     private static void syncDownedHealth(ServerPlayer p,Down down) {
         // Keep the native entity, nameplate mods and the independent DBNO bar at the same fraction.
@@ -268,7 +277,7 @@ public final class CombatService {
     public static UUID finalDeath(ServerPlayer p,MatchEngine engine,DamageSource source) {
         Game g=GAMES.computeIfAbsent(p.server,ignored->new LinkedHashMap<>()).computeIfAbsent(engine.session().sessionId(),ignored->new Game(p.server,engine));Player state=g.players.get(p.getUUID());
         if(state==null||state.eliminated)return null;
-        Hit end=g.forced.remove(p.getUUID());if(end==null)end=hit(source);
+        Hit end=g.forced.remove(p.getUUID());if(end==null)end=participantHit(g,hit(source));
         Down down=state.down;
         var contributions=new ArrayList<CombatRules.Contributor>();
         for(var entry:state.contributors.entrySet())contributions.add(new CombatRules.Contributor(entry.getKey(),team(g,entry.getKey()),entry.getValue().amount,entry.getValue().tick));
@@ -414,7 +423,12 @@ public final class CombatService {
         publish(g,server,type,attacker,victim,hit,cause,only,false);
     }
     private static void publish(Game g,MinecraftServer server,String type,UUID attacker,UUID victim,Hit hit,String cause,ServerPlayer only,boolean wasDowned) {
-        Player stats=g.players.get(attacker);var event=new CombatPayloads.Event(g.engine.session().sessionId(),++g.sequence,type,actor(g,attacker),actor(g,victim),hit.weapon,hit.headshot,cause,stats==null?0:stats.kills,stats==null?0:stats.assists,wasDowned);
+        Player stats = g.players.get(attacker);
+        var credited = actor(g, attacker);
+        var feedAttacker = type.equals("elimination") && hit.attacker != null ? actor(g, hit.attacker) : credited;
+        var event = new CombatPayloads.Event(g.engine.session().sessionId(), ++g.sequence, type, credited,
+                actor(g, victim), hit.weapon, hit.headshot, cause, stats == null ? 0 : stats.kills,
+                stats == null ? 0 : stats.assists, wasDowned, feedAttacker);
         var packet=new CombatPayloads.EventMessage(event);
         if(only!=null)PacketDistributor.sendToPlayer(only,packet);else for(UUID id:g.players.keySet()){ServerPlayer p=server.getPlayerList().getPlayer(id);if(p!=null)PacketDistributor.sendToPlayer(p,packet);}
     }

@@ -25,24 +25,24 @@ final class CombatFeedRow {
     static void draw(GuiGraphics g, Event event, int viewerTeam, int width, int top, int row,
                      PubgSettings settings, double opacity) {
         Font font = Minecraft.getInstance().font;
+        Actor attacker = event.feedAttacker();
         boolean friendly = event.friendlyFire();
-        boolean ownTeam = viewerTeam > 0 && viewerTeam == event.attacker().team();
+        boolean ownTeam = viewerTeam > 0 && viewerTeam == attacker.team();
         String tint = friendly ? "combat.kill_color" : ownTeam ? "combat.own_color" : "combat.text_color";
         int color = CombatHudClient.alpha(settings.color(tint), opacity);
         if ((color >>> 24) < 4) return;
         int iconHeight = Math.max(6, row - 3);
         boolean downed = event.type().equals("knock") || event.bleedout();
         boolean direct = event.directElimination();
-        boolean headshot = event.firearm() && event.headshot();
-        boolean source = !event.bleedout() && (event.firearm() || event.unarmed() || event.throwable()
-                || !event.weaponId().isEmpty() || !downed);
-        int sourceWidth = source ? sourceWidth(font, event, iconHeight) : 0;
+        boolean weapon = CombatMessageRenderer.showsWeapon(event);
+        boolean headshot = weapon && event.firearm() && event.headshot();
+        String action = weapon ? "" : actionLabel(event);
+        int sourceWidth = weapon ? sourceWidth(font, event, iconHeight) : font.width(action);
         String flag = friendly ? CombatMessageRenderer.text("friendly_fire").getString() : "";
         int icons = padded(sourceWidth) + padded(headshot ? iconHeight : 0) + padded(downed || direct ? iconHeight * 3 / 2 : 0);
-        int fixed = 6 + padded(badgeWidth(font, event.attacker())) + badgeWidth(font, event.victim())
+        int fixed = 6 + padded(badgeWidth(font, attacker)) + badgeWidth(font, event.victim())
                 + icons + padded(font.width(flag));
-        String left = event.attacker().name();
-        if (left.isEmpty()) left = CombatMessageRenderer.text("environment").getString();
+        String left = attacker.name();
         String right = event.victim().name();
         int nameSpace = Math.max(16, width - fixed);
         int leftMax = Math.min(font.width(left), Math.max(nameSpace / 2, nameSpace - font.width(right)));
@@ -56,10 +56,10 @@ final class CombatFeedRow {
         g.fill(0, 0, total, row - 1, CombatHudClient.alpha(settings.color("hud.panel_color"), opacity));
         int y = (row - font.lineHeight) / 2;
         int x = 2;
-        x += padded(badge(g, event.attacker(), x, row, friendly, color, opacity));
+        x += padded(badge(g, attacker, x, row, friendly, color, opacity));
         g.drawString(font, left, x, y, color);
         x += font.width(left) + 2;
-        if (source) {
+        if (weapon) {
             var id = ResourceLocation.tryParse(event.weaponId());
             boolean drawn;
             if (event.unarmed()) {
@@ -72,9 +72,12 @@ final class CombatFeedRow {
                         && KillFeedWeaponIcons.drawThrowable(g, id, x, 1, sourceWidth, iconHeight, color);
             }
             if (!drawn) {
-                String label = font.plainSubstrByWidth(sourceLabel(event), sourceWidth);
+                String label = font.plainSubstrByWidth(CombatMessageRenderer.weaponName(event).getString(), sourceWidth);
                 g.drawString(font, label, x + (sourceWidth - font.width(label)) / 2, y, color);
             }
+            x += padded(sourceWidth);
+        } else if (!action.isEmpty()) {
+            g.drawString(font, action, x, y, color);
             x += padded(sourceWidth);
         }
         if (headshot) {
@@ -98,13 +101,16 @@ final class CombatFeedRow {
         if (event.firearm()) return iconHeight * 3;
         if (event.unarmed()) return iconHeight * 3 / 2;
         if (event.throwable()) return iconHeight;
-        return Math.min(45, font.width(sourceLabel(event)));
+        return Math.min(45, font.width(CombatMessageRenderer.weaponName(event).getString()));
     }
 
-    private static String sourceLabel(Event e) {
-        if (e.type().equals("revive")) return "+";
-        if (e.weaponId().isEmpty()) return CombatMessageRenderer.text("eliminate_verb").getString();
-        return CombatMessageRenderer.weaponName(e).getString();
+    static String actionLabel(Event event) {
+        return switch (event.type()) {
+            case "revive" -> "+";
+            case "knock" -> CombatMessageRenderer.text("knock_label").getString();
+            case "elimination" -> CombatMessageRenderer.text("finally_eliminated_label").getString();
+            default -> "";
+        };
     }
 
     private static int padded(int width) { return width > 0 ? width + 2 : 0; }

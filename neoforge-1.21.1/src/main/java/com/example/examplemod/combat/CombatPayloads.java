@@ -55,8 +55,13 @@ public final class CombatPayloads {
         };
         public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
+    /** Personal notices and counters belong to attacker. The feed pairs the finishing weapon with feedAttacker. */
     public record Event(UUID session, long sequence, String type, Actor attacker, Actor victim, String weaponId,
-            boolean headshot, String cause, int kills, int assists, boolean wasDowned) {
+            boolean headshot, String cause, int kills, int assists, boolean wasDowned, Actor feedAttacker) {
+        public Event(UUID session, long sequence, String type, Actor attacker, Actor victim, String weaponId,
+                boolean headshot, String cause, int kills, int assists, boolean wasDowned) {
+            this(session, sequence, type, attacker, victim, weaponId, headshot, cause, kills, assists, wasDowned, attacker);
+        }
         /** Compatibility for previews and callers without a previous DBNO state. */
         public Event(UUID session, long sequence, String type, Actor attacker, Actor victim, String weaponId,
                 boolean headshot, String cause, int kills, int assists) {
@@ -72,10 +77,25 @@ public final class CombatPayloads {
             return (type.equals("knock") || type.equals("elimination")) && attacker.team > 0
                     && attacker.team == victim.team && !attacker.id.equals(victim.id);
         }
-        public Event { if (session == null || sequence < 0 || !List.of("knock", "elimination", "assist", "revive").contains(type) || attacker == null || victim == null || weaponId.length() > 256 || cause.length() > 64 || kills < 0 || assists < 0) throw new IllegalArgumentException("Invalid combat event"); }
+        public Event { if (session == null || sequence < 0 || !List.of("knock", "elimination", "assist", "revive").contains(type) || attacker == null || feedAttacker == null || victim == null || weaponId.length() > 256 || cause.length() > 64 || kills < 0 || assists < 0) throw new IllegalArgumentException("Invalid combat event"); }
         public static final StreamCodec<RegistryFriendlyByteBuf, Event> CODEC = new StreamCodec<>() {
-            public Event decode(RegistryFriendlyByteBuf b) { return new Event(b.readUUID(), b.readVarLong(), b.readUtf(16), readActor(b), readActor(b), b.readUtf(256), b.readBoolean(), b.readUtf(64), b.readVarInt(), b.readVarInt(), b.readBoolean()); }
-            public void encode(RegistryFriendlyByteBuf b, Event p) { b.writeUUID(p.session); b.writeVarLong(p.sequence); b.writeUtf(p.type,16); writeActor(b,p.attacker); writeActor(b,p.victim); b.writeUtf(p.weaponId,256); b.writeBoolean(p.headshot); b.writeUtf(p.cause,64); b.writeVarInt(p.kills); b.writeVarInt(p.assists); b.writeBoolean(p.wasDowned); }
+            public Event decode(RegistryFriendlyByteBuf b) {
+                UUID session = b.readUUID();
+                long sequence = b.readVarLong();
+                String type = b.readUtf(16);
+                Actor attacker = readActor(b);
+                Actor feedAttacker = b.readBoolean() ? readActor(b) : attacker;
+                return new Event(session, sequence, type, attacker, readActor(b), b.readUtf(256), b.readBoolean(),
+                        b.readUtf(64), b.readVarInt(), b.readVarInt(), b.readBoolean(), feedAttacker);
+            }
+            public void encode(RegistryFriendlyByteBuf b, Event p) {
+                b.writeUUID(p.session); b.writeVarLong(p.sequence); b.writeUtf(p.type,16); writeActor(b,p.attacker);
+                boolean separateFinisher = !p.feedAttacker.equals(p.attacker);
+                b.writeBoolean(separateFinisher);
+                if (separateFinisher) writeActor(b, p.feedAttacker);
+                writeActor(b,p.victim); b.writeUtf(p.weaponId,256); b.writeBoolean(p.headshot); b.writeUtf(p.cause,64);
+                b.writeVarInt(p.kills); b.writeVarInt(p.assists); b.writeBoolean(p.wasDowned);
+            }
         };
     }
     public record EventMessage(Event event) implements CustomPacketPayload {
@@ -111,7 +131,7 @@ public final class CombatPayloads {
     public static void setClientRescueHandler(Consumer<Rescue> handler) { rescueUpdates = handler; }
     public static void setClientSessionGate(BiPredicate<UUID,Connection> gate) { clientGate=gate; }
     public static void register(RegisterPayloadHandlersEvent event) {
-        var registrar = event.registrar("3-combat");
+        var registrar = event.registrar("4-combat");
         registrar.playToClient(Snapshot.TYPE, Snapshot.CODEC, (p,c) -> {
             Connection connection=c.connection();
             c.enqueueWork(() -> {

@@ -59,6 +59,11 @@ public final class CombatWireChecks {
         check(!bash.firearm() && !bash.friendlyFire(), "Gun carried as a melee weapon and self damage are distinguished");
         var blast = new CombatPayloads.Event(session, 56, "elimination", actor, victim, "tacz:rpg7", false, "gun_blast", 1, 0);
         check(blast.firearm() && !blast.headshot(), "TaCZ explosive rounds retain the original firearm");
+        var finisher = new CombatPayloads.Actor(new UUID(7, 8), "Finisher", actor.team(), actor.color());
+        var teamFinish = new CombatPayloads.Event(session, 57, "elimination", actor, victim, "tacz:m320", false,
+                "gun_blast", 1, 0, true, finisher);
+        check(round(CombatPayloads.Event.CODEC, teamFinish).equals(teamFinish),
+                "A teammate's launcher and identity reach the feed independently of the credited downer");
         var punch = new CombatPayloads.Event(session, 56, "knock", actor, victim, "", false, "unarmed", 0, 0);
         check(round(CombatPayloads.Event.CODEC, punch).unarmed() && !bleed.unarmed(), "Only a bare-handed strike gets a fist");
         var grenade = new CombatPayloads.Event(session, 57, "elimination", actor, victim, "tacz_pubg:frag_grenade", false, "throwable", 1, 0);

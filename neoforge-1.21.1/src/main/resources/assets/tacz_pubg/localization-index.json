@@ -2586,7 +2586,6 @@
   "1701714e6481": "screen.tacz_pubg.combat.assists",
   "36b588a25ed0": "screen.tacz_pubg.combat.top_kills",
   "8147a62f1cf7": "screen.tacz_pubg.combat.top_assists",
-  "7fb0a1bdbbcd": "screen.tacz_pubg.combat.environment",
   "61951dedba59": "screen.tacz_pubg.medicine.action_using",
   "956acd98a204": "screen.tacz_pubg.medicine.action_cancel",
   "bef8a8b2ff74": "screen.tacz_pubg.medicine.action_rescuing",
@@ -2711,5 +2710,8 @@
   "0c70b1c94dd5": "screen.tacz_pubg.inventory.pubg.action.equip",
   "f1fafc912c0e": "screen.tacz_pubg.inventory.pubg.action.unload",
   "2f0c1bea2c99": "screen.tacz_pubg.inventory.pubg.action.use",
-  "fead47989fe8": "screen.tacz_pubg.inventory.pubg.refit_hint"
+  "fead47989fe8": "screen.tacz_pubg.inventory.pubg.refit_hint",
+  "7322fb7cc65e": "screen.tacz_pubg.combat.finally_eliminated_label",
+  "b3d676c9e0a4": "screen.tacz_pubg.combat.knocked_without_weapon",
+  "905954e49531": "screen.tacz_pubg.combat.knock_label"
 }

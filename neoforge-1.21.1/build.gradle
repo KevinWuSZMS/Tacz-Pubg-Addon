@@ -419,6 +419,7 @@ tasks.named('check').configure { dependsOn droppedLootTransitionChecks }
         minimapPlacementChecks: 'com.example.examplemod.hud.client.MinimapPlacementChecks',
         combatRulesChecks: 'com.example.examplemod.combat.CombatRulesChecks',
         combatWireChecks: 'com.example.examplemod.combat.CombatWireChecks',
+        combatMessageChecks: 'com.example.examplemod.combat.client.CombatMessageChecks',
         combatAbiChecks: 'com.example.examplemod.combat.CombatAbiChecks',
         combatTimelineChecks: 'com.example.examplemod.combat.CombatTimelineChecks',
         pubgSettingsChecks: 'com.example.examplemod.pubgsettings.PubgSettingsChecks',
@@ -460,10 +461,10 @@ tasks.named('check').configure { dependsOn droppedLootTransitionChecks }
         if (checkName == 'combatAbiChecks') {
             classpath += files('run/mods/neoforge-carpet-1.21.1-1.0.8+v251027.jar')
         }
-        if (checkName in ['throwableSettingsFieldNamesChecks', 'gunAmmoConfigChecks', 'combatRulesChecks', 'combatWireChecks', 'pubgSettingsChecks', 'backpackChecks', 'throwableHudIconChecks', 'weaponStackChecks']) {
+        if (checkName in ['throwableSettingsFieldNamesChecks', 'gunAmmoConfigChecks', 'combatRulesChecks', 'combatWireChecks', 'combatMessageChecks', 'pubgSettingsChecks', 'backpackChecks', 'throwableHudIconChecks', 'weaponStackChecks']) {
             classpath += files('../downloads/lrtactical/LesRaisins-Tactical-Equipements-1.21.1-0.4.3.jar')
         }
-        if (checkName in ['combatRulesChecks', 'combatWireChecks', 'pubgSettingsChecks', 'pubgMedicineChecks', 'armorHudLayoutChecks', 'backpackChecks', 'weaponStackChecks']) {
+        if (checkName in ['combatRulesChecks', 'combatWireChecks', 'combatMessageChecks', 'pubgSettingsChecks', 'pubgMedicineChecks', 'armorHudLayoutChecks', 'backpackChecks', 'weaponStackChecks']) {
             classpath += files('../downloads/tacz/tacz-neoforge-1.21.1-1.1.8-hotfix-r7.jar')
         }
         if (checkName == 'heavyWeaponExplosionChecks') {
