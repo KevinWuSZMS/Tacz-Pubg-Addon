@@ -209,17 +209,22 @@ public final class BackpackCapacityGameTests {
                 helper.assertTrue((slot == 41 ? BackpackService.equipped(f.player) : f.player.getInventory().getItem(slot)).isEmpty()
                                 && ItemStack.matches(unrelated, f.player.getInventory().getItem(10)),
                         "PUBG drop retained its source or changed unrelated inventory at " + slot);
-                var drops = f.itemDrops(original);
-                helper.assertTrue(drops.size() == 1 && ItemStack.matches(original, drops.getFirst().getItem()),
+                var drops = f.groundDrops(original);
+                helper.assertTrue(drops.size() == 1 && drops.getFirst().getQuantity() == original.getCount(),
                         "PUBG drop did not preserve one complete source stack at " + slot);
-                ItemEntity dropped = drops.getFirst();
+                GroundLootEntity dropped = drops.getFirst();
                 helper.assertTrue(dropped.position().distanceToSqr(f.player.position().add(0, .2, 0)) < 1.0e-12
                                 && dropped.getDeltaMovement().lengthSqr() == 0,
                         "PUBG inventory drop retained the forward throw trajectory at " + slot);
                 var saved = new net.minecraft.nbt.CompoundTag();
-                dropped.addAdditionalSaveData(saved);
-                helper.assertTrue(saved.getShort("PickupDelay") > 0,
+                dropped.saveWithoutId(saved);
+                helper.assertTrue(saved.getInt("PickupDelay") > 0,
                         "Dropping at the feet erased the vanilla pickup delay at " + slot);
+                helper.assertTrue(PubgInventoryService.nearby(f.player, dropped) && !dropped.canBePickedUpBy(f.player),
+                        "The authoritative nearby row waited for the pickup delay or bypassed that delay at " + slot);
+                helper.assertTrue(!dropped.consumeForInventory(f.player, dropped.getItem(), 1)
+                                && dropped.getQuantity() == original.getCount(),
+                        "Listing a pending drop made it prematurely consumable at " + slot);
             }
             helper.succeed();
         }
@@ -239,7 +244,7 @@ public final class BackpackCapacityGameTests {
                 f.player.getInventory().setItem(10, new ItemStack(Items.STONE, 16));
                 helper.assertTrue(!pubgDrop(f.player, slot)
                                 && ItemStack.matches(original, slot == 41 ? BackpackService.equipped(f.player) : f.player.getInventory().getItem(slot))
-                                && BackpackService.used(f.player) == 80_000 && f.itemDrops(original).isEmpty(),
+                                && BackpackService.used(f.player) == 80_000 && f.groundDrops(original).isEmpty(),
                         "Dropping equipment bypassed the smaller remaining capacity at " + slot);
                 f.player.getInventory().setItem(10, ItemStack.EMPTY);
                 Consumer<ItemTossEvent> tossVeto = event -> {
@@ -249,13 +254,14 @@ public final class BackpackCapacityGameTests {
                 try { helper.assertTrue(!pubgDrop(f.player, slot), "Canceled toss reported success"); }
                 finally { NeoForge.EVENT_BUS.unregister(tossVeto); }
                 Consumer<EntityJoinLevelEvent> spawnVeto = event -> {
-                    if (event.getEntity() instanceof ItemEntity entity && ItemStack.matches(entity.getItem(), original)) event.setCanceled(true);
+                    if (event.getEntity() instanceof GroundLootEntity entity
+                            && ItemStack.isSameItemSameComponents(entity.getItem(), original)) event.setCanceled(true);
                 };
                 NeoForge.EVENT_BUS.addListener(spawnVeto);
                 try { helper.assertTrue(!pubgDrop(f.player, slot), "Canceled entity spawn reported success"); }
                 finally { NeoForge.EVENT_BUS.unregister(spawnVeto); }
                 helper.assertTrue(ItemStack.matches(original, slot == 41 ? BackpackService.equipped(f.player) : f.player.getInventory().getItem(slot))
-                                && BackpackService.used(f.player) == 64_000 && f.itemDrops(original).isEmpty(),
+                                && BackpackService.used(f.player) == 64_000 && f.groundDrops(original).isEmpty(),
                         "Canceled equipment drop lost or duplicated the equipped item at " + slot);
             }
             helper.succeed();
@@ -314,6 +320,12 @@ public final class BackpackCapacityGameTests {
         List<ItemEntity> itemDrops(ItemStack expected) {
             var found = player.level().getEntitiesOfClass(ItemEntity.class, player.getBoundingBox().inflate(3),
                     item -> ItemStack.matches(item.getItem(), expected));
+            drops.addAll(found);
+            return found;
+        }
+        List<GroundLootEntity> groundDrops(ItemStack expected) {
+            var found = player.level().getEntitiesOfClass(GroundLootEntity.class, player.getBoundingBox().inflate(3),
+                    item -> ItemStack.isSameItemSameComponents(item.getItem(), expected));
             drops.addAll(found);
             return found;
         }

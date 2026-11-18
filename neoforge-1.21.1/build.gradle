@@ -401,6 +401,7 @@ tasks.named('check').configure { dependsOn droppedLootTransitionChecks }
         inventorySettingsChecks: 'com.example.examplemod.inventory.InventorySettingsChecks',
         pubgInventoryChecks: 'com.example.examplemod.inventory.PubgInventoryChecks',
         pubgInventoryLayoutChecks: 'com.example.examplemod.inventory.client.PubgInventoryLayoutChecks',
+        pubgInventoryCharacterChecks: 'com.example.examplemod.inventory.client.PubgInventoryCharacterChecks',
         pubgRefitChecks: 'com.example.examplemod.inventory.client.PubgRefitChecks',
         pubgInventoryInputAbiChecks: 'com.example.examplemod.inventory.PubgInventoryInputAbiChecks',
         inventoryTransferChecks: 'com.example.examplemod.inventory.InventoryTransferChecks',
@@ -452,7 +453,7 @@ tasks.named('check').configure { dependsOn droppedLootTransitionChecks }
         dependsOn tasks.named('testClasses')
         classpath = sourceSets.test.runtimeClasspath
         mainClass = checkClass
-        if (checkName in ['heavyWeaponChecks', 'heavyWeaponExplosionChecks']) {
+        if (checkName in ['heavyWeaponChecks', 'heavyWeaponExplosionChecks', 'pubgInventoryLayoutChecks', 'pubgRefitChecks']) {
             classpath += files('../downloads/tacz/tacz-neoforge-1.21.1-1.1.8-hotfix-r7.jar')
         }
         if (checkName == 'combatAbiChecks') {

@@ -55,7 +55,20 @@ public final class MedicineInventoryInputChecks {
         check(!MedicineInputRules.acceptsContinuation(gap, true, true, false, true, false, true, true), "another item use cannot be replaced");
         wiring();
         hudWiring();
+        airLayer();
         System.out.println("MedicineInventoryInputChecks: " + checks + " chain-gap, cancellation, movement and foreground HUD checks passed; no game launched.");
+    }
+
+    private static void airLayer() {
+        var air = net.neoforged.neoforge.client.gui.VanillaGuiLayers.AIR_LEVEL;
+        check(MatchVitalsHud.hidesVanillaLayer(true, air, false), "match lung HUD replaces vanilla bubbles even with the hotbar visible");
+        check(MatchVitalsHud.hidesVanillaLayer(true, air, true), "hiding the hotbar retains the same match oxygen policy");
+        check(!MatchVitalsHud.hidesVanillaLayer(false, air, false), "ordinary gameplay retains vanilla oxygen bubbles");
+        check(!MatchVitalsHud.hidesVanillaLayer(false, air, true), "ordinary oxygen is not affected by a stored match hotbar preference");
+        check(!MatchVitalsHud.hidesVanillaLayer(true, net.neoforged.neoforge.client.gui.VanillaGuiLayers.VEHICLE_HEALTH, false),
+                "mount health remains visible while vanilla oxygen is hidden");
+        check(!MatchVitalsHud.hidesVanillaLayer(true, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("tacz_pubg", "combat_equipment"), false),
+                "the match status layer containing lungs is not suppressed");
     }
 
     private static void hudWiring() throws Exception {

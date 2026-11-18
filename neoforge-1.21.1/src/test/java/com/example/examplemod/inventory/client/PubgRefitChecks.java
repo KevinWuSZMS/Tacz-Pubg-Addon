@@ -45,7 +45,52 @@ public final class PubgRefitChecks {
         check(!departed.flushNative() && departed.destination() == PubgRefitSession.Destination.GAME,
                 "leaving the player/world cannot reopen a stale inventory");
         wiring();
-        System.out.println("PubgRefitChecks: " + checks + " target, exit and native UI delegation checks passed; no game launched.");
+        attachmentSlots();
+        System.out.println("PubgRefitChecks: " + checks + " target, exit, native attachment resources and UI delegation checks passed; no game launched.");
+    }
+
+    private static void attachmentSlots() throws Exception {
+        var slots = read(CLIENT + "PubgAttachmentSlots");
+        String gun = "com/tacz/guns/api/item/IGun";
+        var draw = method(slots, "draw");
+        check(calls(method(slots, "supports"), gun, "allowAttachmentType"), "unsupported attachment types are filtered by the actual TaCZ API");
+        check(slots.methods.stream().anyMatch(m -> m.name.startsWith("lambda$supportedTypes$") && calls(m, gun, "allowAttachmentType")),
+                "visible type enumeration uses TaCZ support rather than a hardcoded gun table");
+        check(calls(method(slots, "accepts"), CLIENT + "PubgAttachmentSlots", "isLocked")
+                        && calls(method(slots, "accepts"), CLIENT + "PubgAttachmentSlots", "isBuiltIn")
+                        && calls(method(slots, "accepts"), gun, "allowAttachment"),
+                "drag targets check lock, fixed parts and native item compatibility");
+        check(calls(method(slots, "canRemove"), CLIENT + "PubgAttachmentSlots", "isBuiltIn")
+                        && calls(method(slots, "canRemove"), CLIENT + "PubgAttachmentSlots", "isLocked"),
+                "fixed and locked parts cannot be offered as unload sources");
+        check(calls(method(slots, "installed"), gun, "getAttachment")
+                        && !calls(method(slots, "installed"), gun, "getBuiltinAttachment"),
+                "installed stacks never substitute synthetic built-in items into inventory transactions");
+        check(calls(method(slots, "displayed"), gun, "getBuiltinAttachment"), "fixed parts can be shown without becoming an unload source");
+        check(calls(method(slots, "emptyIconU"), NATIVE, "getSlotTextureXOffset"), "empty-slot UV mapping delegates to native TaCZ");
+        boolean frame = false, icons = false;
+        for (var instruction : draw.instructions) if (instruction instanceof FieldInsnNode field && field.owner.equals(NATIVE)) {
+            frame |= field.name.equals("SLOT_TEXTURE");
+            icons |= field.name.equals("ICONS_TEXTURE");
+        }
+        check(frame && icons && calls(draw, "net/minecraft/client/gui/GuiGraphics", "renderItem"),
+                "slot drawing uses the original TaCZ frame/type atlas and native item rendering");
+        check(!calls(draw, "net/minecraft/client/gui/GuiGraphics", "fill")
+                        && !calls(draw, "net/minecraft/client/gui/GuiGraphics", "drawString"),
+                "attachment artwork is not approximated with drawn glyphs or placeholder rectangles");
+        check(!calls(draw, "net/neoforged/neoforge/network/PacketDistributor", "sendToServer"),
+                "native slot presentation cannot trigger native automatic attachment mutations");
+        imageSize("assets/tacz/textures/gui/refit_slot.png", 18, 18);
+        imageSize("assets/tacz/textures/gui/refit_slot_icons.png", 224, 32);
+    }
+
+    private static void imageSize(String resource, int width, int height) throws Exception {
+        try (var stream = PubgRefitChecks.class.getClassLoader().getResourceAsStream(resource)) {
+            check(stream != null, "native TaCZ texture is available: " + resource);
+            var image = javax.imageio.ImageIO.read(stream);
+            check(image != null && image.getWidth() == width && image.getHeight() == height,
+                    "native texture dimensions match the actual refit frame/atlas crop: " + resource);
+        }
     }
 
     private static void wiring() throws Exception {

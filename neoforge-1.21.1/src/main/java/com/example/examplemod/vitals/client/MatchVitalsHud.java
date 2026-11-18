@@ -5,7 +5,6 @@ import java.util.function.IntSupplier;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.PlayerRideableJumping;
 import net.neoforged.bus.api.IEventBus;
@@ -123,14 +122,19 @@ public final class MatchVitalsHud {
 
     private static void beforeLayer(RenderGuiLayerEvent.Pre event) {
         if (!personalView()) return;
-        ResourceLocation layer = event.getName();
-        if (layer.equals(VanillaGuiLayers.PLAYER_HEALTH) || layer.equals(VanillaGuiLayers.FOOD_LEVEL)
+        if (hidesVanillaLayer(true, event.getName(),
+                com.example.examplemod.pubgsettings.PubgSettingsService.client().enabled("hud.hide_hotbar")))
+            event.setCanceled(true);
+    }
+
+    static boolean hidesVanillaLayer(boolean inMatch, ResourceLocation layer, boolean hideHotbar) {
+        if (!inMatch) return false;
+        return layer.equals(VanillaGuiLayers.PLAYER_HEALTH) || layer.equals(VanillaGuiLayers.FOOD_LEVEL)
                 || layer.equals(VanillaGuiLayers.ARMOR_LEVEL)
+                || layer.equals(VanillaGuiLayers.AIR_LEVEL)
                 || layer.equals(VanillaGuiLayers.EXPERIENCE_BAR) || layer.equals(VanillaGuiLayers.EXPERIENCE_LEVEL)
                 || layer.toString().equals("tacz:tac_gun_hud_overlay") || layer.toString().equals("tacz:tac_kill_amount_overlay")
-                || com.example.examplemod.pubgsettings.PubgSettingsService.client().enabled("hud.hide_hotbar")
-                && (layer.equals(VanillaGuiLayers.HOTBAR) || layer.equals(VanillaGuiLayers.SELECTED_ITEM_NAME)))
-            event.setCanceled(true);
+                || hideHotbar && (layer.equals(VanillaGuiLayers.HOTBAR) || layer.equals(VanillaGuiLayers.SELECTED_ITEM_NAME));
     }
 
     private static void registerLayers(RegisterGuiLayersEvent event) {
@@ -140,9 +144,8 @@ public final class MatchVitalsHud {
                 ResourceLocation.fromNamespaceAndPath("tacz_pubg", "medicine_use"),
                 (graphics, delta) -> PubgMedicineHud.render(graphics));
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath("tacz_pubg", "weapon_stack"), (graphics, delta) -> WeaponStackRenderer.render(graphics));
-        // Keep vanilla oxygen and mounts functional; their normal row would overlap the new bars.
-        for (var layer : new ResourceLocation[] {VanillaGuiLayers.AIR_LEVEL,
-                VanillaGuiLayers.VEHICLE_HEALTH}) moveDuringMatch(event, layer, () -> -18);
+        // Oxygen is represented by the match lung indicator; mounts retain their vanilla bar.
+        moveDuringMatch(event, VanillaGuiLayers.VEHICLE_HEALTH, () -> -18);
         moveDuringMatch(event, VanillaGuiLayers.JUMP_METER, MatchVitalsHud::jumpMeterOffset);
         moveDuringMatch(event, VanillaGuiLayers.SELECTED_ITEM_NAME, MatchVitalsHud::selectedItemOffset);
     }
@@ -155,8 +158,6 @@ public final class MatchVitalsHud {
             int hearts = Math.min(30, (int) (mount.getMaxHealth() + .5f) / 2);
             rows = (hearts + 9) / 10;
         }
-        if (mc.gameMode.canHurtPlayer() && (mc.player.isEyeInFluid(FluidTags.WATER)
-                || mc.player.getAirSupply() < mc.player.getMaxAirSupply())) rows++;
         return rows;
     }
 

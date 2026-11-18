@@ -1,5 +1,8 @@
 package com.example.examplemod.inventory.client;
 
+import com.tacz.guns.api.item.attachment.AttachmentType;
+import static com.tacz.guns.api.item.attachment.AttachmentType.*;
+
 public final class PubgInventoryLayoutChecks {
     public static void main(String[] args) {
         int checks = 0;
@@ -23,6 +26,35 @@ public final class PubgInventoryLayoutChecks {
                 require(!layout.overNearby(layout.margin(), layout.listTop() - 1), "header accidentally drops items");
                 require(!layout.overNearby(layout.margin(), layout.listBottom()), "footer accidentally drops items");
                 checks += 14;
+                for (int gun = 0; gun < 3; gun++) {
+                    int x = layout.weaponX(), y = layout.weaponTop(gun), w = layout.weaponWidth(), h = layout.weaponHeight();
+                    var anchors = PubgAttachmentLayout.of(x, y, w, h);
+                    var muzzle = anchors.slot(MUZZLE); var laser = anchors.slot(LASER);
+                    var grip = anchors.slot(GRIP); var scope = anchors.slot(SCOPE);
+                    var mag = anchors.slot(EXTENDED_MAG); var stock = anchors.slot(STOCK);
+                    require(muzzle.x() + stock.x() == 2 * grip.x(), "muzzle and stock are not balanced around grip");
+                    require(laser.x() + scope.x() == 2 * grip.x() && scope.x() == mag.x(), "laser/scope/mag are not balanced");
+                    require(scope.y() + grip.y() == 2 * muzzle.y() && muzzle.y() == stock.y(), "top and bottom are not symmetric");
+                    require(laser.y() == grip.y() && grip.y() == mag.y(), "lower attachment row misaligned");
+                    require(grip.x() + grip.size() / 2 == x + w / 2, "grip is not at horizontal center");
+                    checks += 5;
+                    AttachmentType[] types = {MUZZLE, LASER, SCOPE, GRIP, EXTENDED_MAG, STOCK};
+                    for (int i = 0; i < types.length; i++) {
+                        var slot = anchors.slot(types[i]);
+                        require(slot.x() >= x && slot.x() + slot.size() <= x + w, "attachment outside weapon card");
+                        require(slot.y() >= y + 20 && slot.y() + slot.size() <= y + h - 5, "attachment overlaps title/ammo/divider");
+                        require(slot.size() >= 16 && slot.contains(slot.x(), slot.y())
+                                && !slot.contains(slot.x() + slot.size(), slot.y()), "attachment hit region inaccessible");
+                        checks += 3;
+                        for (int j = i + 1; j < types.length; j++) {
+                            var other = anchors.slot(types[j]);
+                            require(slot.x() + slot.size() <= other.x() || other.x() + other.size() <= slot.x()
+                                    || slot.y() + slot.size() <= other.y() || other.y() + other.size() <= slot.y(),
+                                    "attachment hit regions overlap: " + types[i] + " and " + types[j]);
+                            checks++;
+                        }
+                    }
+                }
             }
         }
         System.out.println("PUBG inventory layout: " + checks + " viewport checks passed");

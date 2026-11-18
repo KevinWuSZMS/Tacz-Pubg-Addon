@@ -7,9 +7,9 @@ import com.example.examplemod.vitals.client.CombatHudNumbers;
 import com.example.examplemod.vitals.client.WeaponHudData;
 import com.tacz.guns.api.item.IAttachment;
 import com.tacz.guns.api.item.IGun;
+import com.tacz.guns.api.item.attachment.AttachmentType;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import org.lwjgl.glfw.GLFW;
@@ -33,8 +33,17 @@ public final class PubgInventoryScreen extends Screen {
     private Component actionTooltip;
     private float viewScale = 1;
     private int viewWidth, viewHeight;
-    private record Row(boolean ground, int source, ItemStack item, int count, long order) {}
-    private record Hit(int x, int y, int w, int h, Row row, int target, String action) {
+    private record Row(boolean ground, int source, ItemStack item, int count, long order,
+                       AttachmentType attachmentType, ItemStack ownerGun) {
+        Row(boolean ground, int source, ItemStack item, int count, long order) {
+            this(ground, source, item, count, order, null, ItemStack.EMPTY);
+        }
+        boolean mounted() { return attachmentType != null; }
+    }
+    private record Hit(int x, int y, int w, int h, Row row, int target, String action, AttachmentType attachmentType) {
+        Hit(int x, int y, int w, int h, Row row, int target, String action) {
+            this(x, y, w, h, row, target, action, null);
+        }
         boolean contains(double mx, double my) { return mx >= x && my >= y && mx < x + w && my < y + h; }
     }
     public PubgInventoryScreen() { super(tr("title")); }
@@ -86,6 +95,7 @@ public final class PubgInventoryScreen extends Screen {
     }
     @Override public void render(GuiGraphics g, int mx, int my, float delta) {
         if (minecraft == null || minecraft.player == null) return;
+        if (pressed != null && !sourceStillMatches(pressed)) { pressed = null; dragging = false; }
         g.fillGradient(0, 0, width, height, 0x63313b43, 0xa011151b);
         int screenMouseX = mx, screenMouseY = my;
         mx = Math.round(mx / viewScale); my = Math.round(my / viewScale);
@@ -122,16 +132,8 @@ public final class PubgInventoryScreen extends Screen {
             int left = layout.equipmentX() + layout.equipmentSize() + 7;
             int right = layout.weaponX() - m * 4;
             int bottom = viewHeight - 42;
-            // Vanilla's preview clips in screen coordinates, independently of the current pose.
-            g.pose().pushPose();
-            try {
-                g.pose().scale(1 / viewScale, 1 / viewScale, 1);
-                InventoryScreen.renderEntityInInventoryFollowsMouse(g,
-                        Math.round(left * viewScale), Math.round((top - 8) * viewScale),
-                        Math.round(right * viewScale), Math.round(bottom * viewScale),
-                        Math.round(Math.max(36, (bottom - top - 12) / 2) * viewScale),
-                        0, screenMouseX, screenMouseY, minecraft.player);
-            } finally { g.pose().popPose(); }
+            PubgInventoryCharacterRenderer.render(g, left, top - 8, right, bottom,
+                    viewScale, mx, my, minecraft.player);
         }
         for (int gun = 0; gun < 3; gun++) weapon(g, gun, mx, my);
         var settings = InventoryConfig.current(minecraft.player);
@@ -220,12 +222,13 @@ public final class PubgInventoryScreen extends Screen {
         Hit hit = new Hit(x, y, w, h - 2, item.isEmpty() ? null : new Row(false, slot, item.copy(), 1, 0), slot, "weapon");
         hits.add(hit);
         var gun = IGun.getIGunOrNull(item);
-        boolean hover = hit.contains(mx, my), refittable = gun != null && !gun.hasAttachmentLock(item);
-        boolean compatible = gun != null && pressed != null && pressed.item.getItem() instanceof IAttachment
-                && !gun.hasAttachmentLock(item) && gun.allowAttachment(item, pressed.item);
-        if (hover && refittable && !dragging || dragging && compatible) {
-            g.fill(x, y, x + w, y + h - 3, hover ? 0x42696e71 : 0x24565f60);
-            outline(g, x, y, w, h - 2, dragging && compatible ? 0xcce9dfbf : 0x99d2d6d7);
+        var attachmentLayout = PubgAttachmentLayout.of(x, y, w, h);
+        var supported = PubgAttachmentSlots.supportedTypes(item);
+        boolean overAttachment = supported.stream().anyMatch(type -> attachmentLayout.slot(type).contains(mx, my));
+        boolean hover = hit.contains(mx, my) && !overAttachment, refittable = gun != null && !gun.hasAttachmentLock(item);
+        if (hover && refittable && !dragging) {
+            g.fill(x, y, x + w, y + h - 3, 0x42696e71);
+            outline(g, x, y, w, h - 2, 0x99d2d6d7);
         }
         outline(g, x + 2, y, 15, 17, 0xffbfc2c3);
         CombatHudNumbers.drawCentered(g, Integer.toString(slot + 1), x + 9.5f, y + 3, 11, TEXT);
@@ -238,15 +241,39 @@ public final class PubgInventoryScreen extends Screen {
             String count = ammo.loaded() + "/" + ammo.reserveText();
             CombatHudNumbers.draw(g, count, x + w - CombatHudNumbers.width(count, 13) - 2, y + 1, 13, TEXT);
         }
-        int modelHeight = Math.max(18, h - 44);
+        int modelHeight = Math.max(12, attachmentLayout.verticalStep() * 2 - attachmentLayout.size() - 4);
+        int modelWidth = attachmentLayout.horizontalStep() * 4 - attachmentLayout.size() - 8;
+        int modelTop = attachmentLayout.centerY() - modelHeight / 2;
         if (item.getItem() instanceof IGun) {
-            com.example.examplemod.lootspawn.client.GroundGunModelRenderer.renderInventory(item, g, x + 4, y + 20, w - 8, modelHeight, 0);
-        } else icon(g, item, x + w / 2 - 16, y + 20, Math.min(32, modelHeight));
+            com.example.examplemod.lootspawn.client.GroundGunModelRenderer.renderInventory(item, g,
+                    x + (w - modelWidth) / 2, modelTop, modelWidth, modelHeight, 0);
+        } else icon(g, item, x + w / 2 - 16, modelTop, Math.min(32, modelHeight));
         if (hover && refittable && !dragging) {
-            text(g, tr("click_refit"), x + 4, y + h - 17, TEXT);
             actionTooltip = Component.translatable("screen.tacz_pubg.inventory.pubg.refit_weapon", item.getHoverName());
-        } else if (hover && dragging && compatible) {
-            text(g, tr("release_attach"), x + 4, y + h - 17, TEXT);
+        }
+        for (AttachmentType type : supported) attachment(g, slot, item, type, attachmentLayout.slot(type), mx, my);
+    }
+    private void attachment(GuiGraphics g, int gunSlot, ItemStack gun, AttachmentType type,
+                            PubgAttachmentLayout.Slot position, int mx, int my) {
+        ItemStack installed = PubgAttachmentSlots.installed(gun, type);
+        Row row = PubgAttachmentSlots.canRemove(gun, type)
+                ? new Row(false, gunSlot, installed, 1, 0, type, gun.copy()) : null;
+        Hit hit = new Hit(position.x(), position.y(), position.size(), position.size(), row, gunSlot, "attachment", type);
+        hits.add(hit);
+        boolean hover = hit.contains(mx, my);
+        boolean compatible = dragging && pressed != null && (!pressed.mounted() || pressed.source != gunSlot)
+                && PubgAttachmentSlots.accepts(gun, type, pressed.item);
+        PubgAttachmentSlots.draw(g, gun, type, hit.x, hit.y, hit.w, hover, compatible);
+        if (compatible) {
+            g.pose().pushPose();
+            g.pose().translate(0, 0, 200);
+            outline(g, hit.x - 1, hit.y - 1, hit.w + 2, hit.h + 2, hover ? 0xffffe1a1 : 0xffdfd4ae);
+            g.pose().popPose();
+        }
+        if (hover) {
+            actionTooltip = null;
+            tooltip = PubgAttachmentSlots.displayed(gun, type);
+            if (tooltip.isEmpty()) actionTooltip = tr("slot." + type.name().toLowerCase(java.util.Locale.ROOT));
         }
     }
     private void smallWeapon(GuiGraphics g, int slot, int x, int y, int w, Component label, int mx, int my) {
@@ -299,7 +326,8 @@ public final class PubgInventoryScreen extends Screen {
         if (button == 1) {
             if (hit.row != null) {
                 if (!sourceStillMatches(hit.row)) return true;
-                if (hit.row.ground) PubgInventoryState.pickupGround(hit.row.source);
+                if (hit.row.mounted()) PubgInventoryState.unloadAttachment(hit.row.source, hit.row.attachmentType.name());
+                else if (hit.row.ground) PubgInventoryState.pickupGround(hit.row.source);
                 else if (hit.row.source == 41) PubgInventoryState.removeBackpack();
                 else PubgInventoryState.rightClickInventory(hit.row.source);
             }
@@ -324,6 +352,9 @@ public final class PubgInventoryScreen extends Screen {
         return true;
     }
     private boolean sourceStillMatches(Row row) {
+        if (row.mounted()) return ItemStack.matches(stack(row.source), row.ownerGun)
+                && PubgAttachmentSlots.canRemove(stack(row.source), row.attachmentType)
+                && ItemStack.matches(PubgAttachmentSlots.installed(stack(row.source), row.attachmentType), row.item);
         if (row.ground) return PubgInventoryState.nearby().stream().anyMatch(value -> value.entityId() == row.source
                 && value.quantity() == row.count && ItemStack.isSameItemSameComponents(value.item(), row.item));
         return ItemStack.matches(stack(row.source), row.item);
@@ -335,26 +366,32 @@ public final class PubgInventoryScreen extends Screen {
         if (!sourceStillMatches(source)) return true;
         if (!wasDragging) {
             Hit released = hit(x, y);
-            if (!source.ground && source.source < 3 && source.item.getItem() instanceof IGun
-                    && released != null && released.target == source.source)
+            if (!source.ground && !source.mounted() && source.source < 3 && source.item.getItem() instanceof IGun
+                    && released != null && released.action.equals("weapon") && released.target == source.source)
                 PubgInventoryInput.openRefit(source.source);
             return true;
         }
         if (!source.ground && layout.overNearby(x, y)) {
-            PubgInventoryState.dropInventory(source.source);
+            if (source.mounted()) PubgInventoryState.transferAttachment(source.source, source.attachmentType.name(), -2);
+            else PubgInventoryState.dropInventory(source.source);
             return true;
         }
         Hit target = hit(x, y);
         if (target != null && target.target >= 0 && target.target < 3
                 && source.item.getItem() instanceof IAttachment attachment) {
-            if (source.ground) PubgInventoryState.attachGround(source.source, target.target, attachment.getType(source.item).name());
-            else PubgInventoryState.attachInventory(source.source, target.target, attachment.getType(source.item).name());
-        } else if (target != null && target.target >= 0) {
+            AttachmentType type = attachment.getType(source.item);
+            if (target.attachmentType != null && target.attachmentType != type
+                    || !PubgAttachmentSlots.accepts(stack(target.target), type, source.item)) return true;
+            if (source.mounted()) PubgInventoryState.transferAttachment(source.source, type.name(), target.target);
+            else if (source.ground) PubgInventoryState.attachGround(source.source, target.target, type.name());
+            else PubgInventoryState.attachInventory(source.source, target.target, type.name());
+        } else if (target != null && target.target >= 0 && target.attachmentType == null && !source.mounted()) {
             if (source.ground) PubgInventoryState.equipGround(source.source, target.target);
             else if (source.source != 41) PubgInventoryState.moveInventory(source.source, target.target);
         } else if (x >= layout.inventoryX() && x <= layout.inventoryX() + layout.listWidth()
                 && y >= layout.listTop() && y < layout.listBottom()) {
-            if (source.ground) PubgInventoryState.pickupGround(source.source);
+            if (source.mounted()) PubgInventoryState.unloadAttachment(source.source, source.attachmentType.name());
+            else if (source.ground) PubgInventoryState.pickupGround(source.source);
             else if (source.source == 41) PubgInventoryState.removeBackpack();
             else if (source.source >= 36) PubgInventoryState.moveInventory(source.source, -1);
         }

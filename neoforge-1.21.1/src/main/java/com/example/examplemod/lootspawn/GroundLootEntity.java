@@ -113,7 +113,12 @@ public final class GroundLootEntity extends Entity {
     }
 
     public boolean canBePickedUpBy(Player player) {
-        return isResting() && pickupDelay == 0 && (pickupTarget == null || pickupTarget.equals(player.getUUID()));
+        return isResting() && pickupDelay == 0 && mayBeListedFor(player);
+    }
+
+    /** A visible pile can still be falling or waiting for its original pickup delay. */
+    public boolean mayBeListedFor(Player player) {
+        return pickupTarget == null || pickupTarget.equals(player.getUUID());
     }
 
     public boolean isResting() { return entityData.get(PHYSICS_STATE) == RESTING; }

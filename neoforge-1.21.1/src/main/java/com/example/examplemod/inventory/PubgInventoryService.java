@@ -6,6 +6,9 @@ import com.example.examplemod.backpack.BackpackService;
 import com.example.examplemod.backpack.BackpackWeights;
 import com.example.examplemod.combat.CombatService;
 import com.example.examplemod.lootspawn.GroundLootEntity;
+import com.example.examplemod.lootspawn.GroundLootWorldPhysics;
+import com.example.examplemod.lootspawn.LootSpawnRegistration;
+import com.example.examplemod.lootspawn.DroppedLootPolicy;
 import com.example.examplemod.inventory.PubgInventoryPayloads.*;
 import com.tacz.guns.api.DefaultAssets;
 import com.tacz.guns.api.TimelessAPI;
@@ -77,7 +80,7 @@ public final class PubgInventoryService {
     public static boolean nearby(ServerPlayer player, GroundLootEntity loot) {
         if (!player.isAlive() || player.isSpectator() || loot.isRemoved() || !loot.isManagedLoot()
                 || loot.level() != player.level() || loot.getItem().isEmpty() || loot.getQuantity() <= 0
-                || !loot.canBePickedUpBy(player) || !PubgInventoryRules.withinNearby(player.getX() - loot.getX(),
+                || !loot.mayBeListedFor(player) || !PubgInventoryRules.withinNearby(player.getX() - loot.getX(),
                     player.getY() - loot.getY(), player.getZ() - loot.getZ())) return false;
         var end = loot.position().add(0, .1, 0);
         var hit = player.level().clip(new ClipContext(player.getEyePosition(), end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
@@ -124,6 +127,7 @@ public final class PubgInventoryService {
                     || !ItemStack.isSameItemSameComponents(expected.item(), loot.getItem()) || expected.quantity() != loot.getQuantity()) {
                 fail(player, message("ground_changed")); return;
             }
+            if (!loot.canBePickedUpBy(player)) { fail(player, message("busy")); return; }
             ground = loot; source = loot.getItem();
         } else {
             if (command.source() < 0 || command.source() > 41 || !unchanged(player, state, command.source())) {
@@ -141,7 +145,7 @@ public final class PubgInventoryService {
             case RIGHT_CLICK -> !command.ground() && rightClick(player, command.source(), source);
             case MOVE -> move(player, command.source(), command.target(), ground);
             case ATTACH -> attach(player, command.source(), command.target(), ground, command.attachmentType(), false);
-            case UNLOAD -> ground == null && attach(player, -1, command.source(), null, command.attachmentType(), true);
+            case UNLOAD -> ground == null && transferAttachment(player, command.source(), command.target(), command.attachmentType());
             case DROP -> ground == null && drop(player, command.source());
             case REMOVE_BACKPACK -> ground == null && removeBackpack(player);
             case REFRESH -> false;
@@ -293,7 +297,8 @@ public final class PubgInventoryService {
 
     private static boolean compatible(ItemStack gun, ItemStack attachment, AttachmentType type) {
         return gun.getCount() == 1 && gun.getItem() instanceof IGun api && type != AttachmentType.NONE
-                && !api.hasAttachmentLock(gun) && api.allowAttachmentType(gun, type) && api.allowAttachment(gun, attachment);
+                && !api.hasAttachmentLock(gun) && api.allowAttachmentType(gun, type)
+                && DefaultAssets.isEmptyAttachmentId(api.getBuiltInAttachmentId(gun, type)) && api.allowAttachment(gun, attachment);
     }
     private static boolean attach(ServerPlayer player, int from, int target, GroundLootEntity ground, String typeName, boolean unload) {
         if (target < 0 || target > 2) return false;
@@ -301,12 +306,14 @@ public final class PubgInventoryService {
         try { type = AttachmentType.valueOf(typeName.toUpperCase(java.util.Locale.ROOT)); }
         catch (IllegalArgumentException e) { return false; }
         Plan plan = new Plan(player); ItemStack gun = plan.items[target];
-        if (!(gun.getItem() instanceof IGun api) || api.hasAttachmentLock(gun) || type == AttachmentType.NONE) return false;
+        if (gun.getCount() != 1 || !(gun.getItem() instanceof IGun api) || api.hasAttachmentLock(gun)
+                || type == AttachmentType.NONE || !api.allowAttachmentType(gun, type)
+                || !DefaultAssets.isEmptyAttachmentId(api.getBuiltInAttachmentId(gun, type))) return false;
         ItemStack old = api.getAttachment(player.registryAccess(), gun, type);
         if (old.isEmpty() && !DefaultAssets.isEmptyAttachmentId(api.getAttachmentId(gun, type))) return false;
         ItemStack incoming = unload ? ItemStack.EMPTY : ground == null ? live(player, from) : ground.getItem();
         if (unload) {
-            if (old.isEmpty()) return false;
+            if (old.getCount() != 1 || !(old.getItem() instanceof IAttachment part) || part.getType(old) != type) return false;
             api.unloadAttachment(player.registryAccess(), gun, type);
             if (!api.getAttachment(player.registryAccess(), gun, type).isEmpty()
                     || !DefaultAssets.isEmptyAttachmentId(api.getAttachmentId(gun, type))) return false;
@@ -317,18 +324,62 @@ public final class PubgInventoryService {
             if (!ItemStack.matches(incoming.copyWithCount(1), api.getAttachment(player.registryAccess(), gun, type))) return false;
             if (ground == null) plan.items[from].shrink(1);
         }
-        ItemStack originalGun = live(player, target);
+        if (!preservesAmmunition(player, live(player, target), gun, api)) return false;
+        if (!plan.store(old.copy()) || !plan.valid()) return false;
+        if (ground != null && !ground.consumeForInventory(player, incoming, 1)) return false;
+        plan.commit();
+        if (ground != null) acquired(player, incoming);
+        sound(player, unload ? old : incoming, unload, target);
+        return true;
+    }
+
+    /** One copied plan owns source unload, destination replacement, and any displaced attachment. */
+    private static boolean transferAttachment(ServerPlayer player, int source, int target, String typeName) {
+        if (source < 0 || source > 2 || target < -2 || target > 2 || target == source) return false;
+        if (target == -1) return attach(player, -1, source, null, typeName, true);
+        AttachmentType type;
+        try { type = AttachmentType.valueOf(typeName.toUpperCase(java.util.Locale.ROOT)); }
+        catch (IllegalArgumentException e) { return false; }
+        Plan plan = new Plan(player);
+        ItemStack gun = plan.items[source];
+        if (gun.getCount() != 1 || !(gun.getItem() instanceof IGun api) || api.hasAttachmentLock(gun)
+                || type == AttachmentType.NONE || !api.allowAttachmentType(gun, type)
+                || !DefaultAssets.isEmptyAttachmentId(api.getBuiltInAttachmentId(gun, type))) return false;
+        ItemStack attachment = api.getAttachment(player.registryAccess(), gun, type).copy();
+        // Built-in fallback assets are not physical items and may never be extracted.
+        if (attachment.getCount() != 1 || !(attachment.getItem() instanceof IAttachment part) || part.getType(attachment) != type) return false;
+        api.unloadAttachment(player.registryAccess(), gun, type);
+        if (!api.getAttachment(player.registryAccess(), gun, type).isEmpty()
+                || !DefaultAssets.isEmptyAttachmentId(api.getAttachmentId(gun, type))
+                || !preservesAmmunition(player, live(player, source), gun, api)) return false;
+        if (target >= 0) {
+            ItemStack destination = plan.items[target];
+            if (!compatible(destination, attachment, type)) return false;
+            IGun destinationApi = (IGun) destination.getItem();
+            ItemStack displaced = destinationApi.getAttachment(player.registryAccess(), destination, type).copy();
+            if (displaced.isEmpty() && !DefaultAssets.isEmptyAttachmentId(destinationApi.getAttachmentId(destination, type))
+                    || ItemStack.isSameItemSameComponents(displaced, attachment)) return false;
+            destinationApi.installAttachment(player.registryAccess(), destination, attachment.copy());
+            if (!ItemStack.matches(attachment, destinationApi.getAttachment(player.registryAccess(), destination, type))
+                    || !preservesAmmunition(player, live(player, target), destination, destinationApi)
+                    || !plan.store(displaced)) return false;
+        }
+        if (!plan.valid() || !plan.stillCurrent()) return false;
+        if (target == -2) {
+            if (!commitDrop(player, attachment, plan)) return false;
+        } else plan.commit();
+        sound(player, attachment, true, source);
+        if (target >= 0) sound(player, attachment, false, target);
+        return true;
+    }
+
+    private static boolean preservesAmmunition(ServerPlayer player, ItemStack originalGun, ItemStack gun, IGun api) {
         int capacity = TimelessAPI.getCommonGunIndex(api.getGunId(gun))
                 .map(index -> AttachmentDataUtils.getAmmoCountWithAttachment(gun, index.getGunData())).orElse(-1);
         if (!PubgInventoryRules.preservesAmmunition(api.getCurrentAmmoCount(originalGun), api.hasBulletInBarrel(originalGun),
                 api.getCurrentAmmoCount(gun), api.hasBulletInBarrel(gun), capacity)) {
             FAILURE.put(player.getUUID(), message("magazine_full")); return false;
         }
-        if (!plan.store(old.copy()) || !plan.valid()) return false;
-        if (ground != null && !ground.consumeForInventory(player, incoming, 1)) return false;
-        plan.commit();
-        if (ground != null) acquired(player, incoming);
-        sound(player, unload ? old : incoming, unload, target);
         return true;
     }
 
@@ -339,7 +390,10 @@ public final class PubgInventoryService {
         Plan plan = new Plan(player);
         if (from == 41) plan.pack = ItemStack.EMPTY;
         else plan.items[from] = ItemStack.EMPTY;
-        if (!plan.valid()) return false;
+        return plan.valid() && commitDrop(player, original, plan);
+    }
+
+    private static boolean commitDrop(ServerPlayer player, ItemStack original, Plan plan) {
         // Keep vanilla ownership/pickup delay while checking the actual entity spawn result.
         var previousCapture = player.captureDrops(new ArrayList<>());
         net.minecraft.world.entity.item.ItemEntity dropped;
@@ -349,11 +403,27 @@ public final class PubgInventoryService {
         var toss = new net.neoforged.neoforge.event.entity.item.ItemTossEvent(dropped, player);
         if (net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(toss).isCanceled() || !plan.stillCurrent()) return false;
         dropped = toss.getEntity();
-        // Inventory-to-nearby drops settle at the player's feet; ordinary Q drops keep their trajectory.
-        dropped.setPos(player.getX(), player.getY() + .2, player.getZ());
-        dropped.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
-        if (!player.level().addFreshEntity(dropped)) { dropped.discard(); return false; }
-        if (!plan.stillCurrent()) { dropped.discard(); return false; }
+        var data = new net.minecraft.nbt.CompoundTag();
+        dropped.addAdditionalSaveData(data);
+        int delay = data.getShort("PickupDelay");
+        if (!DroppedLootPolicy.legalDelay(delay) || !DroppedLootPolicy.legalQuantity(dropped.getItem().getCount())) return false;
+        GroundLootEntity carrier = LootSpawnRegistration.GROUND_LOOT.get().create(player.level());
+        if (carrier == null) return false;
+        // The authority creates the final carrier immediately; display never waits for pickup eligibility.
+        carrier.initializeDrop(dropped.getItem(), player.blockPosition().below(), delay, dropped.getTarget());
+        carrier.setPos(player.getX(), player.getY() + .2, player.getZ());
+        carrier.setYRot(DroppedLootPolicy.yaw(dropped)); carrier.yRotO = carrier.getYRot();
+        carrier.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+        carrier.setCustomName(dropped.getCustomName()); carrier.setCustomNameVisible(dropped.isCustomNameVisible());
+        GroundLootWorldPhysics.prepareSpawn(carrier);
+        try {
+            if (!player.level().addFreshEntity(carrier)) { carrier.discard(); return false; }
+        } catch (RuntimeException error) {
+            carrier.discard();
+            com.example.examplemod.ExampleMod.LOGGER.warn("Inventory drop spawn failed; source retained", error);
+            return false;
+        }
+        if (!plan.stillCurrent()) { carrier.discard(); return false; }
         plan.commit(); return true;
     }
 

@@ -39,6 +39,7 @@ public final class PubgInventoryState {
     public static void attachInventory(int from, int gunSlot, String type) { send(Action.ATTACH, false, from, gunSlot, type); }
     public static void attachGround(int entityId, int gunSlot, String type) { send(Action.ATTACH, true, entityId, gunSlot, type); }
     public static void unloadAttachment(int gunSlot, String type) { send(Action.UNLOAD, false, gunSlot, -1, type); }
+    public static void transferAttachment(int gunSlot, String type, int target) { send(Action.UNLOAD, false, gunSlot, target, type); }
     public static void dropInventory(int slot) { send(Action.DROP, false, slot, -1, ""); }
     public static void removeBackpack() { send(Action.REMOVE_BACKPACK, false, 41, -1, ""); }
     private static void send(Action action, boolean ground, int source, int target, String type) {

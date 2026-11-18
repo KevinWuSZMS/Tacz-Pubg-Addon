@@ -4,6 +4,6 @@
   "package": "com.example.examplemod.inventory.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": ["MatchInventoryMixin", "MatchInventoryMenuMixin", "MatchInventorySlotMixin"],
-  "client": ["MatchGunKeyboardMixin", "MatchGunInteractKeyMixin", "MatchGunClickMixin", "MatchGunInteractTextMixin", "PubgInventoryShootMixin", "PubgInventoryAimMixin", "PubgInventoryMeleeMixin", "PubgInventoryCombatMixin", "PubgGunRefitRenderMixin"],
+  "client": ["MatchGunKeyboardMixin", "MatchGunInteractKeyMixin", "MatchGunClickMixin", "MatchGunInteractTextMixin", "PubgInventoryShootMixin", "PubgInventoryAimMixin", "PubgInventoryMeleeMixin", "PubgInventoryCombatMixin", "PubgGunRefitRenderMixin", "InventoryEntityRenderDispatcherAccessor"],
   "injectors": {"defaultRequire": 1}
 }

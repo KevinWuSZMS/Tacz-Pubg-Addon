@@ -23,6 +23,7 @@ public final class PubgInventoryPayloads {
     private static <T extends CustomPacketPayload> CustomPacketPayload.Type<T> id(String path) {
         return new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("tacz_pubg", path));
     }
+    /** UNLOAD target: -1 inventory, -2 nearby ground, or 0..2 destination gun; source is the original gun. */
     public record Command(Action action, long revision, boolean ground, int source, int target, String attachmentType)
             implements CustomPacketPayload {
         public static final Type<Command> TYPE = id("pubg_inventory_command");
