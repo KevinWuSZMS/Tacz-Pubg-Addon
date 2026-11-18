@@ -22,6 +22,10 @@ public final class CombatRulesChecks {
         check(bleed.killer().equals(downer)&&bleed.assistants().equals(List.of(mate)),"Bleedout/team wipe/environment credits recorded hostile downer");
         var teamkill=CombatRules.credit(victim,"V",friendly,"V",friendly,"V",damage,200,1200,1);
         check(teamkill.killer()==null&&teamkill.assistants().isEmpty(),"Friendly damage never creates positive kill or assist");
+        var friendlyFinish=CombatRules.credit(victim,"V",downer,"A",friendly,"V",damage,200,1200,1);
+        check(friendlyFinish.killer()==null&&friendlyFinish.assistants().isEmpty(),"A friendly finisher cannot generate a kill or assists from an earlier enemy knock");
+        var friendlyBleed=CombatRules.credit(victim,"V",friendly,"V",null,"",damage,200,1200,1);
+        check(friendlyBleed.killer()==null&&friendlyBleed.assistants().isEmpty(),"A teammate's knock followed by bleedout grants no credit");
         var solo=CombatRules.credit(victim,"V",null,"",downer,"A",damage,200,1200,1);
         check(solo.killer().equals(downer),"Direct solo elimination has an independent finisher");
         check(CombatRules.credit(victim,"V",null,"",null,"",damage,200,1200,1).killer()==null,"An environmental elimination without a downer has no invented killer");

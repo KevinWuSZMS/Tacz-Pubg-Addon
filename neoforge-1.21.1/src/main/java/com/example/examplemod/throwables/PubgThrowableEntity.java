@@ -50,6 +50,7 @@ public final class PubgThrowableEntity extends ThrowableItemEntity implements It
     private static final EntityDataAccessor<Boolean> FIELD = SynchedEntityData.defineId(PubgThrowableEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> FIXED = SynchedEntityData.defineId(PubgThrowableEntity.class, EntityDataSerializers.BOOLEAN);
     private UUID session;
+    private UUID throwerId;
     private long map;
     private Vec3 attachment;
     private UUID attachedEntity;
@@ -67,6 +68,7 @@ public final class PubgThrowableEntity extends ThrowableItemEntity implements It
     }
     public void initialize(ThrowableKind kind, LivingEntity owner, ItemStack item, int fuse, UUID session, long map) {
         entityData.set(KIND, kind.ordinal()); entityData.set(FUSE, fuse);
+        throwerId = owner == null ? null : owner.getUUID();
         setOwner(owner); setItem(item.copyWithCount(1)); this.session = session; this.map = map;
         var nativeData = LrThrowableBridge.data(kind);
         if (nativeData != null) setBaseData(nativeData.getEntityData());
@@ -77,6 +79,8 @@ public final class PubgThrowableEntity extends ThrowableItemEntity implements It
     public boolean field() { return entityData.get(FIELD); }
     public int fieldAge() { return entityData.get(AGE); }
     public int remainingFuse() { return entityData.get(FUSE); }
+    /** Vanilla may no longer resolve the owner when a delayed blast or burn deals damage. */
+    public UUID throwerId() { return throwerId; }
     public UUID session() { return session; }
     public long mapId() { return map; }
     public double fieldRadius() {
@@ -283,6 +287,7 @@ public final class PubgThrowableEntity extends ThrowableItemEntity implements It
         if (ordinal < 0 || ordinal >= ThrowableKind.values().length) { discard(); return; }
         entityData.set(KIND, ordinal);
         super.readAdditionalSaveData(tag);
+        throwerId = tag.hasUUID("Owner") ? tag.getUUID("Owner") : null;
         var nativeData = LrThrowableBridge.data(kind());
         if (nativeData != null) setBaseData(nativeData.getEntityData());
         setLife(-1);

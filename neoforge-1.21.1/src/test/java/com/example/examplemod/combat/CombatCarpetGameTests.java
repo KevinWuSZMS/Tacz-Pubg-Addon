@@ -5,11 +5,14 @@ import carpet.patches.NetHandlerPlayServerFake;
 import com.example.examplemod.movement.MovementService;
 import com.example.examplemod.movement.MovementState.Mode;
 import com.example.examplemod.pubgsettings.PubgSettingsService;
+import com.example.examplemod.throwables.ThrowableKind;
+import com.example.examplemod.throwables.ThrowableRegistration;
 import com.example.examplemod.zones.MapZoneModel;
 import com.example.examplemod.zones.match.MatchConfigModel;
 import com.example.examplemod.zones.match.MatchEngine;
 import com.example.examplemod.zones.match.MatchService;
 import com.mojang.authlib.GameProfile;
+import com.tacz.guns.api.event.common.EntityHurtByGunEvent;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -26,16 +29,22 @@ import net.minecraft.network.PacketSendListener;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.game.ClientboundDamageEventPacket;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.world.entity.Pose;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.neoforge.common.NeoForge;
+import org.apache.commons.lang3.tuple.Pair;
 
 /** Exercises Carpet's actual die override, queued disconnects, server ticks and rescue validation. */
 @GameTestHolder("combat_dbno")
@@ -218,6 +227,87 @@ public final class CombatCarpetGameTests {
         });
     }
 
+    @GameTest(template = "empty", templateNamespace = "combat_dbno", batch = "combat_dbno", timeoutTicks = 600)
+    public static void gunKnockAndNaturalBleedoutUseDifferentFeedIcons(GameTestHelper helper) throws Exception {
+        Fixture f = new Fixture(helper);
+        f.later(65, () -> {
+            f.attack(f.enemy, f.victim, 1000, true);
+            var knock = f.capture(f.ally).events.getLast();
+            helper.assertTrue(knock.type().equals("knock") && knock.firearm() && knock.headshot()
+                    && knock.weaponId().equals("tacz:ak47") && !knock.friendlyFire(), "Wrong gun knock: " + knock);
+            helper.assertTrue(f.snapshot().viewerTeam() == knock.victim().team()
+                    && f.capture(f.enemy).snapshot.viewerTeam() == knock.attacker().team(), "Incorrect viewer teams");
+            f.later((int) f.setting("dbno.protection_ticks") + 2, () -> {
+                // Leave less than one bleed tick in the DBNO pool using a real nonlethal follow-up.
+                float amount = (f.snapshot().downedHealth() - .001F) * f.victim.getMaxHealth() / 100;
+                f.hitFromEnemy(amount);
+                helper.assertTrue(CombatService.downed(f.victim), "The follow-up unexpectedly finished the victim");
+                f.later(3, () -> {
+                    var death = f.capture(f.enemy).events.getLast();
+                    helper.assertTrue(death.bleedout() && !death.firearm() && !death.headshot()
+                            && death.weaponId().isEmpty() && death.attacker().id().equals(f.enemy.getUUID())
+                            && death.kills() == 1, "Wrong bleedout credit or source: " + death);
+                    f.close(); helper.succeed();
+                });
+            });
+        });
+    }
+
+    @GameTest(template = "empty", templateNamespace = "combat_dbno", batch = "combat_dbno", timeoutTicks = 600)
+    public static void friendlyFinisherReceivesNoKillAndUsesFistSource(GameTestHelper helper) throws Exception {
+        Fixture f = new Fixture(helper, true);
+        f.later(65, () -> {
+            f.hitFromEnemy(1000);
+            var knock = f.capture(f.ally).events.getLast();
+            helper.assertTrue(knock.type().equals("knock") && knock.unarmed(), "Missing fist knock: " + knock);
+            f.later((int) f.setting("dbno.protection_ticks") + 2, () -> {
+                f.attack(f.ally, f.victim, 1000, false);
+                var death = f.capture(f.enemy).events.getLast();
+                helper.assertTrue(death.type().equals("elimination") && death.friendlyFire() && death.unarmed()
+                        && death.attacker().id().equals(f.ally.getUUID()) && death.kills() == 0
+                        && f.capture(f.enemy).snapshot.kills() == 0, "Wrong friendly finish: " + death);
+                f.close(); helper.succeed();
+            });
+        });
+    }
+
+    @GameTest(template = "empty", templateNamespace = "combat_dbno", batch = "combat_dbno", timeoutTicks = 600)
+    public static void directHeadshotKillIsOneGunEvent(GameTestHelper helper) throws Exception {
+        Fixture f = new Fixture(helper);
+        f.later(65, () -> {
+            f.attack(f.ally, f.enemy, 1000, true);
+            var events = f.capture(f.victim).events;
+            helper.assertTrue(events.size() == 1, "Direct kill published extra rows: " + events);
+            var death = events.getFirst();
+            helper.assertTrue(death.type().equals("elimination") && death.firearm() && death.headshot()
+                    && !death.bleedout() && !death.friendlyFire() && death.kills() == 1
+                    && f.capture(f.victim).snapshot.viewerTeam() == death.attacker().team(), "Wrong direct kill: " + death);
+            f.close(); helper.succeed();
+        });
+    }
+
+    @GameTest(template = "empty", templateNamespace = "combat_dbno", batch = "combat_dbno", timeoutTicks = 600)
+    public static void delayedExplosiveRetainsItsItemWhenThrowerSwitchesWeapon(GameTestHelper helper) throws Exception {
+        Fixture f = new Fixture(helper);
+        f.later(65, () -> {
+            var kind = ThrowableKind.C4;
+            var charge = ThrowableRegistration.THROWABLE.get().create(helper.getLevel());
+            charge.initialize(kind, f.enemy, ThrowableRegistration.ITEMS.get(kind).get().getDefaultInstance(),
+                    kind.fuse, f.game.session().sessionId(), f.mapId);
+            f.enemy.setItemSlot(EquipmentSlot.MAINHAND, Items.IRON_SWORD.getDefaultInstance());
+            boolean previous = f.server.isPvpAllowed();
+            try {
+                f.server.setPvpAllowed(true);
+                f.victim.hurt(f.victim.damageSources().explosion(charge, f.enemy), 1000);
+            } finally { f.server.setPvpAllowed(previous); }
+            var knock = f.capture(f.ally).events.getLast();
+            helper.assertTrue(knock.type().equals("knock") && knock.throwable() && !knock.firearm()
+                    && !knock.headshot() && knock.weaponId().equals("tacz_pubg:c4")
+                    && knock.attacker().id().equals(f.enemy.getUUID()), "Wrong delayed explosion source: " + knock);
+            f.close(); helper.succeed();
+        });
+    }
+
     @FunctionalInterface private interface CheckedAction { void run() throws Exception; }
 
     private static final class Fixture implements AutoCloseable {
@@ -231,8 +321,12 @@ public final class CombatCarpetGameTests {
         final MatchEngine game;
         boolean closed;
 
-        @SuppressWarnings("unchecked")
         Fixture(GameTestHelper helper) throws Exception {
+            this(helper, false);
+        }
+
+        @SuppressWarnings("unchecked")
+        Fixture(GameTestHelper helper, boolean friendlyFire) throws Exception {
             this.helper = helper;
             server = helper.getLevel().getServer();
             BlockPos origin = helper.absolutePos(BlockPos.ZERO);
@@ -255,7 +349,7 @@ public final class CombatCarpetGameTests {
                     new MapZoneModel.Circle(origin.getX(), origin.getZ(), 40), 0, List.of());
             var defaults = MatchConfigModel.defaults(mapId);
             var settings = new MatchConfigModel.Settings(mapId, "combat fixture", 1, 20, 2, 0, 2400, 60,
-                    false, false, false, false, defaults.phases(),
+                    false, false, false, friendlyFire, defaults.phases(),
                     new MatchConfigModel.BombingRules(false, .12, 60, defaults.bombingRules().projectile()),
                     defaults.flowRules(), false, false, new MatchConfigModel.FlightRules(false, true, 40, 512, 3, 52));
             Method start = stateType.getDeclaredMethod("start", MapZoneModel.MapDefinition.class,
@@ -336,14 +430,24 @@ public final class CombatCarpetGameTests {
         }
 
         void hitFromEnemy(float amount) {
+            attack(enemy, victim, amount, false);
+        }
+
+        void attack(ServerPlayer attacker, ServerPlayer target, float amount, boolean gunHeadshot) {
             // GameTestServer leaves PvP disabled. Enable it only for this synchronous real hit,
             // then restore it so other concurrently running fixtures retain their server settings.
             boolean previous = server.isPvpAllowed();
             try {
                 server.setPvpAllowed(true);
-                helper.assertTrue(victim.canHarmPlayer(enemy), "The test's enemy hit is blocked before the combat damage event");
-                victim.invulnerableTime = 0;
-                victim.hurt(victim.damageSources().playerAttack(enemy), amount);
+                helper.assertTrue(attacker.canHarmPlayer(target), "PvP hit blocked before the combat damage event");
+                var source = target.damageSources().playerAttack(attacker);
+                if (gunHeadshot) {
+                    var gun = ResourceLocation.parse("tacz:ak47");
+                    NeoForge.EVENT_BUS.post(new EntityHurtByGunEvent.Pre(null, target, attacker, gun, gun,
+                            amount, Pair.of(source, source), true, 1, LogicalSide.SERVER));
+                }
+                target.invulnerableTime = 0;
+                target.hurt(source, amount);
             } finally { server.setPvpAllowed(previous); }
         }
 
