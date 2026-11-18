@@ -1,5 +1,6 @@
 package com.example.examplemod.zones.match.client;
 
+import com.example.examplemod.hud.client.SafeZoneAlertHud;
 import com.example.examplemod.localization.Texts;
 import com.example.examplemod.vitals.client.MatchVitalsHud;
 import com.example.examplemod.zones.MapZoneModel.Circle;
@@ -7,8 +8,10 @@ import com.example.examplemod.zones.client.MapOverlayClient;
 import com.example.examplemod.zones.client.xaero.XaeroHudAnchor;
 import com.example.examplemod.zones.match.MatchConfigPayloads;
 import com.example.examplemod.zones.match.MatchStatus;
+import com.example.examplemod.zones.match.SafeZoneAlerts;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.neoforged.bus.api.IEventBus;
@@ -23,8 +26,8 @@ import java.util.UUID;
 public final class MatchHudClient {
     private static MatchStatus current;
     private static UUID playedSession;
-    private static int age, alertTicks, resultTicks;
-    private static String alert = "";
+    private static int age, bombingAlertTicks, safeZoneAlertTicks, resultTicks;
+    private static Component safeZoneAlert;
     private MatchHudClient() {}
     public static MatchStatus currentStatus() {
         var frame = MapOverlayClient.frameFor(MapOverlayClient.current());
@@ -37,7 +40,8 @@ public final class MatchHudClient {
         NeoForge.EVENT_BUS.addListener((ClientTickEvent.Post event) -> {
             if (Minecraft.getInstance().isPaused()) return;
             if (++age > 80) current = null;
-            if (alertTicks > 0) alertTicks--;
+            if (bombingAlertTicks > 0) bombingAlertTicks--;
+            if (safeZoneAlertTicks > 0) safeZoneAlertTicks--;
             if (resultTicks > 0) resultTicks--;
         });
         modBus.addListener((RegisterGuiLayersEvent event) -> event.registerAboveAll(
@@ -46,26 +50,22 @@ public final class MatchHudClient {
 
     private static void clear() {
         current = null; playedSession = null;
-        age = alertTicks = resultTicks = 0; alert = "";
+        age = bombingAlertTicks = safeZoneAlertTicks = resultTicks = 0;
+        safeZoneAlert = null;
     }
 
     private static void accept(MatchStatus next) {
-        if (next == null) { current = null; age = alertTicks = resultTicks = 0; return; }
+        if (next == null) { current = null; age = bombingAlertTicks = safeZoneAlertTicks = resultTicks = 0; return; }
         MatchStatus previous = current;
         boolean same = previous != null && previous.sessionId().equals(next.sessionId()) && previous.mapId() == next.mapId();
-        if (!same) { alertTicks = resultTicks = 0; alert = ""; }
-        if (same && (!previous.stage().equals(next.stage()) || previous.phase() != next.phase())) {
-            if (next.stage().equals("shrinking")) announce(Texts.tr("screen.tacz_pubg.pubg_hud.restricting"));
-            else if (next.stage().equals("waiting")) announce(Texts.tr("screen.tacz_pubg.pubg_hud.new_safe_zone"));
-        } else if (same && next.stage().equals("waiting")) {
-            for (int warning : new int[] {60, 30, 10}) {
-                if (previous.secondsRemaining() > warning && next.secondsRemaining() <= warning) {
-                    announce(Texts.tr("screen.tacz_pubg.pubg_hud.restrict_in", warning)); break;
-                }
-            }
+        if (!same) bombingAlertTicks = safeZoneAlertTicks = resultTicks = 0;
+        var announcement = SafeZoneAlerts.message(previous, next);
+        if (announcement != null) {
+            safeZoneAlert = announcement;
+            safeZoneAlertTicks = 70;
         }
         if (same && !previous.bombingStage().equals(next.bombingStage()) && next.bombingStage().equals("warning"))
-            announce(Texts.tr("screen.tacz_pubg.pubg_hud.red_zone_warning"));
+            bombingAlertTicks = 70;
         if (same && !ended(previous) && ended(next) && next.sessionId().equals(playedSession)) resultTicks = 160;
         current = next; age = 0;
     }
@@ -73,7 +73,6 @@ public final class MatchHudClient {
     private static boolean ended(MatchStatus status) {
         return status.stage().equals("finished") || status.stage().equals("stopped");
     }
-    private static void announce(String text) { alert = text; alertTicks = 70; }
     public static String clock(int seconds) {
         int safe = Math.max(0, seconds);
         return safe / 60 + ":" + (safe % 60 < 10 ? "0" : "") + safe % 60;
@@ -110,7 +109,11 @@ public final class MatchHudClient {
                 renderPhase(graphics, status, frame);
                 if (!com.example.examplemod.combat.client.CombatHudClient.hasStats(status.sessionId())) renderAlive(graphics, status);
                 renderCompass(graphics);
-                if (alertTicks > 0) centerMessage(graphics, alert, false);
+                if (bombingAlertTicks > 0 && (safeZoneAlertTicks == 0 ||
+                        !com.example.examplemod.hud.client.HudLayoutClient.hasPosition("match_alert"))) {
+                    centerMessage(graphics, Texts.tr("screen.tacz_pubg.pubg_hud.red_zone_warning"), false);
+                }
+                if (safeZoneAlertTicks > 0) SafeZoneAlertHud.draw(graphics, safeZoneAlert, safeZoneAlertTicks);
             }
         } else if (resultTicks > 0 && status.sessionId().equals(playedSession)) {
             centerMessage(graphics, status.result(), true);
@@ -304,7 +307,7 @@ public final class MatchHudClient {
             graphics.fill((graphics.guiWidth() - ruleWidth) / 2, y - 5,
                     (graphics.guiWidth() + ruleWidth) / 2, y - 4, 0x99D9C27F);
         }
-        int color = result ? 0xFFF0F0E7 : ((int) (255 * Math.min(1, alertTicks / 15.0)) << 24) | 0xF4CE53;
+        int color = result ? 0xFFF0F0E7 : ((int) (255 * Math.min(1, bombingAlertTicks / 15.0)) << 24) | 0xF4CE53;
         scaledString(graphics, clipped, (graphics.guiWidth() - (int) (font.width(clipped) * scale)) / 2, y, scale, color);
         }
     }

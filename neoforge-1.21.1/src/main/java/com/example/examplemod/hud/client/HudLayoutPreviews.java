@@ -33,8 +33,7 @@ final class HudLayoutPreviews {
                 yield rect(w - width - 9, 9, width, 33);
             }
             case "compass" -> centeredRect(w, 9, Math.min(300, Math.max(120, w - 190)), 34);
-            case "match_alert" -> centeredRect(w, Math.max(53, h / 3),
-                    Math.min(Math.max(20, w - 30), textWidth(translated("screen.tacz_pubg.pubg_hud.shrinking"))), 12);
+            case "match_alert" -> SafeZoneAlertHud.previewBounds(w, h);
             case "match_result" -> centeredRect(w, Math.max(53, h / 3) - 23, Math.min(w - 20, 230), 38);
             case "squad" -> rect(4, Math.max(35, h - 50 - squadRows(h) * 21) - 2,
                     Math.min(148, Math.max(72, w / 3)) + 6, squadRows(h) * 21);
@@ -153,7 +152,7 @@ final class HudLayoutPreviews {
                     string(g, lines[i], x + 4, y + 4 + i * 11, w - 8, i == 3 ? 0xFF64E9FF : text);
             }
             case "map_preview" -> string(g, mapLabel(), x, y, w, 0xBFC7CDD4);
-            case "match_alert" -> string(g, translated("screen.tacz_pubg.pubg_hud.shrinking"), x, y, w, 0xFFF4CE53);
+            case "match_alert" -> SafeZoneAlertHud.drawPreview(g, r);
             default -> {
                 g.fill(x, y, x + w, y + h, selected ? 0x90313C49 : 0x50232830);
                 String label = HudLayoutClient.definition(id).label().getString();

@@ -2395,9 +2395,7 @@
   "6bec2db0be6b": "screen.tacz_pubg.battle_settings.field.hud.fuse_color",
   "e4bfe5eb513e": "screen.tacz_pubg.battle_settings.field.hud.fuse_warning_color",
   "109f5c02685d": "screen.tacz_pubg.battle_settings.field.hud.fuse_track_color",
-  "2b63ec787419": "screen.tacz_pubg.battle_settings.field.medicine.recovery_step_ticks",
   "c6cbf75a12f1": "screen.tacz_pubg.battle_settings.field.medicine.bandage_recovery_ticks",
-  "3dc5b68ddb86": "screen.tacz_pubg.battle_settings.field.medicine.first_aid_step_percent",
   "5fd75226c7ee": "screen.tacz_pubg.battle_settings.field.medicine.circle_radius",
   "bf4ade1aa182": "screen.tacz_pubg.battle_settings.field.medicine.circle_line_width",
   "a111c097af96": "screen.tacz_pubg.battle_settings.field.medicine.circle_offset_y",
@@ -2631,5 +2629,11 @@
   "ca4519f40368": "screen.tacz_pubg.battle_settings.field.lean.body_penetration_tolerance",
   "d5cb194c0455": "screen.tacz_pubg.battle_settings.group.lean",
   "73db83305df1": "screen.tacz_pubg.battle_settings.lean_body_tolerance_hint",
-  "54d74b0e910c": "message.tacz_pubg.match_service.open_to_lan_before_start"
+  "54d74b0e910c": "message.tacz_pubg.match_service.open_to_lan_before_start",
+  "b8e8229abaf6": "command.tacz_pubg.map.destroy_preview",
+  "6e3b79cdcae3": "command.tacz_pubg.map.force_deleted",
+  "7cc3b6eb1605": "screen.tacz_pubg.battle_settings.field.medicine.first_aid_recovery_ticks",
+  "c1b37ffd9579": "screen.tacz_pubg.pubg_hud.time_minutes",
+  "74ffa4f3cb1c": "screen.tacz_pubg.pubg_hud.time_minutes_seconds",
+  "67d4a8a3866a": "screen.tacz_pubg.pubg_hud.time_seconds"
 }

@@ -1,12 +1,15 @@
 package com.example.examplemod.zones.match;
 
+import com.example.examplemod.localization.TestLanguages;
 import com.example.examplemod.zones.MapOverlayPayloads;
 import com.example.examplemod.zones.MapZoneModel;
 import com.example.examplemod.zones.MapZoneModel.Circle;
 import io.netty.buffer.Unpooled;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.RegistryAccess;
+import net.minecraft.locale.Language;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.network.connection.ConnectionType;
@@ -57,7 +60,56 @@ public final class CircleClockChecks {
                     MatchCirclePreview.target(mid, 1), mid.flightProgress(), mid);
             throw new AssertionError("Mixed snapshot accepted");
         } catch (IllegalArgumentException expected) { checks++; }
+        checkSafeZoneAlerts(game.session(), player);
         System.out.println("CircleClockChecks: " + checks + " passed; no game launched.");
+    }
+
+    private static void checkSafeZoneAlerts(MatchSession session, MatchEngine.Participant player) {
+        var rules = new MatchConfigModel.Settings(1, "alerts", 1, 20, 1, 0, 600, 60, true, false, true, false,
+                List.of(new MatchConfigModel.Phase(240, 2, .5, 1, false),
+                        new MatchConfigModel.Phase(60, 2, .5, 1, false)),
+                MatchConfigModel.BombingRules.defaults(), MatchConfigModel.FlowRules.defaults().withFirstCircleDelay(0));
+        var game = new MatchEngine(session, rules, List.of(player), 19);
+        var language = Language.getInstance();
+        try {
+            Language.inject(TestLanguages.language(TestLanguages.catalog("zh_cn")));
+            var alerts = new ArrayList<String>();
+            MatchStatus previous = null;
+            MatchStatus beforeTwoMinutes = null;
+            for (int second = 0; second <= 242; second++) {
+                var next = game.status();
+                var alert = SafeZoneAlerts.message(previous, next);
+                if (alert != null) alerts.add(second + " " + alert.getString());
+                if (second == 119) beforeTwoMinutes = next;
+                if (second == 121) {
+                    var crossed = SafeZoneAlerts.message(beforeTwoMinutes, next);
+                    check(crossed != null && crossed.getString().equals("距离缩小安全区还有 2 分"),
+                            "snapshots straddling the two-minute mark still announce it");
+                }
+                if (second == 120 || second == 241) {
+                    check(SafeZoneAlerts.message(null, next) == null, "late join skips old announcements");
+                    check(SafeZoneAlerts.message(next, next) == null, "duplicate snapshot skips announcements");
+                    game.pause();
+                    var paused = game.status();
+                    game.resume();
+                    check(SafeZoneAlerts.message(next, paused) == null && SafeZoneAlerts.message(paused, game.status()) == null,
+                            "pause and resume keep the current countdown and contraction quiet");
+                }
+                previous = next;
+                for (int tick = 0; tick < 20; tick++) game.advance();
+            }
+            check(alerts.equals(List.of(
+                    "0 距离地图上标注的安全区缩小还有 4 分！",
+                    "120 距离缩小安全区还有 2 分",
+                    "180 距离缩小安全区还有 1 分",
+                    "210 距离缩小安全区还有 30 秒",
+                    "230 距离缩小安全区还有 10 秒",
+                    "235 距离缩小安全区还有 5 秒",
+                    "240 开始缩小安全区！",
+                    "242 距离地图上标注的安全区缩小还有 1 分！")), "safe-zone timeline: " + alerts);
+        } finally {
+            Language.inject(language);
+        }
     }
     private static void near(double a, double b, String message) { check(Math.abs(a - b) < 1e-8, message); }
     private static void check(boolean value, String message) { if (!value) throw new AssertionError(message); checks++; }
