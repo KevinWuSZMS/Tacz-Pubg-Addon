@@ -9,13 +9,12 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.entity.EquipmentSlot;
 
 public final class BackpackLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
     public BackpackLayer(PlayerRenderer renderer) { super(renderer); }
     @Override public void render(PoseStack pose, MultiBufferSource buffer, int light, AbstractClientPlayer player,
             float limbSwing, float limbSwingAmount, float partialTick, float age, float yaw, float pitch) {
-        ItemStack stack = player.getItemBySlot(EquipmentSlot.LEGS);
+        ItemStack stack = com.example.examplemod.backpack.BackpackService.equipped(player);
         if (!(stack.getItem() instanceof BackpackItem || stack.getItem() instanceof ParachuteItem)
                 || player.isInvisible() || player.isSpectator()) return;
         pose.pushPose();

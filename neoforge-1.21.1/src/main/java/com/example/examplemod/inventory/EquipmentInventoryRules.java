@@ -24,9 +24,16 @@ import net.minecraft.world.item.enchantment.EnchantmentHelper;
 /** Counts equipment by category, independent of tier, damage, and where it is carried. */
 public final class EquipmentInventoryRules {
     public enum Category {
-        HELMET(EquipmentSlot.HEAD), VEST(EquipmentSlot.CHEST), BACKPACK(EquipmentSlot.LEGS);
+        HELMET(EquipmentSlot.HEAD), VEST(EquipmentSlot.CHEST), BACKPACK(null);
         public final EquipmentSlot slot;
         Category(EquipmentSlot slot) { this.slot = slot; }
+        public ItemStack equipped(Player player) {
+            return this == BACKPACK ? BackpackService.equipped(player) : player.getItemBySlot(slot);
+        }
+        public void equip(Player player, ItemStack stack) {
+            if (this == BACKPACK) BackpackService.setEquipped(player, stack);
+            else player.setItemSlot(slot, stack);
+        }
     }
     private EquipmentInventoryRules() {}
     public static Category category(ItemStack stack) {
@@ -64,6 +71,7 @@ public final class EquipmentInventoryRules {
     public static int[] carried(Player player) {
         int[] result = new int[3];
         for (int i = 0; i < player.getInventory().getContainerSize(); i++) add(result, counts(player.getInventory().getItem(i)), 1);
+        add(result, counts(BackpackService.equipped(player)), 1);
         add(result, counts(player.containerMenu.getCarried()), 1);
         for (Slot slot : BackpackOwnership.temporaryInputs(player)) add(result, counts(slot.getItem()), 1);
         return result;
@@ -141,7 +149,7 @@ public final class EquipmentInventoryRules {
     public static boolean mayReplace(Player player, ItemStack incoming, boolean automatic) {
         Category category = category(incoming);
         if (category == null || AutoAttachmentService.busy(player)) return false;
-        ItemStack old = player.getItemBySlot(category.slot);
+        ItemStack old = category.equipped(player);
         if (!player.isCreative() && EnchantmentHelper.has(old, EnchantmentEffectComponents.PREVENT_ARMOR_CHANGE)) return false;
         if (!permitsChange(player, incoming.copyWithCount(1), old)) return false;
         if (automatic && !better(incoming, old)) return false;

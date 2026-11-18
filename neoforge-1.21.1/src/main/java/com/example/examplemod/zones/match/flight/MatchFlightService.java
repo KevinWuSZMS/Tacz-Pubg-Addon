@@ -285,7 +285,7 @@ public final class MatchFlightService {
         if (!next.equals(rider.sent) || player.server.getTickCount() % 20 == 0) {
             // The HUD payload goes only to its owner. Equipment synchronization also reaches
             // observers, including players who begin tracking this descent after the jump.
-            ItemStack pack = player.getItemBySlot(EquipmentSlot.LEGS);
+            ItemStack pack = com.example.examplemod.backpack.BackpackService.equipped(player);
             if (ParachuteItem.isParachute(pack)) {
                 CompoundTag marker = pack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
                 if (marker.hasUUID("flight_pack") && next.session().equals(marker.getUUID("flight_pack"))
@@ -293,7 +293,7 @@ public final class MatchFlightService {
                     ItemStack updated = pack.copy();
                     marker.putInt(ParachuteItem.FLIGHT_STAGE_TAG, next.stage());
                     updated.set(DataComponents.CUSTOM_DATA, CustomData.of(marker));
-                    player.setItemSlot(EquipmentSlot.LEGS, updated);
+                    com.example.examplemod.backpack.BackpackService.setEquipped(player, updated);
                 }
             }
             PacketDistributor.sendToPlayer(player, next);
@@ -318,9 +318,10 @@ public final class MatchFlightService {
         equip(p, tag, session);
     }
     private static void equip(ServerPlayer p, CompoundTag tag, UUID session) {
-        ItemStack previous = p.getItemBySlot(EquipmentSlot.LEGS);
+        com.example.examplemod.backpack.BackpackService.migrateLegacy(p);
+        ItemStack previous = com.example.examplemod.backpack.BackpackService.equipped(p);
         tag.putBoolean("equipment_saved", true);
-        tag.putString("equipment_slot", "legs");
+        tag.putString("equipment_slot", "backpack");
         if (!previous.isEmpty()) tag.put("equipment", previous.save(p.registryAccess()));
         else tag.remove("equipment");
         tag.remove("chest");
@@ -328,7 +329,7 @@ public final class MatchFlightService {
         CompoundTag marker = new CompoundTag();
         marker.putUUID("flight_pack", session);
         pack.set(DataComponents.CUSTOM_DATA, CustomData.of(marker));
-        p.setItemSlot(EquipmentSlot.LEGS, pack);
+        com.example.examplemod.backpack.BackpackService.setEquipped(p, pack);
     }
     private static void restoreEquipment(ServerPlayer p) {
         CompoundTag tag = p.getPersistentData().getCompound(RECOVERY);
@@ -342,13 +343,20 @@ public final class MatchFlightService {
             p.inventoryMenu.setCarried(ItemStack.EMPTY);
         if (temporaryPack(p.getItemBySlot(EquipmentSlot.CHEST), session)) p.setItemSlot(EquipmentSlot.CHEST, ItemStack.EMPTY);
         if (temporaryPack(p.getItemBySlot(EquipmentSlot.LEGS), session)) p.setItemSlot(EquipmentSlot.LEGS, ItemStack.EMPTY);
+        if (temporaryPack(com.example.examplemod.backpack.BackpackService.equipped(p), session))
+            com.example.examplemod.backpack.BackpackService.setEquipped(p, ItemStack.EMPTY);
         // Recovery written before the slot migration contains a saved chest item. Keep its
         // original slot, so upgrading never turns a stored vest into a leggings item.
-        EquipmentSlot slot = tag.getString("equipment_slot").equals("legs") ? EquipmentSlot.LEGS : EquipmentSlot.CHEST;
-        String savedKey = slot == EquipmentSlot.LEGS ? "equipment" : "chest";
+        String savedSlot = tag.getString("equipment_slot");
+        EquipmentSlot slot = savedSlot.equals("legs") ? EquipmentSlot.LEGS : EquipmentSlot.CHEST;
+        String savedKey = savedSlot.equals("backpack") || savedSlot.equals("legs") ? "equipment" : "chest";
         ItemStack original = ItemStack.parseOptional(p.registryAccess(), tag.getCompound(savedKey));
         if (!original.isEmpty()) {
-            if (p.getItemBySlot(slot).isEmpty()) p.setItemSlot(slot, original);
+            if (com.example.examplemod.backpack.BackpackService.isBackpack(original)) {
+                if (com.example.examplemod.backpack.BackpackService.equipped(p).isEmpty())
+                    com.example.examplemod.backpack.BackpackService.setEquipped(p, original);
+                else p.getInventory().placeItemBackInInventory(original);
+            } else if (p.getItemBySlot(slot).isEmpty()) p.setItemSlot(slot, original);
             else p.getInventory().placeItemBackInInventory(original);
         }
         tag.remove("chest"); tag.remove("equipment"); tag.remove("equipment_slot");
@@ -360,7 +368,8 @@ public final class MatchFlightService {
         // A real vest/backpack in the destination is never overwritten. Full inventories use
         // vanilla's give-back handling, which leaves a recoverable item at the player's feet.
         player.setItemSlot(EquipmentSlot.CHEST, ItemStack.EMPTY);
-        if (player.getItemBySlot(EquipmentSlot.LEGS).isEmpty()) player.setItemSlot(EquipmentSlot.LEGS, previous);
+        if (com.example.examplemod.backpack.BackpackService.equipped(player).isEmpty())
+            com.example.examplemod.backpack.BackpackService.setEquipped(player, previous);
         else player.getInventory().placeItemBackInInventory(previous);
         player.getInventory().setChanged();
         player.inventoryMenu.broadcastChanges();

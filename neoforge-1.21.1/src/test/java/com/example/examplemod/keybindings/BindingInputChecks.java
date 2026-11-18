@@ -46,6 +46,14 @@ public final class BindingInputChecks {
         check(BindingInput.pollHeld(alternatives, Set.of("G", "Mouse4")::contains, "Mouse4"), "a second alternative does not rearm while the first remains held");
         check(BindingInput.pollHeld(chord, Set.of("G", "ControlLeft", "ControlRight")::contains, "ControlRight"), "second Ctrl does not rearm an already complete generic chord");
         check(!BindingInput.pollHeld(chord, Set.of("G", "ControlRight")::contains, "ControlRight"), "completing a previously released chord rearms it");
+        check(BindingInput.pollKeyboardHeld(InputBinding.chord("W"), Set.of("W")::contains), "inventory movement retains keyboard direction");
+        check(!BindingInput.pollKeyboardHeld(InputBinding.chord("Mouse1"), Set.of("Mouse1")::contains), "inventory clicks cannot become movement");
+        check(BindingInput.pollKeyboardHeld(alternatives, Set.of("G", "Mouse4")::contains), "keyboard alternative still works beside a UI mouse press");
+        check(!BindingInput.pollKeyboardHeld(alternatives, Set.of("Mouse4")::contains), "mouse alternative is excluded from inventory movement");
+        check(!BindingInput.pollKeyboardHeld(InputBinding.chord("W", "Mouse1"), Set.of("W", "Mouse1")::contains), "mouse-containing chord cannot move through inventory");
+        check(BindingInput.pollKeyboardHeld(chord, Set.of("G", "ControlRight")::contains), "keyboard-only polling retains either-side modifiers");
+        check(!BindingInput.pollKeyboardHeld(chord, Set.of("G")::contains), "inventory modifier release cannot leave movement held");
+        check(!BindingInput.pollKeyboardHeld(InputBinding.empty(), key -> true), "empty inventory movement binding stays inactive");
         System.out.println("BindingInputChecks: " + checks + " physical input scenarios passed");
     }
 

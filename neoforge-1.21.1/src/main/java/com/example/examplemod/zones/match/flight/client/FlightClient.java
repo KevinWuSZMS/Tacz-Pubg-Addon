@@ -43,7 +43,8 @@ public final class FlightClient {
     private FlightClient() {}
     static int renderStage(LivingEntity entity) {
         if (entity == Minecraft.getInstance().player) return current.stage();
-        var marker = entity.getItemBySlot(EquipmentSlot.LEGS)
+        if (!(entity instanceof net.minecraft.world.entity.player.Player player)) return 0;
+        var marker = com.example.examplemod.backpack.BackpackService.equipped(player)
                 .getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
         return marker.hasUUID("flight_pack") ? marker.getInt(ParachuteItem.FLIGHT_STAGE_TAG) : 0;
     }

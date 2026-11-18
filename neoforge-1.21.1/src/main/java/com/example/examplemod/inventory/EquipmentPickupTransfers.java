@@ -14,7 +14,7 @@ public final class EquipmentPickupTransfers {
                 || !InventoryConfig.current(player).autoEquipmentReplacement()
                 || !EquipmentInventoryRules.mayReplace(player, incoming, true)) return false;
         var category = EquipmentInventoryRules.category(incoming);
-        ItemStack previous = player.getItemBySlot(category.slot).copy();
+        ItemStack previous = category.equipped(player).copy();
         GroundLootEntity dropped = null;
         if (!previous.isEmpty()) {
             dropped = LootSpawnRegistration.GROUND_LOOT.get().create(player.level());
@@ -25,10 +25,10 @@ public final class EquipmentPickupTransfers {
             if (!player.level().addFreshEntity(dropped)) { dropped.discard(); return false; }
         }
         try {
-            player.setItemSlot(category.slot, incoming.copyWithCount(1));
+            category.equip(player, incoming.copyWithCount(1));
         } catch (RuntimeException failure) {
             if (dropped != null) dropped.discard();
-            player.setItemSlot(category.slot, previous);
+            category.equip(player, previous);
             return false;
         }
         incoming.shrink(1);

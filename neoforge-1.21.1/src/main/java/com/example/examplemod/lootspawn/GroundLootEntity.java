@@ -154,6 +154,17 @@ public final class GroundLootEntity extends Entity {
         return entityData.get(QUANTITY);
     }
 
+    /** Server inventory transactions consume a real carrier only after all destination checks pass. */
+    public boolean consumeForInventory(Player player, ItemStack expected, int amount) {
+        if (level().isClientSide || isRemoved() || !validAnchor || player.level() != level()
+                || !canBePickedUpBy(player) || amount <= 0 || amount > getQuantity()
+                || !ItemStack.isSameItemSameComponents(getItem(), expected)) return false;
+        int remaining = getQuantity() - amount;
+        entityData.set(QUANTITY, remaining);
+        if (remaining == 0) discard();
+        return true;
+    }
+
     public BlockPos anchor() {
         return anchor;
     }
@@ -304,6 +315,7 @@ public final class GroundLootEntity extends Entity {
         player.getInventory().setChanged();
         player.containerMenu.broadcastChanges();
         int remaining = quantityBefore - taken;
+        com.example.examplemod.inventory.PubgInventoryService.acquired(player, original);
         entityData.set(QUANTITY, remaining);
         if (remaining == 0) {
             discard();
@@ -323,8 +335,8 @@ public final class GroundLootEntity extends Entity {
         if (category == null || !com.example.examplemod.inventory.EquipmentInventoryRules.mayReplace(player, getItem(), automatic))
             return false;
         ItemStack replacement = getItem().copyWithCount(1);
-        ItemStack previous = player.getItemBySlot(category.slot).copy();
-        return commitExchange(player, replacement, previous, previous, stack -> player.setItemSlot(category.slot, stack));
+        ItemStack previous = category.equipped(player).copy();
+        return commitExchange(player, replacement, previous, previous, stack -> category.equip(player, stack));
     }
     private static boolean weaponSlotsFull(Player player, ItemStack stack) {
         boolean handgun = com.example.examplemod.inventory.MatchInventoryService.role(stack).equals("handgun");
@@ -333,10 +345,18 @@ public final class GroundLootEntity extends Entity {
     }
     /** A deliberate F press may replace a weapon; passive acquisition never replaces guns. */
     private boolean exchangeWeapon(Player player) {
+        return exchangeWeapon(player, player.getInventory().selected);
+    }
+
+    /** Explicit inventory drag can select either real primary slot without changing the held gun. */
+    public boolean exchangeWeapon(Player player, int target) {
+        if (level().isClientSide || isRemoved() || !validAnchor || player.level() != level()
+                || !canBePickedUpBy(player) || getQuantity() < 1
+                || !com.example.examplemod.inventory.InventoryConfig.active(player)
+                || !com.example.examplemod.inventory.MatchInventoryService.weapon(getItem())) return false;
         if (com.example.examplemod.inventory.AutoAttachmentService.busy(player)) return false;
         boolean handgun = com.example.examplemod.inventory.MatchInventoryService.role(getItem()).equals("handgun");
-        int selected = player.getInventory().selected;
-        int target = selected;
+        if (handgun ? target != 2 : target != 0 && target != 1) return false;
         ItemStack previous = player.getInventory().getItem(target).copy();
         ItemStack rollback = previous.copy();
         ItemStack replacement = getItem().copyWithCount(1);
@@ -385,6 +405,7 @@ public final class GroundLootEntity extends Entity {
         }
         player.getInventory().setChanged();
         player.containerMenu.broadcastChanges();
+        com.example.examplemod.inventory.PubgInventoryService.acquired(player, replacement);
         return true;
     }
 

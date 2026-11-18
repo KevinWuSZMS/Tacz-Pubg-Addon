@@ -2,6 +2,7 @@ package com.example.examplemod.zones.match;
 
 import com.example.examplemod.armor.ArmorRegistration;
 import com.example.examplemod.backpack.BackpackRegistration;
+import com.example.examplemod.backpack.BackpackService;
 import com.example.examplemod.inventory.EquipmentInventoryRules;
 import com.example.examplemod.inventory.EquipmentPreference;
 import com.example.examplemod.inventory.InventorySettings;
@@ -66,7 +67,7 @@ public final class EquipmentPickupGameTests {
             GroundLootEntity firstPack = f.ground(otherCategory, 1);
             firstPack.pickup(player);
             helper.assertTrue(firstPack.isRemoved()
-                    && player.getItemBySlot(EquipmentSlot.LEGS).is(BackpackRegistration.LEVEL_1.get())
+                    && BackpackService.equipped(player).is(BackpackRegistration.LEVEL_1.get())
                     && ItemStack.matches(player.getItemBySlot(EquipmentSlot.HEAD), incoming),
                     "Picking up the first pack failed to equip it alongside the worn helmet");
             for (int i = 0; i < 36; i++) player.getInventory().setItem(i, ItemStack.EMPTY);
@@ -95,7 +96,7 @@ public final class EquipmentPickupGameTests {
             player.getInventory().setItem(9, bundle);
             helper.assertTrue(EquipmentInventoryRules.allowed(player, extra) == 0,
                     "Nested equipment bypassed the category count");
-            player.setItemSlot(EquipmentSlot.LEGS, new ItemStack(BackpackRegistration.LEVEL_3.get()));
+            BackpackService.setEquipped(player, new ItemStack(BackpackRegistration.LEVEL_3.get()));
             for (int i = 0; i < 36; i++) player.getInventory().setItem(i, ItemStack.EMPTY);
             for (int i = 9; i < 13; i++) player.getInventory().setItem(i, new ItemStack(Items.STONE, 64));
             player.getInventory().setItem(13, new ItemStack(Items.STONE, 33));
@@ -110,7 +111,7 @@ public final class EquipmentPickupGameTests {
             for (int i = 0; i < 36; i++) player.getInventory().setItem(i, new ItemStack(Items.STONE, 64));
             GroundLootEntity smaller = f.ground(new ItemStack(BackpackRegistration.LEVEL_1.get()), 1);
             helper.assertTrue(!smaller.exchangeEquipment(player, false)
-                    && player.getItemBySlot(EquipmentSlot.LEGS).is(BackpackRegistration.LEVEL_3.get())
+                    && BackpackService.equipped(player).is(BackpackRegistration.LEVEL_3.get())
                     && smaller.getQuantity() == 1, "Backpack downgrade swallowed an over-capacity inventory");
             f.state.end(f.mapId);
             helper.assertTrue(EquipmentInventoryRules.allowed(player, extra) == 1,

@@ -43,7 +43,10 @@ public final class MatchInventorySnapshotGameTests {
             helmet.set(DataComponents.CUSTOM_NAME, Component.literal("original helmet"));
             player.setItemSlot(EquipmentSlot.HEAD, helmet);
             player.setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.DIAMOND_CHESTPLATE));
-            player.setItemSlot(EquipmentSlot.LEGS, new ItemStack(BackpackRegistration.LEVEL_2.get()));
+            player.setItemSlot(EquipmentSlot.LEGS, new ItemStack(Items.DIAMOND_LEGGINGS));
+            ItemStack originalPack = new ItemStack(BackpackRegistration.LEVEL_2.get());
+            originalPack.set(DataComponents.CUSTOM_NAME, Component.literal("original independent backpack"));
+            BackpackService.setEquipped(player, originalPack);
             player.setItemSlot(EquipmentSlot.FEET, new ItemStack(Items.IRON_BOOTS));
             player.setItemSlot(EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
             player.getInventory().selected = 4;
@@ -71,6 +74,7 @@ public final class MatchInventorySnapshotGameTests {
 
             MatchInventorySnapshots.begin(player, UUID.randomUUID());
             helper.assertTrue(player.getInventory().isEmpty(), "Begin left pre-match inventory behind");
+            helper.assertTrue(BackpackService.equipped(player).isEmpty(), "Begin left the independent backpack behind");
             helper.assertTrue(player.containerMenu.getCarried().isEmpty(), "Begin left a cursor item behind");
             for (int i = 1; i <= 4; i++)
                 helper.assertTrue(player.inventoryMenu.getSlot(i).getItem().isEmpty(), "Hidden personal input leaked into match");
@@ -91,6 +95,8 @@ public final class MatchInventorySnapshotGameTests {
             MatchInventorySnapshots.restoreIfStale(reconnected);
             helper.assertTrue(originals.equals(reconnected.getInventory().save(new ListTag())),
                     "Restored inventory differs in slots, counts, equipment, damage or components");
+            helper.assertTrue(ItemStack.matches(originalPack, BackpackService.equipped(reconnected)),
+                    "Independent backpack did not survive atomic snapshot and reconnect");
             helper.assertTrue(reconnected.getInventory().selected == 4, "Selected hotbar slot was not restored");
             helper.assertTrue(!reconnected.getPersistentData().contains(SNAPSHOT), "Committed restore retained snapshot marker");
             assertSameMultiset(helper, extras, MatchInventorySnapshots.recovery(reconnected));
@@ -131,7 +137,9 @@ public final class MatchInventorySnapshotGameTests {
         position(helper, original);
         original.getInventory().clearContent();
         original.getInventory().setItem(8, new ItemStack(Items.EMERALD, 11));
-        original.setItemSlot(EquipmentSlot.LEGS, new ItemStack(BackpackRegistration.LEVEL_3.get()));
+        original.setItemSlot(EquipmentSlot.LEGS, new ItemStack(Items.IRON_LEGGINGS));
+        ItemStack originalPack = new ItemStack(BackpackRegistration.LEVEL_3.get());
+        BackpackService.setEquipped(original, originalPack);
         ListTag expected = original.getInventory().save(new ListTag()).copy();
         MatchInventorySnapshots.begin(original, UUID.randomUUID());
         var replacement = new FakePlayer(helper.getLevel(), profile);
@@ -140,6 +148,7 @@ public final class MatchInventorySnapshotGameTests {
         helper.assertTrue(replacement.getPersistentData().contains(SNAPSHOT), "Death clone lost saved originals");
         MatchInventorySnapshots.restoreIfStale(replacement);
         helper.assertTrue(expected.equals(replacement.getInventory().save(new ListTag())), "Death clone recovery lost or duplicated items");
+        helper.assertTrue(ItemStack.matches(originalPack, BackpackService.equipped(replacement)), "Death clone lost original independent pack");
         helper.assertTrue(!replacement.getPersistentData().contains(SNAPSHOT) && !MatchInventorySnapshots.hasRecovery(replacement),
                 "Death clone recovery retained a second claim");
         MatchInventorySnapshots.restoreIfStale(replacement);

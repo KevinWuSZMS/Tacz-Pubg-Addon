@@ -198,21 +198,24 @@ public final class BindingInput {
 
     /** Screen lifetimes must recover even when an input consumer loses the release callback. */
     public static boolean pollHeld(KeyMapping mapping) {
-        return pollHeld(mapping, null);
+        return pollHeld(mapping, null, false);
     }
+
+    /** Inventory movement permits keyboard members only; mouse input belongs to the UI. */
+    public static boolean pollKeyboardHeld(KeyMapping mapping) { return pollHeld(mapping, null, true); }
 
     /** A new member of an already held alternative/chord is not a fresh complete trigger. */
     public static boolean freshPress(KeyMapping mapping, String physicalKey) {
-        return physicalKey != null && !pollHeld(mapping, physicalKey);
+        return physicalKey != null && !pollHeld(mapping, physicalKey, false);
     }
 
-    private static boolean pollHeld(KeyMapping mapping, String excludedKey) {
+    private static boolean pollHeld(KeyMapping mapping, String excludedKey, boolean keyboardOnly) {
         var mc = Minecraft.getInstance();
         if (!mc.isWindowActive()) return false;
         long window = mc.getWindow().getWindow();
         var binding = ACTIVE.get(mapping);
         if (binding == null) binding = BindingKeys.fromMapping(mapping, false);
-        return pollHeld(binding, id -> {
+        Predicate<String> nativeHeld = id -> {
             var key = BindingKeys.toKey(id);
             if (key.getType() == InputConstants.Type.MOUSE) {
                 int button = key.getValue();
@@ -222,7 +225,12 @@ public final class BindingInput {
             int code = key.getType() == InputConstants.Type.SCANCODE ? BindingKeys.keySymbol(key.getValue()) : key.getValue();
             return code >= GLFW.GLFW_KEY_SPACE && code <= GLFW.GLFW_KEY_LAST
                     && GLFW.glfwGetKey(window, code) == GLFW.GLFW_PRESS;
-        }, excludedKey);
+        };
+        return keyboardOnly ? pollKeyboardHeld(binding, nativeHeld) : pollHeld(binding, nativeHeld, excludedKey);
+    }
+
+    static boolean pollKeyboardHeld(InputBinding binding, Predicate<String> nativeDown) {
+        return pollHeld(binding, id -> BindingKeys.toKey(id).getType() != InputConstants.Type.MOUSE && nativeDown.test(id));
     }
 
     static boolean pollHeld(InputBinding binding, Predicate<String> nativeDown) {

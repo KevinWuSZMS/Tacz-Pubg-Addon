@@ -335,6 +335,7 @@ public final class MatchBotService {
             fake.teleportTo(level, feet.getX() + .5, feet.getY(), feet.getZ() + .5, request.next * 137.5F, 0);
             fake.setGameMode(GameType.ADVENTURE); fake.getAbilities().flying = false; fake.getAbilities().invulnerable = false;
             fake.setHealth(fake.getMaxHealth()); fake.getFoodData().setFoodLevel(20); fake.getInventory().clearContent();
+            com.example.examplemod.backpack.BackpackService.setEquipped(fake, net.minecraft.world.item.ItemStack.EMPTY);
             fake.getPersistentData().putUUID("tacz_pubg_bot_owner", request.token);
             owned.brain.suspend();
             return new PreparedBot(spec.plannedId(), fake.getUUID(), fake.getGameProfile().getName(), spec.teamId());

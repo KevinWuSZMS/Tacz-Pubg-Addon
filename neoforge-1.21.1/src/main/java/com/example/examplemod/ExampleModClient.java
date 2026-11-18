@@ -48,6 +48,8 @@ public class ExampleModClient {
         com.example.examplemod.throwables.client.ThrowableClient.register(modEventBus);
         com.example.examplemod.throwables.client.ThrowableSettingsClient.register();
         com.example.examplemod.inventory.client.InventoryClient.register();
+        com.example.examplemod.inventory.client.PubgInventoryState.register(net.neoforged.neoforge.common.NeoForge.EVENT_BUS);
+        com.example.examplemod.inventory.client.PubgInventoryInput.register();
         com.example.examplemod.gunbalance.client.GunExperimentClient.register();
         com.example.examplemod.visibility.client.VisibilityClient.register();
         modEventBus.addListener(com.example.examplemod.spawn.client.SpawnAreaKeys::registerKeyMappings);

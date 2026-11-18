@@ -100,6 +100,7 @@ public class ExampleMod {
         com.example.examplemod.throwables.ThrowableRegistration.registerItems();
         com.example.examplemod.armor.ArmorRegistration.register(modEventBus, NeoForge.EVENT_BUS);
         com.example.examplemod.inventory.MatchInventoryService.register(modEventBus, NeoForge.EVENT_BUS);
+        com.example.examplemod.inventory.PubgInventoryService.register(modEventBus, NeoForge.EVENT_BUS);
         com.example.examplemod.backpack.BackpackRegistration.register(modEventBus, NeoForge.EVENT_BUS);
         com.example.examplemod.originalicons.OriginalIconService.register(modEventBus, NeoForge.EVENT_BUS);
         ITEMS.register(modEventBus);

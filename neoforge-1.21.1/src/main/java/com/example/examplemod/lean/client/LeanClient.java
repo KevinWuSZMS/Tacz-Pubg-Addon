@@ -1,6 +1,7 @@
 package com.example.examplemod.lean.client;
 
 import com.example.examplemod.keybindings.BindingInput;
+import com.example.examplemod.inventory.client.PubgInventoryInput;
 import com.example.examplemod.keybindings.BindingProfile;
 import com.example.examplemod.keybindings.BindingProfiles;
 import com.example.examplemod.lean.LeanMotion;
@@ -43,6 +44,7 @@ public final class LeanClient {
             if (RIGHT.matches(event.getKey(), event.getScanCode())) change(1, event.getAction());
         });
         NeoForge.EVENT_BUS.addListener(EventPriority.HIGHEST, (InputEvent.MouseButton.Post event) -> {
+            if (PubgInventoryInput.activeScreen()) return;
             if (LEFT.matchesMouse(event.getButton())) change(-1, event.getAction());
             if (RIGHT.matchesMouse(event.getButton())) change(1, event.getAction());
         });
@@ -55,9 +57,18 @@ public final class LeanClient {
 
     private static boolean acceptsInput() {
         var mc = Minecraft.getInstance();
-        return mc.player != null && mc.getConnection() != null && mc.screen == null && mc.getOverlay() == null
+        return mc.player != null && mc.getConnection() != null && (mc.screen == null || PubgInventoryInput.acceptsMovement()) && mc.getOverlay() == null
                 && mc.isWindowActive() && MovementClient.groundContext() && LeanService.eligible(mc.player);
     }
+    public static boolean inventoryKey(int key, int scan, int action) {
+        boolean left = LEFT.matches(key, scan), right = RIGHT.matches(key, scan);
+        if (action != GLFW.GLFW_REPEAT) {
+            if (left) change(-1, action);
+            if (right) change(1, action);
+        }
+        return left || right;
+    }
+    public static void releaseInventoryInput() { INPUT.reset(); sync(); }
     private static void identity() {
         var mc = Minecraft.getInstance();
         if (identity != mc.player) {
@@ -77,8 +88,8 @@ public final class LeanClient {
         while (LEFT.consumeClick()) { }
         while (RIGHT.consumeClick()) { }
         if (!acceptsInput()) INPUT.reset();
-        if (!BindingInput.physicallyHeld(LEFT)) INPUT.release(-1);
-        if (!BindingInput.physicallyHeld(RIGHT)) INPUT.release(1);
+        if (!PubgInventoryInput.heldForMovement(LEFT)) INPUT.release(-1);
+        if (!PubgInventoryInput.heldForMovement(RIGHT)) INPUT.release(1);
         sync();
     }
     private static void sync() {

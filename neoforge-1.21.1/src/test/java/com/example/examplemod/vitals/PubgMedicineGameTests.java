@@ -3,6 +3,7 @@ package com.example.examplemod.vitals;
 import carpet.patches.EntityPlayerMPFake;
 import carpet.patches.NetHandlerPlayServerFake;
 import com.mojang.authlib.GameProfile;
+import com.example.examplemod.inventory.MatchInventoryService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 import net.neoforged.neoforge.event.entity.living.LivingHealEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -160,6 +162,101 @@ public final class PubgMedicineGameTests {
         });
     }
 
+    @GameTest(template = "empty", templateNamespace = "combat_dbno", batch = "combat_dbno", timeoutTicks = 300)
+    public static void temporaryHotbarSlotRestoresOnlyAfterTheLastBandage(GameTestHelper helper) throws Exception {
+        var fixture = new Fixture(helper, PubgMedicineItems.BANDAGE.get(), 5, 60, 58, 2.4);
+        fixture.later(65, () -> {
+            fixture.player.getInventory().selected = 5;
+            fixture.start(2);
+            var displaced = new ItemStack(net.minecraft.world.item.Items.STONE, 7);
+            var temporary = new TemporarySlotHarness(fixture, 9, 5, 0, displaced);
+            fixture.later(63, () -> {
+                helper.assertTrue(temporary.pendingGaps == 1 && fixture.capture.continued.size() == 1
+                                && fixture.player.isUsingItem() && fixture.player.getInventory().selected == 5,
+                        "Restoring the temporary hotbar slot interrupted the next bandage");
+                helper.assertTrue(fixture.player.getInventory().getItem(9) == displaced
+                                && fixture.player.getMainHandItem().getCount() == 1,
+                        "The displaced item moved or another bandage was consumed before its cast finished");
+            });
+            fixture.later(125, () -> {
+                helper.assertTrue(temporary.pendingGaps == 2 && fixture.completions.size() == 2
+                                && fixture.capture.continued.size() == 1 && !fixture.player.isUsingItem()
+                                && !PubgMedicineService.pendingContinuation(fixture.player),
+                        "Two completed bandages did not leave the continuation decision settled");
+                helper.assertTrue(fixture.player.getInventory().selected == 0
+                                && fixture.player.getInventory().getItem(5) == displaced
+                                && fixture.player.getInventory().getItem(9).isEmpty() && !temporary.present(),
+                        "Finishing the chain did not restore the exact displaced stack and previous selection");
+                fixture.close(); helper.succeed();
+            });
+        });
+    }
+
+    @GameTest(template = "empty", templateNamespace = "combat_dbno", batch = "combat_dbno", timeoutTicks = 300)
+    public static void cancelledTemporaryBandageRestoresTheUnconsumedRemainder(GameTestHelper helper) throws Exception {
+        var fixture = new Fixture(helper, PubgMedicineItems.BANDAGE.get(), 5, 60, 58, 2.4);
+        fixture.later(65, () -> {
+            fixture.player.getInventory().selected = 5;
+            fixture.start(3);
+            var displaced = new ItemStack(net.minecraft.world.item.Items.COBBLESTONE, 11);
+            var temporary = new TemporarySlotHarness(fixture, 9, 5, 0, displaced);
+            fixture.later(65, () -> {
+                helper.assertTrue(fixture.player.isUsingItem() && fixture.capture.continued.size() == 1,
+                        "The temporary-slot chain never reached its second cast");
+                fixture.player.releaseUsingItem();
+            });
+            fixture.later(135, () -> {
+                helper.assertTrue(!fixture.player.isUsingItem() && !PubgMedicineService.pendingContinuation(fixture.player)
+                                && fixture.completions.size() == 1 && fixture.capture.continued.size() == 1,
+                        "A cancelled temporary-slot chain restarted or consumed another bandage");
+                helper.assertTrue(fixture.player.getInventory().selected == 0 && !temporary.present()
+                                && fixture.player.getInventory().getItem(5) == displaced
+                                && fixture.player.getInventory().getItem(9).getItem() == fixture.medicine
+                                && fixture.player.getInventory().getItem(9).getCount() == 2,
+                        "Cancellation lost or duplicated the displaced item or unused bandages");
+                fixture.close(); helper.succeed();
+            });
+        });
+    }
+
+    /** Reproduce the match router's PlayerTick.Post ordering without creating another match fixture. */
+    private static final class TemporarySlotHarness {
+        final Fixture fixture;
+        final Map<UUID, Object> entries;
+        final Consumer<PlayerTickEvent.Post> listener;
+        int pendingGaps;
+        @SuppressWarnings("unchecked")
+        TemporarySlotHarness(Fixture fixture, int source, int target, int previousSelected, ItemStack displaced) {
+            this.fixture = fixture;
+            try {
+                var field = MatchInventoryService.class.getDeclaredField("TEMPORARY");
+                field.setAccessible(true);
+                entries = (Map<UUID, Object>) field.get(null);
+                Class<?> operation = Class.forName(MatchInventoryService.class.getName() + "$TemporaryUse");
+                var constructor = operation.getDeclaredConstructor(int.class, int.class, int.class, ItemStack.class);
+                constructor.setAccessible(true);
+                entries.put(fixture.player.getUUID(), constructor.newInstance(source, target, previousSelected, displaced));
+                fixture.player.getInventory().setItem(source, displaced);
+                var restore = MatchInventoryService.class.getDeclaredMethod("restoreTemporary", ServerPlayer.class);
+                restore.setAccessible(true);
+                listener = event -> {
+                    if (event.getEntity() != fixture.player) return;
+                    boolean gap = !fixture.player.isUsingItem() && PubgMedicineService.pendingContinuation(fixture.player);
+                    if (gap) pendingGaps++;
+                    try { restore.invoke(null, fixture.player); }
+                    catch (ReflectiveOperationException e) { throw new AssertionError("Cannot invoke temporary inventory restoration", e); }
+                    if (gap) fixture.helper.assertTrue(fixture.player.getInventory().selected == target
+                                    && fixture.player.getInventory().getItem(source) == displaced && present(),
+                            "PlayerTick.Post restored a borrowed slot before ServerTick.Post decided bandage continuation");
+                };
+                NeoForge.EVENT_BUS.addListener(listener);
+                fixture.extraCleanup.add(this::close);
+            } catch (ReflectiveOperationException e) { throw new AssertionError("Cannot configure temporary-slot regression", e); }
+        }
+        boolean present() { return entries.containsKey(fixture.player.getUUID()); }
+        void close() { NeoForge.EVENT_BUS.unregister(listener); entries.remove(fixture.player.getUUID()); }
+    }
+
     private record Heal(long clock, float amount, float before, int usingTicks) {}
     private record Finished(long clock, int usingTicks, int observedTicks, int lastRemaining) {}
     private record Forecast(long clock, MatchVitalsPayloads.RecoveryState state, float health, long healthClock) {}
@@ -178,6 +275,7 @@ public final class PubgMedicineGameTests {
         final CaptureConnection capture;
         final List<Heal> heals = new ArrayList<>();
         final List<Finished> completions = new ArrayList<>();
+        final List<Runnable> extraCleanup = new ArrayList<>();
         final Consumer<LivingHealEvent> healListener;
         final Consumer<LivingEntityUseItemEvent.Tick> useTickListener;
         final Consumer<LivingEntityUseItemEvent.Finish> finishListener;
@@ -334,6 +432,7 @@ public final class PubgMedicineGameTests {
         @Override public void close() {
             if (closed) return;
             closed = true; observing = false;
+            extraCleanup.forEach(Runnable::run);
             NeoForge.EVENT_BUS.unregister(healListener); NeoForge.EVENT_BUS.unregister(useTickListener);
             NeoForge.EVENT_BUS.unregister(finishListener);
             player.stopUsingItem(); PubgMedicineService.cancelUse(player);

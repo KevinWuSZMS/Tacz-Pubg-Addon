@@ -29,14 +29,15 @@ public final class MatchInventorySnapshots {
     private MatchInventorySnapshots() {}
 
     private record TemporarySlot(Container container, int index, ItemStack contents) {}
-    private record Live(ListTag inventory, int selected, ItemStack cursor, List<TemporarySlot> temporarySlots) {}
+    private record Live(ListTag inventory, int selected, ItemStack cursor, List<TemporarySlot> temporarySlots, ItemStack backpack) {}
 
     private static Live capture(ServerPlayer player) {
+        BackpackService.migrateLegacy(player);
         List<TemporarySlot> temporary = new ArrayList<>();
         for (var slot : BackpackOwnership.temporaryInputs(player))
             temporary.add(new TemporarySlot(slot.container, slot.getContainerSlot(), slot.getItem().copy()));
         return new Live(player.getInventory().save(new ListTag()), player.getInventory().selected,
-                player.containerMenu.getCarried().copy(), temporary);
+                player.containerMenu.getCarried().copy(), temporary, BackpackService.equipped(player).copy());
     }
     private static List<ItemStack> extras(Live live) {
         List<ItemStack> result = new ArrayList<>();
@@ -47,11 +48,13 @@ public final class MatchInventorySnapshots {
     }
     private static void clear(ServerPlayer player, Live live) {
         player.getInventory().clearContent();
+        BackpackService.setEquipped(player, ItemStack.EMPTY);
         player.containerMenu.setCarried(ItemStack.EMPTY);
         for (TemporarySlot slot : live.temporarySlots()) slot.container().setItem(slot.index(), ItemStack.EMPTY);
     }
     private static void restoreLive(ServerPlayer player, Live live) {
         player.getInventory().load(live.inventory());
+        BackpackService.setEquipped(player, live.backpack());
         player.getInventory().selected = live.selected();
         player.containerMenu.setCarried(live.cursor().copy());
         for (TemporarySlot slot : live.temporarySlots())
@@ -66,11 +69,12 @@ public final class MatchInventorySnapshots {
         if (extras.size() > RECOVERY_SLOTS)
             throw new IllegalStateException("Too many temporary crafting items to safely snapshot for " + player.getGameProfile().getName());
         CompoundTag marker = new CompoundTag();
-        marker.putInt("Version", 1);
+        marker.putInt("Version", 2);
         marker.putUUID("Session", session);
         marker.put("Inventory", live.inventory().copy());
         marker.putInt("Selected", live.selected());
         marker.put("Extras", saveItems(player, extras));
+        if (!live.backpack().isEmpty()) marker.put("Backpack", live.backpack().save(player.registryAccess()));
         CompoundTag previousData = player.getPersistentData().copy();
         try {
             player.getPersistentData().put(SNAPSHOT, marker);
@@ -107,7 +111,7 @@ public final class MatchInventorySnapshots {
         Long retry = RETRY_AFTER.get(player.getUUID());
         if (retry != null && now - retry < 0) return;
         RETRY_AFTER.put(player.getUUID(), now + java.util.concurrent.TimeUnit.SECONDS.toNanos(5));
-        if (marker.getInt("Version") != 1 || !marker.contains("Inventory", Tag.TAG_LIST)) {
+        if ((marker.getInt("Version") != 1 && marker.getInt("Version") != 2) || !marker.contains("Inventory", Tag.TAG_LIST)) {
             ExampleMod.LOGGER.error("Cannot restore invalid original inventory for {}", player.getUUID());
             player.sendSystemMessage(Component.translatable("message.tacz_pubg.inventory.restore_failed"));
             return;
@@ -117,8 +121,12 @@ public final class MatchInventorySnapshots {
         try {
             validateItems(player, marker.getList("Inventory", Tag.TAG_COMPOUND));
             validateItems(player, marker.getList("Extras", Tag.TAG_COMPOUND));
+            if (marker.contains("Backpack") && ItemStack.parse(player.registryAccess(), marker.getCompound("Backpack")).isEmpty())
+                throw new IllegalStateException("A saved backpack is unavailable; recovery record retained");
             clear(player, matchInventory);
             player.getInventory().load(marker.getList("Inventory", Tag.TAG_COMPOUND));
+            BackpackService.setEquipped(player, ItemStack.parseOptional(player.registryAccess(), marker.getCompound("Backpack")));
+            BackpackService.migrateLegacy(player);
             player.getInventory().selected = Math.clamp(marker.getInt("Selected"), 0, 8);
             List<ItemStack> remaining = new ArrayList<>();
             for (ItemStack stack : loadItems(player, marker.getList("Extras", Tag.TAG_COMPOUND))) {

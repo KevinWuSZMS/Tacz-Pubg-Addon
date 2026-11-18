@@ -26,7 +26,7 @@ public final class PubgMedicineHud {
         if (++recoveryAge > 100) clear();
         if (mc.gameMode == null || !player.isUsingItem() || !(player.getUseItem().getItem() instanceof PubgMedicineItem medicine)) return;
         boolean capped = !medicine.kind().isBoost() && !medicine.kind().canUse(player.getHealth(), player.getMaxHealth(), 0);
-        if (capped || mc.options.keySprint.isDown() || mc.options.keyJump.isDown()) mc.gameMode.releaseUsingItem(player);
+        if (capped || MedicineClient.movementKeyPressed()) mc.gameMode.releaseUsingItem(player);
     }
     private static boolean recoveryValid() {
         return recovery.remaining() > 0 && (recovery.session().equals(MatchVitalsPayloads.NO_SESSION)

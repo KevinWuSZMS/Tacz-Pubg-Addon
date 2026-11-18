@@ -58,7 +58,8 @@ public final class BackpackCapacityGameTests {
             helper.assertTrue(BackpackWeights.unit(f.player, new ItemStack(Items.ARROW)) == 2_000
                     && BackpackWeights.unit(f.player, new ItemStack(Items.CROSSBOW)) == 0,
                     "Vanilla crossbow adaptation disagrees with its equipped weapon role");
-            f.player.setItemSlot(EquipmentSlot.LEGS, item("backpack_3"));
+            BackpackService.setEquipped(f.player, item("backpack_3"));
+            f.player.setItemSlot(EquipmentSlot.LEGS, new ItemStack(Items.IRON_LEGGINGS));
             f.player.setItemSlot(EquipmentSlot.HEAD, item("helmet_1"));
             f.player.setItemSlot(EquipmentSlot.CHEST, item("vest_1"));
             helper.assertTrue(BackpackService.used(f.player) == 0 && BackpackService.capacity(f.player) == 370_000,
@@ -107,23 +108,23 @@ public final class BackpackCapacityGameTests {
     @GameTest(template = "empty", templateNamespace = "tacz_pubg")
     public static void carriedPackSwapsDropExactlyOneOldPackAcrossMenus(GameTestHelper helper) throws Exception {
         try (Fixture f = new Fixture(helper)) {
-            for (String route : List.of("hand", "cursor", "shift", "vanilla")) {
+            for (String route : List.of("hand", "cursor", "shift", "inventory")) {
                 f.player.getInventory().clearContent();
                 f.player.inventoryMenu.setCarried(ItemStack.EMPTY);
                 f.player.containerMenu = f.player.inventoryMenu;
                 ItemStack old = named(item("backpack_1"), "old-" + route);
                 ItemStack incoming = named(item("backpack_2"), "new-" + route);
-                f.player.setItemSlot(EquipmentSlot.LEGS, old);
+                BackpackService.setEquipped(f.player, old);
                 f.player.getInventory().setItem(9, new ItemStack(Items.STONE, 50));
                 if (route.equals("hand")) {
                     f.player.getInventory().selected = 5;
                     f.player.setItemInHand(InteractionHand.MAIN_HAND, incoming);
                     BackpackService.equipHand(f.player, InteractionHand.MAIN_HAND);
                     helper.assertTrue(f.player.getMainHandItem().isEmpty(), "Hand source retained a consumed pack");
-                } else if (route.equals("vanilla")) {
-                    f.player.inventoryMenu.setCarried(incoming);
-                    f.player.inventoryMenu.clicked(7, 0, ClickType.PICKUP, f.player);
-                    helper.assertTrue(f.player.inventoryMenu.getCarried().isEmpty(), "Vanilla cursor kept a consumed pack");
+                } else if (route.equals("inventory")) {
+                    f.player.getInventory().setItem(11, incoming);
+                    BackpackService.equipInventory(f.player, 11);
+                    helper.assertTrue(f.player.getInventory().getItem(11).isEmpty(), "Inventory source kept a consumed pack");
                 } else {
                     BackpackMenu menu = new BackpackMenu(25, f.player.getInventory());
                     f.player.containerMenu = menu;
@@ -152,7 +153,7 @@ public final class BackpackCapacityGameTests {
         try (Fixture f = new Fixture(helper)) {
             ItemStack old = named(item("backpack_1"), "cancel original");
             ItemStack incoming = named(item("backpack_2"), "cancel replacement");
-            f.player.setItemSlot(EquipmentSlot.LEGS, old);
+            BackpackService.setEquipped(f.player, old);
             f.player.setItemInHand(InteractionHand.MAIN_HAND, incoming);
             Consumer<EntityJoinLevelEvent> veto = event -> {
                 if (event.getEntity() instanceof ItemEntity item && ItemStack.matches(item.getItem(), old)) event.setCanceled(true);
@@ -171,7 +172,7 @@ public final class BackpackCapacityGameTests {
                     "Custom small old-pack capacity should return the old item instead of dropping it");
             f.settings(InventorySettings.defaults());
             f.player.getInventory().clearContent();
-            f.player.setItemSlot(EquipmentSlot.LEGS, item("backpack_3"));
+            BackpackService.setEquipped(f.player, item("backpack_3"));
             f.player.setItemInHand(InteractionHand.MAIN_HAND, item("backpack_1"));
             for (int i = 9; i < 12; i++) f.player.getInventory().setItem(i, new ItemStack(Items.STONE, 64));
             f.player.getInventory().setItem(12, new ItemStack(Items.STONE, 38));
@@ -179,7 +180,7 @@ public final class BackpackCapacityGameTests {
             helper.assertTrue(BackpackService.tier(f.player) == 3 && f.player.getMainHandItem().is(BackpackRegistration.LEVEL_1.get()),
                     "Downgrade left remaining contents above the smaller capacity");
             f.player.getInventory().clearContent();
-            f.player.setItemSlot(EquipmentSlot.LEGS, item("backpack_3"));
+            BackpackService.setEquipped(f.player, item("backpack_3"));
             BackpackMenu menu = new BackpackMenu(26, f.player.getInventory());
             f.player.containerMenu = menu;
             menu.clicked(0, 0, ClickType.QUICK_MOVE, f.player);

@@ -75,6 +75,11 @@ public final class PubgMedicineService {
         var states = STATES.get(p.server);
         return states == null ? null : states.get(p.getUUID());
     }
+    /** PlayerTick.Post must leave the hand intact until ServerTick.Post decides the next bandage. */
+    public static boolean pendingContinuation(ServerPlayer player) {
+        State state = state(player);
+        return state != null && state.repeatBandage != null;
+    }
     public static void startHeld(ServerPlayer p, int requestedSlot, int request) {
         int duration = 0;
         if (p.getInventory().selected == requestedSlot && !p.isUsingItem() && p.containerMenu == p.inventoryMenu

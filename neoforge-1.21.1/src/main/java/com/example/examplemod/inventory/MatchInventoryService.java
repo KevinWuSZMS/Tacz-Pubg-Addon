@@ -89,6 +89,15 @@ public final class MatchInventoryService {
     }
     /** Inventory.add callers retain the actual unaccepted remainder in their original stack. */
     public static boolean insert(Player player, ItemStack incoming, boolean acquisition) {
+        ItemStack acquiredType = acquisition ? incoming.copyWithCount(1) : ItemStack.EMPTY;
+        int previousCount = incoming.getCount();
+        try {
+            return insertInternal(player, incoming, acquisition);
+        } finally {
+            if (acquisition && incoming.getCount() < previousCount) PubgInventoryService.acquired(player, acquiredType);
+        }
+    }
+    private static boolean insertInternal(Player player, ItemStack incoming, boolean acquisition) {
         if (incoming.isEmpty()) return false;
         if (acquisition) AutoAttachmentService.tryEquipPickedUp(player, incoming);
         if (incoming.isEmpty()) return true;
@@ -199,7 +208,8 @@ public final class MatchInventoryService {
     }
     private static void restoreTemporary(ServerPlayer player) {
         var operation = TEMPORARY.get(player.getUUID());
-        if (operation == null || player.isUsingItem()) return;
+        if (operation == null || player.isUsingItem()
+                || com.example.examplemod.vitals.PubgMedicineService.pendingContinuation(player)) return;
         var inv = player.getInventory();
         // Restore only the same displaced object; inventory changes cannot manufacture a duplicate gun.
         if (inv.getItem(operation.source) == operation.displaced) {

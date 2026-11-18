@@ -103,6 +103,7 @@ final class BotBrain {
     private IGunOperator operator() { return IGunOperator.fromLivingEntity(body); }
     void equip() {
         body.getInventory().clearContent(); body.getInventory().selected = 0;
+        com.example.examplemod.backpack.BackpackService.setEquipped(body, ItemStack.EMPTY);
         body.getInventory().setChanged();
     }
     private static boolean supported(CommonGunIndex index) {

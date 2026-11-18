@@ -67,25 +67,27 @@ public final class BandageChainClient {
     private static boolean validOwner() {
         var mc = Minecraft.getInstance();
         return owner != null && mc.player == owner && mc.level == level && owner.isAlive() && !owner.isSpectator()
-                && (mc.screen == null || MedicineClient.active())
+                && MedicineClient.screenAllowed()
                 && owner.getInventory().selected == slot && !com.example.examplemod.combat.client.CombatInputClient.blocked();
     }
 
     /** Includes the short gap between vanilla completion and the next server confirmation. */
     public static boolean hasIntent() {
-        if (!validOwner() || intentTicks <= 0) return false;
-        return bandage(owner.getItemInHand(hand)) || owner.getInventory().items.stream().anyMatch(BandageChainClient::bandage);
+        if (!validOwner()) return false;
+        return MedicineInputRules.hasChainIntent(true, intentTicks, bandage(owner.getItemInHand(hand)),
+                owner.getInventory().items.stream().anyMatch(BandageChainClient::bandage));
     }
 
     private static void accept(MatchVitalsPayloads.BandageContinued packet) {
         var mc = Minecraft.getInstance();
         boolean session = packet.session().equals(MatchVitalsPayloads.NO_SESSION)
                 ? !MatchVitalsHud.active() : MatchVitalsHud.activeSession(packet.session());
-        boolean canContinue = hasIntent() && session && slot == packet.slot() && hand == packet.hand()
-                && !mc.isPaused() && !MatchVitalsHud.paused() && bandage(owner.getItemInHand(hand))
-                && !mc.options.keyJump.isDown() && !mc.options.keySprint.isDown() && !owner.isSprinting()
-                && PubgMedicineModel.Kind.BANDAGE.canUse(owner.getHealth(), owner.getMaxHealth(), 0)
-                && (!owner.isUsingItem() || bandage(owner.getUseItem()));
+        boolean intent = hasIntent();
+        boolean canContinue = intent && MedicineInputRules.acceptsContinuation(intent, session,
+                slot == packet.slot() && hand == packet.hand(), mc.isPaused() || MatchVitalsHud.paused(),
+                bandage(owner.getItemInHand(hand)), MedicineClient.movementKeyPressed() || owner.isSprinting(),
+                PubgMedicineModel.Kind.BANDAGE.canUse(owner.getHealth(), owner.getMaxHealth(), 0),
+                owner.isUsingItem() && !bandage(owner.getUseItem()));
         if (canContinue && hand == InteractionHand.MAIN_HAND) {
             // The old client timer may still be waiting for vanilla's completion notification.
             owner.stopUsingItem();
@@ -111,7 +113,7 @@ public final class BandageChainClient {
         if (!hasIntent()) { cancel(); return; }
         if (owner.isUsingItem() && !bandage(owner.getUseItem())) { cancel(); return; }
         var mc = Minecraft.getInstance();
-        if (mc.options.keyJump.isDown() || mc.options.keySprint.isDown() || owner.isSprinting()) { cancel(); return; }
+        if (MedicineClient.movementKeyPressed() || owner.isSprinting()) { cancel(); return; }
         if (!mc.isPaused() && !MatchVitalsHud.paused()) {
             intentTicks--;
             if (offhandTicks > 0) offhandTicks--;

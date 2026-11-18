@@ -38,11 +38,70 @@ import java.util.Map;
 import java.util.Set;
 
 /** Measure and draw the same static mesh without running TaCZ's shared animation renderer. */
-final class GroundGunModelRenderer {
+public final class GroundGunModelRenderer {
     private static final Map<BedrockGunModel, Map<GunDisplayInstance, Map<BakedModel, Map<Appearance, Placement>>>> CACHE = new IdentityHashMap<>();
     private static final Set<ResourceLocation> WARNED = new HashSet<>();
+    private static final Map<BedrockGunModel, Map<Appearance, AABB>> INVENTORY_BOUNDS = new IdentityHashMap<>();
     private GroundGunModelRenderer() {}
-    static void clearCache() { CACHE.clear(); WARNED.clear(); }
+    static void clearCache() { CACHE.clear(); INVENTORY_BOUNDS.clear(); WARNED.clear(); }
+
+    /** Draw the real assembled mesh in a bounded inventory panel without mutating first-person animation. */
+    public static void renderInventory(ItemStack stack, net.minecraft.client.gui.GuiGraphics graphics,
+                                       int x, int y, int width, int height, float turn) {
+        if (width <= 0 || height <= 0) return;
+        var display = TimelessAPI.getGunDisplay(stack).orElse(null);
+        if (display == null || display.getGunModel() == null || display.getModelTexture() == null) {
+            if (display != null) {
+                graphics.flush();
+                com.mojang.blaze3d.systems.RenderSystem.enableBlend();
+                graphics.blit(display.getSlotTexture(), x, y, width, height, 0, 0, 256, 128, 256, 128);
+            }
+            return;
+        }
+        BedrockGunModel model = display.getGunModel();
+        Appearance appearance = appearance(stack);
+        Map<Appearance, AABB> cache = INVENTORY_BOUNDS.computeIfAbsent(model, ignored -> new HashMap<>());
+        if (cache.size() > 128) cache.clear();
+        AABB bounds = cache.computeIfAbsent(appearance, ignored -> {
+            PoseStack measurement = new PoseStack();
+            inventoryRotation(measurement, 0);
+            GroundLootMeshBounds measured = new GroundLootMeshBounds();
+            for (BedrockPart part : model.getShouldRender())
+                collectGun(part, measurement, texture -> measured, display.getModelTexture(), appearance, 0xF000F0);
+            if (!Double.isFinite(measured.minX) || !Double.isFinite(measured.maxX)) return new AABB(-1, -1, -1, 1, 1, 1);
+            return new AABB(measured.minX, measured.minY, measured.minZ, measured.maxX, measured.maxY, measured.maxZ);
+        });
+        graphics.flush();
+        // GuiGraphics scissors do not inherit the logical inventory's GUI scaling.
+        Matrix4f screenPose = graphics.pose().last().pose();
+        Vector3f topLeft = screenPose.transformPosition(new Vector3f(x, y, 0));
+        Vector3f bottomRight = screenPose.transformPosition(new Vector3f(x + width, y + height, 0));
+        graphics.enableScissor((int) Math.floor(topLeft.x), (int) Math.floor(topLeft.y),
+                (int) Math.ceil(bottomRight.x), (int) Math.ceil(bottomRight.y));
+        PoseStack poses = graphics.pose();
+        poses.pushPose();
+        try {
+            float scale = (float) Math.min((width - 6) / Math.max(.1, bounds.getXsize()),
+                    (height - 4) / Math.max(.1, bounds.getYsize()));
+            poses.translate(x + width / 2f, y + height / 2f, 120);
+            poses.scale(scale, scale, -scale);
+            var center = bounds.getCenter();
+            poses.translate(-center.x, -center.y, -center.z);
+            inventoryRotation(poses, turn);
+            com.mojang.blaze3d.platform.Lighting.setupFor3DItems();
+            MeshSink sink = texture -> graphics.bufferSource().getBuffer(RenderType.entityCutoutNoCull(texture));
+            for (BedrockPart part : model.getShouldRender())
+                collectGun(part, poses, sink, display.getModelTexture(), appearance, 0xF000F0);
+            graphics.flush();
+        } finally {
+            poses.popPose(); graphics.disableScissor();
+            com.mojang.blaze3d.platform.Lighting.setupFor3DItems();
+        }
+    }
+    private static void inventoryRotation(PoseStack poses, float turn) {
+        poses.mulPose(Axis.YP.rotationDegrees(90 + turn));
+        poses.scale(1, -1, 1);
+    }
 
     static AABB bounds(ItemStack stack, BakedModel bakedModel) {
         GunDisplayInstance display = TimelessAPI.getGunDisplay(stack).orElse(null);

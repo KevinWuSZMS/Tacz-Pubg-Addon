@@ -2,6 +2,7 @@ package com.example.examplemod.vitals.client;
 
 import com.example.examplemod.lootspawn.client.GroundLootClient;
 import com.example.examplemod.keybindings.BindingInput;
+import com.example.examplemod.inventory.client.PubgInventoryInput;
 import com.example.examplemod.throwables.client.ThrowableClient;
 import com.example.examplemod.vitals.MatchVitalsPayloads;
 import com.example.examplemod.vitals.PubgMedicineItem;
@@ -42,7 +43,7 @@ public final class MedicineClient {
     private static boolean sameHeld() {
         var mc = Minecraft.getInstance();
         return active() && mc.player.getInventory().selected == pendingSlot && mc.player.getMainHandItem().getItem() == expectedItem
-                && !mc.options.keyJump.isDown() && !mc.options.keySprint.isDown();
+                && !movementKeyPressed();
     }
     private static void accept(MatchVitalsPayloads.MedicineStarted packet) {
         if (packet.request() != pending) return;
@@ -53,10 +54,21 @@ public final class MedicineClient {
     }
     public static boolean active() {
         var mc = Minecraft.getInstance();
-        return mc.player != null && mc.level != null && mc.gameMode != null && mc.screen == null
+        return mc.player != null && mc.level != null && mc.gameMode != null && screenAllowed()
                 && mc.player.isAlive() && !mc.player.isSpectator()
                 && !com.example.examplemod.combat.client.CombatInputClient.blocked()
                 && mc.player.getMainHandItem().getItem() instanceof PubgMedicineItem;
+    }
+    /** Screen eligibility must not depend on a hand stack that can empty between chained casts. */
+    public static boolean screenAllowed() {
+        return MedicineInputRules.allowsScreen(Minecraft.getInstance().screen == null, PubgInventoryInput.activeScreen());
+    }
+    public static boolean movementKeyPressed() {
+        var mc = Minecraft.getInstance();
+        boolean inventory = PubgInventoryInput.activeScreen();
+        return MedicineInputRules.movementKeyPressed(inventory, mc.options.keyJump.isDown(), mc.options.keySprint.isDown(),
+                inventory && PubgInventoryInput.heldForMovement(mc.options.keyJump),
+                inventory && PubgInventoryInput.sprintHeld());
     }
     /** Return true even on a refused treatment: this press must never fall through to ground loot. */
     public static boolean tryUseHeld() {
@@ -89,7 +101,7 @@ public final class MedicineClient {
     public static boolean captureKey(long window, int key, int scan, int action) {
         var mc = Minecraft.getInstance();
         var interaction = GroundLootClient.pickupKey();
-        if (!active() || window != mc.getWindow().getWindow() || !interaction.matches(key, scan)) return false;
+        if (mc.screen != null || !active() || window != mc.getWindow().getWindow() || !interaction.matches(key, scan)) return false;
         if (action == GLFW.GLFW_RELEASE) {
             KeyMapping.set(InputConstants.getKey(key, scan), false);
             interaction.setDown(false);
@@ -104,7 +116,7 @@ public final class MedicineClient {
     }
     public static boolean captureMouse(InputEvent.MouseButton.Pre event) {
         var interaction = GroundLootClient.pickupKey();
-        if (!active() || !interaction.matchesMouse(event.getButton())) return false;
+        if (Minecraft.getInstance().screen != null || !active() || !interaction.matchesMouse(event.getButton())) return false;
         if (event.getAction() == GLFW.GLFW_RELEASE) {
             KeyMapping.set(InputConstants.Type.MOUSE.getOrCreate(event.getButton()), false);
             interaction.setDown(false);

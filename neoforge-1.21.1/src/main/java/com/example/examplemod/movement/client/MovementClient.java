@@ -3,6 +3,7 @@ package com.example.examplemod.movement.client;
 import com.example.examplemod.combat.CombatService;
 import com.example.examplemod.combat.CombatPayloads;
 import com.example.examplemod.keybindings.BindingInput;
+import com.example.examplemod.inventory.client.PubgInventoryInput;
 import com.example.examplemod.keybindings.BindingProfile;
 import com.example.examplemod.keybindings.BindingProfiles;
 import com.example.examplemod.keybindings.mixin.KeyMappingAccess;
@@ -66,8 +67,21 @@ public final class MovementClient {
             change(entry.getKey(), event.getAction());
     }
     private static void mouse(InputEvent.MouseButton.Post event) {
+        if (PubgInventoryInput.activeScreen()) return;
         for (var entry : KEYS.entrySet()) if (entry.getValue().matchesMouse(event.getButton()))
             change(entry.getKey(), event.getAction());
+    }
+    public static boolean inventoryKey(int key, int scan, int action) {
+        boolean handled = false;
+        for (var entry : KEYS.entrySet()) if (entry.getValue().matches(key, scan)) {
+            handled = true;
+            if (action != GLFW.GLFW_REPEAT) change(entry.getKey(), action);
+        }
+        return handled;
+    }
+    public static void releaseInventoryInput() {
+        for (Action action : Action.values()) STATE.release(action);
+        sync();
     }
     private static void change(Action action, int event) {
         adoptRescueStance();
@@ -78,7 +92,7 @@ public final class MovementClient {
             return;
         }
         var mc = Minecraft.getInstance();
-        if (event != GLFW.GLFW_PRESS || !groundContext() || mc.screen != null || !mc.isWindowActive() || mc.getOverlay() != null) return;
+        if (event != GLFW.GLFW_PRESS || !groundContext() || mc.screen != null && !PubgInventoryInput.acceptsMovement() || !mc.isWindowActive() || mc.getOverlay() != null) return;
         var player = mc.player;
         enforceWaterMode();
         Mode requested = switch (action) {
@@ -114,7 +128,7 @@ public final class MovementClient {
         adoptRescueStance();
         for (var entry : KEYS.entrySet()) {
             while (entry.getValue().consumeClick()) { }
-            if (!BindingInput.physicallyHeld(entry.getValue())) STATE.release(entry.getKey());
+            if (!PubgInventoryInput.heldForMovement(entry.getValue())) STATE.release(entry.getKey());
         }
         if (mc.player == null) return;
         boolean flight = flying();
@@ -138,13 +152,13 @@ public final class MovementClient {
             mc.player.setSprinting(false);
             mc.player.input.shiftKeyDown = false;
             // Sprint is a hold in both environments; landing must not require releasing/repressing it.
-            if (groundContext() && acceptsSwimmingInput() && BindingInput.physicallyHeld(KEYS.get(Action.SPRINT))
+            if (groundContext() && acceptsSwimmingInput() && PubgInventoryInput.heldForMovement(KEYS.get(Action.SPRINT))
                     && MatchSwimming.legalGroundMode(mc.player, Mode.SPRINT) == Mode.SPRINT)
                 STATE.press(Action.SPRINT);
         }
         if (!groundContext()) { reset(true); return; }
         enforceWaterMode();
-        if (!mc.isWindowActive() || mc.screen != null) {
+        if (!mc.isWindowActive() || mc.screen != null && !PubgInventoryInput.acceptsMovement()) {
             STATE.release(Action.SPRINT); STATE.release(Action.WALK); STATE.release(Action.STAND);
         }
         if (clearNativeCrawl) {
@@ -174,13 +188,13 @@ public final class MovementClient {
     public static boolean waterContext() { return swimmingContext() || wadingContext(); }
     private static SwimmingInput swimmingInput() {
         var mc = Minecraft.getInstance();
-        return SwimmingInput.resolve(acceptsSwimmingInput(), BindingInput.physicallyHeld(mc.options.keyJump),
-                BindingInput.physicallyHeld(KEYS.get(Action.CROUCH)),
-                BindingInput.physicallyHeld(KEYS.get(Action.SPRINT)), mc.player == null ? 0 : mc.player.input.forwardImpulse);
+        return SwimmingInput.resolve(acceptsSwimmingInput(), PubgInventoryInput.heldForMovement(mc.options.keyJump),
+                PubgInventoryInput.heldForMovement(KEYS.get(Action.CROUCH)),
+                PubgInventoryInput.heldForMovement(KEYS.get(Action.SPRINT)), mc.player == null ? 0 : mc.player.input.forwardImpulse);
     }
     private static boolean acceptsSwimmingInput() {
         var mc = Minecraft.getInstance();
-        return mc.player != null && mc.screen == null && mc.getOverlay() == null && mc.isWindowActive();
+        return mc.player != null && (mc.screen == null || PubgInventoryInput.acceptsMovement()) && mc.getOverlay() == null && mc.isWindowActive();
     }
     private static void swimmingInput(Input input) {
         var movement = swimmingInput();
@@ -195,7 +209,7 @@ public final class MovementClient {
         var mc = Minecraft.getInstance();
         // No hopping through open water. Space still permits climbing onto a reachable bank.
         input.jumping = !consumesJump() && acceptsSwimmingInput()
-                && BindingInput.physicallyHeld(mc.options.keyJump) && MatchSwimming.canClimbOut(mc.player);
+                && PubgInventoryInput.heldForMovement(mc.options.keyJump) && MatchSwimming.canClimbOut(mc.player);
     }
     /** Crossing a depth boundary releases only an illegal stance, never forces a slower one. */
     private static void enforceWaterMode() {
@@ -259,10 +273,11 @@ public final class MovementClient {
     public static void updateInput(Input input) {
         var mc = Minecraft.getInstance();
         if (mc.player == null || input != mc.player.input) return;
+        PubgInventoryInput.updateMovement(input);
         if (flying()) {
-            boolean acceptsFlightInput = mc.screen == null && mc.isWindowActive() && mc.getOverlay() == null;
-            input.jumping = acceptsFlightInput && BindingInput.physicallyHeld(mc.options.keyJump);
-            input.shiftKeyDown = acceptsFlightInput && BindingInput.physicallyHeld(mc.options.keyShift);
+            boolean acceptsFlightInput = (mc.screen == null || PubgInventoryInput.acceptsMovement()) && mc.isWindowActive() && mc.getOverlay() == null;
+            input.jumping = acceptsFlightInput && PubgInventoryInput.heldForMovement(mc.options.keyJump);
+            input.shiftKeyDown = acceptsFlightInput && PubgInventoryInput.heldForMovement(mc.options.keyShift);
             ((KeyMappingAccess) mc.options.keyShift).taczPubg$setRawDown(input.shiftKeyDown);
             return;
         }
@@ -297,7 +312,7 @@ public final class MovementClient {
         if (mapping == Minecraft.getInstance().options.keySprint && wadingContext()
                 && MatchSwimming.legalGroundMode(Minecraft.getInstance().player, Mode.SPRINT) != Mode.SPRINT) return false;
         if (mapping != Minecraft.getInstance().options.keySprint || !ownsGround()) return mapping.isDown();
-        return STATE.mode() == Mode.SPRINT && BindingInput.physicallyHeld(KEYS.get(Action.SPRINT));
+        return STATE.mode() == Mode.SPRINT && PubgInventoryInput.heldForMovement(KEYS.get(Action.SPRINT));
     }
     public static boolean canStartSprint() {
         if (wadingContext() && MatchSwimming.legalGroundMode(Minecraft.getInstance().player, Mode.SPRINT) != Mode.SPRINT) return false;
@@ -312,7 +327,7 @@ public final class MovementClient {
             // Vanilla cancels sprint above the waterline. Restore it only in the permitted
             // ankle-deep band, with the normal forward input, food and collision gates.
             boolean sprint = STATE.mode() == Mode.SPRINT && acceptsSwimmingInput()
-                    && BindingInput.physicallyHeld(KEYS.get(Action.SPRINT)) && player.input.forwardImpulse >= .8F
+                    && PubgInventoryInput.heldForMovement(KEYS.get(Action.SPRINT)) && player.input.forwardImpulse >= .8F
                     && MatchSwimming.legalGroundMode(player, Mode.SPRINT) == Mode.SPRINT
                     && !player.isUsingItem() && !player.hasEffect(net.minecraft.world.effect.MobEffects.BLINDNESS)
                     && (player.getFoodData().getFoodLevel() > 6 || player.mayFly())
@@ -328,7 +343,7 @@ public final class MovementClient {
     }
     public static void afterAiStep(LocalPlayer player) {
         if (player == Minecraft.getInstance().player && ownsGround()
-                && (STATE.mode() != Mode.SPRINT || !BindingInput.physicallyHeld(KEYS.get(Action.SPRINT)))) player.setSprinting(false);
+                && (STATE.mode() != Mode.SPRINT || !PubgInventoryInput.heldForMovement(KEYS.get(Action.SPRINT)))) player.setSprinting(false);
         if (player == Minecraft.getInstance().player) pendingStandFrame = false;
     }
 

@@ -19,8 +19,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-/** Backpacks occupy the vanilla leggings slot; every carried item remains in the vanilla inventory. */
+/** Independent worn backpack; carried contents remain in the shared vanilla inventory. */
 public final class BackpackService {
+    static final String EQUIPMENT_KEY = "tacz_pubg_equipped_backpack";
+    private static final Map<UUID, ItemStack> CLIENT_EQUIPMENT = new HashMap<>();
     private static final Map<UUID, BackpackPayloads.State> LAST_SENT = new HashMap<>();
     private static final Map<UUID, Long> LAST_WARNING = new HashMap<>();
     private BackpackService() {}
@@ -30,18 +32,55 @@ public final class BackpackService {
         bus.addListener(BackpackService::login);
         bus.addListener(BackpackService::logout);
         bus.addListener(BackpackService::tracking);
+        bus.addListener(BackpackService::drops);
+        bus.addListener(BackpackService::clonePlayer);
     }
 
     public static ItemStack equipped(Player player) {
-        return player.getItemBySlot(EquipmentSlot.LEGS);
+        if (player.level().isClientSide) return CLIENT_EQUIPMENT.getOrDefault(player.getUUID(), ItemStack.EMPTY).copy();
+        return ItemStack.parseOptional(player.registryAccess(), player.getPersistentData().getCompound(EQUIPMENT_KEY));
     }
     public static int tier(Player player) {
         return equipped(player).getItem() instanceof BackpackItem pack ? pack.tier() : 0;
     }
-    static void setEquipped(Player player, ItemStack stack) {
-        player.setItemSlot(EquipmentSlot.LEGS, stack.isEmpty() ? ItemStack.EMPTY : stack.copyWithCount(1));
+    public static boolean isBackpack(ItemStack stack) {
+        return stack.getItem() instanceof BackpackItem
+                || stack.getItem() instanceof com.example.examplemod.zones.match.flight.ParachuteItem;
+    }
+    /** Assignment only: callers must validate and commit consumption/returns as one transaction. */
+    public static void setEquipped(Player player, ItemStack stack) {
+        if (!stack.isEmpty() && (!isBackpack(stack) || stack.getCount() != 1))
+            throw new IllegalArgumentException("The independent backpack slot accepts one backpack or parachute");
+        if (player.level().isClientSide) return;
+        if (stack.isEmpty()) player.getPersistentData().remove(EQUIPMENT_KEY);
+        else player.getPersistentData().put(EQUIPMENT_KEY, stack.save(player.registryAccess()));
         player.getInventory().setChanged();
         if (player instanceof ServerPlayer serverPlayer) sync(serverPlayer, true);
+    }
+    static void acceptClient(BackpackPayloads.State state) {
+        CLIENT_EQUIPMENT.put(state.owner(), state.equipment().copy());
+    }
+    public static void clearClient() { CLIENT_EQUIPMENT.clear(); }
+    /** Old saves used leggings. Never replace real trousers or overwrite an independent pack. */
+    public static void migrateLegacy(Player player) {
+        if (player.level().isClientSide) return;
+        ItemStack legacy = player.getItemBySlot(EquipmentSlot.LEGS);
+        if (!isBackpack(legacy)) return;
+        if (equipped(player).isEmpty() && legacy.getCount() == 1) {
+            setEquipped(player, legacy);
+            player.setItemSlot(EquipmentSlot.LEGS, ItemStack.EMPTY);
+        } else {
+            // A conflicting pack remains in its real slot until a safe destination exists.
+            for (int i = 0; i < player.getInventory().items.size(); i++) {
+                if (player.getInventory().getItem(i).isEmpty()
+                        && !com.example.examplemod.inventory.MatchInventoryService.locked(player, i)) {
+                    player.getInventory().setItem(i, legacy);
+                    player.setItemSlot(EquipmentSlot.LEGS, ItemStack.EMPTY);
+                    break;
+                }
+            }
+        }
+        player.getInventory().setChanged();
     }
     public static boolean active(Player player) {
         return player instanceof ServerPlayer
@@ -88,7 +127,7 @@ public final class BackpackService {
     /** The replacement is already carried; an old pack that cannot fit can be dropped during a swap. */
     static boolean maySwap(Player player, ItemStack replacement) {
         if (!replacement.isEmpty() && (replacement.getCount() != 1
-                || player.getEquipmentSlotForItem(replacement) != EquipmentSlot.LEGS)) return false;
+                || !isBackpack(replacement))) return false;
         if (!player.isCreative() && net.minecraft.world.item.enchantment.EnchantmentHelper.has(
                 equipped(player), net.minecraft.world.item.enchantment.EnchantmentEffectComponents.PREVENT_ARMOR_CHANGE)) return false;
         if (!active(player)) return true;
@@ -125,7 +164,7 @@ public final class BackpackService {
         } catch (RuntimeException failure) {
             if (dropped != null) dropped.discard();
             source.accept(replacement);
-            player.setItemSlot(EquipmentSlot.LEGS, previous);
+            setEquipped(player, previous);
             com.example.examplemod.ExampleMod.LOGGER.error("Backpack swap failed; both items retained", failure);
         }
     }
@@ -140,13 +179,14 @@ public final class BackpackService {
         ItemStack replacement = menu.getCarried();
         swap(player, replacement, menu::setCarried);
     }
-    static void equipInventory(Player player, int inventorySlot) {
+    public static void equipInventory(Player player, int inventorySlot) {
+        if (inventorySlot < 0 || inventorySlot >= player.getInventory().items.size()) return;
         ItemStack replacement = player.getInventory().getItem(inventorySlot);
         if (!(replacement.getItem() instanceof BackpackItem
                 || replacement.getItem() instanceof com.example.examplemod.zones.match.flight.ParachuteItem)) return;
         swap(player, replacement, returned -> player.getInventory().setItem(inventorySlot, returned));
     }
-    static void removeToInventory(Player player) {
+    public static void removeToInventory(Player player) {
         if (!maySwap(player, ItemStack.EMPTY)) return;
         int empty = -1;
         for (int i = 0; i < player.getInventory().items.size(); i++) {
@@ -185,24 +225,6 @@ public final class BackpackService {
                     || type == ClickType.SWAP && button >= 0 && button < 9
                         && com.example.examplemod.inventory.EquipmentInventoryRules.mayReplace(player, slot.getItem(), true)))
             return true;
-        if (slot.container == player.getInventory() && slot.getContainerSlot() == 37 && tier(player) > 0) {
-            ItemStack replacement = switch (type) {
-                case PICKUP -> menu.getCarried();
-                case SWAP -> button >= 0 && (button < 9 || button == 40) ? player.getInventory().getItem(button) : ItemStack.EMPTY;
-                default -> ItemStack.EMPTY;
-            };
-            if (type == ClickType.PICKUP || type == ClickType.SWAP || type == ClickType.QUICK_MOVE) {
-                if (!maySwap(player, replacement)) { menu.sendAllDataToRemote(); return false; }
-                if (dropPrevious(player, replacement)) {
-                    if (type == ClickType.PICKUP) swapCursor(player, menu);
-                    else if (type == ClickType.SWAP) equipInventory(player, button);
-                    menu.sendAllDataToRemote();
-                    return false;
-                }
-            } else if (type == ClickType.THROW && used(player) > BackpackRules.capacity(0, vest(player))) {
-                warn(player); menu.sendAllDataToRemote(); return false;
-            }
-        }
         if (((slot.container == player.getInventory() || BackpackOwnership.isTemporaryInput(menu, slot)) && type != ClickType.PICKUP_ALL)
                 || menu instanceof BackpackMenu && slotId == 0) return true;
         ItemStack incoming = slot.getItem(), cursor = menu.getCarried();
@@ -256,20 +278,25 @@ public final class BackpackService {
         return true;
     }
     private static void tick(PlayerTickEvent.Post event) {
-        if (event.getEntity() instanceof ServerPlayer player && player.tickCount % 5 == 0) sync(player, false);
+        if (event.getEntity() instanceof ServerPlayer player && player.tickCount % 5 == 0) {
+            migrateLegacy(player);
+            sync(player, false);
+        }
     }
     private static BackpackPayloads.State state(ServerPlayer player) {
-        return new BackpackPayloads.State(player.getUUID(), tier(player), used(player), capacity(player), active(player));
+        return new BackpackPayloads.State(player.getUUID(), tier(player), used(player), capacity(player), active(player), equipped(player));
     }
     private static void sync(ServerPlayer player, boolean force) {
         var current = state(player);
         var previous = LAST_SENT.put(player.getUUID(), current);
-        if (force || previous == null || previous.tier() != current.tier()) {
+        if (force || previous == null || previous.tier() != current.tier()
+                || !ItemStack.matches(previous.equipment(), current.equipment())) {
             PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, current);
-        } else if (!current.equals(previous)) PacketDistributor.sendToPlayer(player, current);
+        } else if (previous.used() != current.used() || previous.capacity() != current.capacity()
+                || previous.active() != current.active()) PacketDistributor.sendToPlayer(player, current);
     }
     private static void login(PlayerEvent.PlayerLoggedInEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) sync(player, true);
+        if (event.getEntity() instanceof ServerPlayer player) { migrateLegacy(player); sync(player, true); }
     }
     private static void logout(PlayerEvent.PlayerLoggedOutEvent event) {
         LAST_SENT.remove(event.getEntity().getUUID());
@@ -278,5 +305,27 @@ public final class BackpackService {
     private static void tracking(PlayerEvent.StartTracking event) {
         if (event.getEntity() instanceof ServerPlayer watcher && event.getTarget() instanceof ServerPlayer subject)
             PacketDistributor.sendToPlayer(watcher, state(subject));
+    }
+    static void drops(net.neoforged.neoforge.event.entity.living.LivingDropsEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)
+                || player.level().getGameRules().getBoolean(net.minecraft.world.level.GameRules.RULE_KEEPINVENTORY)) return;
+        ItemStack pack = equipped(player);
+        if (pack.isEmpty()) return;
+        setEquipped(player, ItemStack.EMPTY);
+        if (net.minecraft.world.item.enchantment.EnchantmentHelper.has(pack,
+                net.minecraft.world.item.enchantment.EnchantmentEffectComponents.PREVENT_EQUIPMENT_DROP)) return;
+        var dropped = new net.minecraft.world.entity.item.ItemEntity(player.level(), player.getX(), player.getY() + .25,
+                player.getZ(), pack);
+        dropped.setDefaultPickUpDelay();
+        event.getDrops().add(dropped);
+    }
+    static void clonePlayer(PlayerEvent.Clone event) {
+        Player original = event.getOriginal(), replacement = event.getEntity();
+        if (!event.isWasDeath() || original.isSpectator()
+                || original.level().getGameRules().getBoolean(net.minecraft.world.level.GameRules.RULE_KEEPINVENTORY)) {
+            if (original.getPersistentData().contains(EQUIPMENT_KEY))
+                replacement.getPersistentData().put(EQUIPMENT_KEY, original.getPersistentData().get(EQUIPMENT_KEY).copy());
+        } else replacement.getPersistentData().remove(EQUIPMENT_KEY);
+        LAST_SENT.remove(replacement.getUUID());
     }
 }

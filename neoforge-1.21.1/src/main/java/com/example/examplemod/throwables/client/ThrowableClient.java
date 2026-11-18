@@ -2,6 +2,7 @@ package com.example.examplemod.throwables.client;
 
 import com.example.examplemod.localization.Texts;
 import com.example.examplemod.keybindings.BindingInput;
+import com.example.examplemod.inventory.client.PubgInventoryInput;
 import com.example.examplemod.movement.SwimmingGunRestrictions;
 import com.example.examplemod.throwables.PubgThrowableEntity;
 import com.example.examplemod.throwables.PubgThrowableItem;
@@ -123,6 +124,38 @@ public final class ThrowableClient {
         animationVisual = ItemStack.EMPTY; animationTicks = 0; animationSlot = -1;
         cancelQuick(); WHEEL_INPUT.clear();
     }
+    /** Explicit inventory keyboard actions; no mouse button or cook/throw action is forwarded. */
+    public static boolean inventoryKey(int key, int scan, int action) {
+        var mc = Minecraft.getInstance();
+        if (!PubgInventoryInput.activeScreen() || mc.player == null) return false;
+        for (var mapping : new KeyMapping[]{CANCEL, THROWABLE, MED, AID, BANDAGE, BOOST, WHEEL, WHEEL_ALT, MED_WHEEL, MED_WHEEL_ALT}) {
+            if (!mapping.matches(key, scan)) continue;
+            if (mapping == CANCEL && !mc.player.isUsingItem() && !cookedHeld
+                    && !hasMedicineIntent()) continue;
+            if (action != GLFW.GLFW_PRESS) return true;
+            if (mapping == CANCEL) requestCancel();
+            else if (mapping == THROWABLE) sendQuick("throwable");
+            else if (mapping == MED) sendQuick("med_kit");
+            else if (mapping == AID) sendQuick("first_aid_kit");
+            else if (mapping == BANDAGE) sendQuick("bandage");
+            else if (mapping == BOOST) sendQuick("boost");
+            else {
+                mapping.setDown(true);
+                WHEEL_INPUT.pressed(mapping);
+                if (WHEEL_INPUT.tryOpen(mapping)) {
+                    if (quickTicks > 0 || hasMedicineIntent()) requestCancel();
+                    else cancelQuick();
+                    mc.setScreen(new ThrowableWheelScreen(mapping == MED_WHEEL || mapping == MED_WHEEL_ALT, mapping));
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean medicineScreenAllowed() {
+        return com.example.examplemod.vitals.client.MedicineClient.screenAllowed();
+    }
     /** Capture item controls before vanilla F1/F2 and numbered-hotbar actions run. */
     public static boolean captureKey(long window, int key, int scan, int action, int modifiers) {
         var mc = Minecraft.getInstance();
@@ -227,7 +260,7 @@ public final class ThrowableClient {
     }
     public static boolean sustainingMedicineUse() {
         var mc = Minecraft.getInstance();
-        return quickTicks > 0 && mc.player != null && mc.screen == null && mc.player.isAlive() && !mc.player.isSpectator()
+        return quickTicks > 0 && mc.player != null && medicineScreenAllowed() && mc.player.isAlive() && !mc.player.isSpectator()
                 && !com.example.examplemod.combat.client.CombatInputClient.blocked()
                 && mc.player.getInventory().selected == quickSlot && quickStarted && mc.player.isUsingItem()
                 && mc.player.getUsedItemHand() == InteractionHand.MAIN_HAND
@@ -236,7 +269,7 @@ public final class ThrowableClient {
     }
     public static boolean startAutomaticMedicineUse(int slot, int duration, boolean selectSlot) {
         var mc = Minecraft.getInstance();
-        if (mc.player == null || mc.screen != null || !mc.player.isAlive() || mc.player.isSpectator()
+        if (mc.player == null || !medicineScreenAllowed() || !mc.player.isAlive() || mc.player.isSpectator()
                 || com.example.examplemod.combat.client.CombatInputClient.blocked()) return false;
         if (selectSlot) mc.player.getInventory().selected = slot;
         if (mc.player.getInventory().selected != slot || !(mc.player.getMainHandItem().getItem() instanceof PubgMedicineItem)) return false;
@@ -270,7 +303,7 @@ public final class ThrowableClient {
         if (mc.player == null || mc.level == null) { clear(); return; }
         // Keep a cancelled wheel closed until its trigger is physically released.
         releaseWheelTrigger();
-        if (quickTicks > 0 && mc.screen != null) requestCancel();
+        if (quickTicks > 0 && !medicineScreenAllowed()) requestCancel();
         if (mc.isPaused() || MatchVitalsHud.paused()) return;
         cancelSwimmingThrowable();
         if (fuse > 0) fuse--;
@@ -281,7 +314,7 @@ public final class ThrowableClient {
             PacketDistributor.sendToServer(new ThrowablePayloads.Action(mc.screen == null ? 2 : 1));
         }
         if (quickTicks > 0) {
-            if (mc.screen != null || mc.player.getInventory().selected != quickSlot
+            if (!medicineScreenAllowed() || mc.player.getInventory().selected != quickSlot
                     || !(mc.player.getMainHandItem().getItem() instanceof PubgMedicineItem)
                     || quickStarted && !mc.player.isUsingItem()) cancelQuick();
             else {

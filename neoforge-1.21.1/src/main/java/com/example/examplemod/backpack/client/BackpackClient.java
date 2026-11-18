@@ -35,6 +35,8 @@ public final class BackpackClient {
     private BackpackClient() {}
     public static int tier(UUID player) { return TIERS.getOrDefault(player, 0); }
     public static BackpackPayloads.State current() { return current; }
+    public static boolean matchesOpenKey(int key, int scan) { return OPEN.matches(key, scan); }
+    public static boolean openKeyHeld() { return com.example.examplemod.keybindings.BindingInput.pollKeyboardHeld(OPEN); }
     public static String units(int value) {
         return java.math.BigDecimal.valueOf(value, 3).stripTrailingZeros().toPlainString();
     }
@@ -54,13 +56,19 @@ public final class BackpackClient {
         });
         NeoForge.EVENT_BUS.addListener((ClientTickEvent.Post event) -> {
             var mc = Minecraft.getInstance();
-            while (OPEN.consumeClick()) if (mc.player != null && mc.screen == null)
-                PacketDistributor.sendToServer(new BackpackPayloads.Open());
+            while (OPEN.consumeClick()) if (mc.player != null && mc.screen == null) {
+                if (com.example.examplemod.inventory.client.PubgInventoryInput.inMatch())
+                    com.example.examplemod.inventory.client.PubgInventoryInput.openPreferred();
+                else PacketDistributor.sendToServer(new BackpackPayloads.Open());
+            }
         });
         NeoForge.EVENT_BUS.addListener((ScreenEvent.Init.Post event) -> {
             if (event.getScreen() instanceof InventoryScreen screen) {
-                event.addListener(Button.builder(Component.literal("B"), button ->
-                                PacketDistributor.sendToServer(new BackpackPayloads.Open()))
+                event.addListener(Button.builder(Component.literal("B"), button -> {
+                            if (com.example.examplemod.inventory.client.PubgInventoryInput.inMatch())
+                                com.example.examplemod.inventory.client.PubgInventoryInput.openPubg();
+                            else PacketDistributor.sendToServer(new BackpackPayloads.Open());
+                        })
                         .bounds(Math.min(screen.width - 23, screen.getGuiLeft() + screen.getXSize() + 3),
                                 screen.getGuiTop() + 3, 20, 20)
                         .tooltip(Tooltip.create(Component.translatable("container.tacz_pubg.backpack"))).build());
@@ -71,6 +79,9 @@ public final class BackpackClient {
                 event.getToolTip().add(Component.translatable("tooltip.tacz_pubg.backpack.weight",
                         units(BackpackWeights.weight(Minecraft.getInstance().player, event.getItemStack()))));
         });
-        NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut event) -> { current = null; TIERS.clear(); });
+        NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut event) -> {
+            current = null; TIERS.clear();
+            com.example.examplemod.backpack.BackpackService.clearClient();
+        });
     }
 }

@@ -4,20 +4,18 @@ import com.example.examplemod.ExampleMod;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Equipable;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.DyedItemColor;
 import net.minecraft.world.level.Level;
 
 /**
- * Leggings-slot flight marker without armor attributes or a humanoid armor layer.
+ * Independent-backpack flight marker without armor attributes or a humanoid armor layer.
  * The authored pack item and deployed canopy follow the selected detailed/pixel model style.
  */
-public final class ParachuteItem extends Item implements Equipable {
+public final class ParachuteItem extends Item {
     public static final int DARK_GREEN = 0x1F3D2B;
     /** The issued equipment stack is synchronized to every player tracking its wearer. */
     public static final String FLIGHT_STAGE_TAG = "flight_stage";
@@ -26,11 +24,6 @@ public final class ParachuteItem extends Item implements Equipable {
         super(properties
                 .component(DataComponents.DYED_COLOR, new DyedItemColor(DARK_GREEN, false))
                 .component(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true));
-    }
-
-    @Override
-    public EquipmentSlot getEquipmentSlot() {
-        return EquipmentSlot.LEGS;
     }
 
     @Override
@@ -55,6 +48,6 @@ public final class ParachuteItem extends Item implements Equipable {
     }
 
     public static boolean isEquipped(LivingEntity entity) {
-        return isParachute(entity.getItemBySlot(EquipmentSlot.LEGS));
+        return entity instanceof Player player && isParachute(com.example.examplemod.backpack.BackpackService.equipped(player));
     }
 }
