@@ -75,11 +75,18 @@ public final class MatchInventoryService {
         return InventoryConfig.active(player) && inventorySlot >= 0 && inventorySlot < 9
                 && !InventoryConfig.current(player).hotbar().get(inventorySlot).equals("free");
     }
+    /** Match storage is slots 0–35. An empty incoming stack only removes the previous item. */
+    public static boolean acceptsStorageSlot(Player player, int slot, ItemStack stack) {
+        if (slot < 0 || slot >= 36) return false;
+        if (stack.isEmpty()) return true;
+        if (slot >= 9) return !weapon(stack);
+        String required = InventoryConfig.current(player).hotbar().get(slot);
+        return required.equals("free") ? !weapon(stack) : required.equals(role(stack));
+    }
     public static boolean mayPlace(Slot slot, ItemStack stack) {
         if (!(slot.container instanceof Inventory inv) || !InventoryConfig.active(inv.player)) return true;
         int index = slot.getContainerSlot();
-        if (index == 40 || locked(inv.player, index)) return false;
-        return !weapon(stack) || index >= 36;
+        return index >= 36 ? index != 40 : acceptsStorageSlot(inv.player, index, stack);
     }
     public static void prepareStack(Player player, ItemStack stack) {
         if (stack.getItem() instanceof IAmmo) {
@@ -156,15 +163,15 @@ public final class MatchInventoryService {
     public static boolean permitsClick(AbstractContainerMenu menu, int index, int button, ClickType type, Player player) {
         if (!InventoryConfig.active(player)) return true;
         if (type == ClickType.CLONE) return false;
-        if (type == ClickType.SWAP && (button == 40 || locked(player, button))) return false;
+        if (type == ClickType.SWAP && button == 40) return false;
         if (index < 0 || index >= menu.slots.size()) return true;
         Slot slot = menu.slots.get(index);
-        if (slot.container == player.getInventory() && locked(player, slot.getContainerSlot()))
-            return type == ClickType.THROW;
+        boolean hotbarSwap = type == ClickType.SWAP && button >= 0 && button < 9;
+        boolean freeSlotShortcut = hotbarSwap && !locked(player, button);
         if (slot.container != player.getInventory() && EquipmentInventoryRules.category(slot.getItem()) != null
                 && InventoryConfig.current(player).autoEquipmentReplacement() && slot.mayPickup(player)
                 && (type == ClickType.PICKUP && menu.getCarried().isEmpty()
-                    || type == ClickType.SWAP && button >= 0 && button < 9
+                    || freeSlotShortcut
                         && EquipmentInventoryRules.mayReplace(player, slot.getItem(), true))) {
             if (!player.level().isClientSide) {
                 menu.quickMoveStack(player, index); // Keep the real source's recipe/trading callbacks.
@@ -175,7 +182,7 @@ public final class MatchInventoryService {
         if (!EquipmentInventoryRules.permitsClick(menu, index, button, type, player)) return false;
         // Shift-click must retain the source menu's quickMoveStack transaction and output callbacks.
         if (slot.container != player.getInventory() && weapon(slot.getItem())
-                && (type == ClickType.PICKUP || type == ClickType.SWAP && button >= 0 && button < 9)) {
+                && (type == ClickType.PICKUP || freeSlotShortcut)) {
             if (!player.level().isClientSide && (type == ClickType.SWAP || menu.getCarried().isEmpty()) && slot.mayPickup(player)) {
                 String role = role(slot.getItem());
                 int begin = role.equals("handgun") ? 2 : 0, end = role.equals("handgun") ? 3 : 2;
@@ -192,7 +199,8 @@ public final class MatchInventoryService {
             }
             return false;
         }
-        return true;
+        // Vanilla checks the clicked slot's mayPlace, but writes the numbered hotbar slot directly.
+        return !hotbarSwap || acceptsStorageSlot(player, button, slot.getItem());
     }
     private static void tick(PlayerTickEvent.Post event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
@@ -224,24 +232,13 @@ public final class MatchInventoryService {
     }
     private static void enforceLayout(ServerPlayer player) {
         Inventory inv = player.getInventory();
-        var rules = InventoryConfig.current(player);
         for (int i = 0; i < 36; i++) prepareStack(player, inv.getItem(i));
-        for (int i = 0; i < 41; i++) {
+        for (int i = 0; i <= 40; i++) {
             ItemStack stack = inv.getItem(i);
-            if (stack.isEmpty() || i >= 36 && i != 40) continue;
-            String role = role(stack);
-            boolean wrongGun = weapon(stack) && !(role.equals("handgun") ? i == 2 : i == 0 || i == 1);
-            boolean wrongSlot = i < 9 && locked(player, i) && !rules.hotbar().get(i).equals(role);
-            if (!wrongGun && !wrongSlot && i != 40) continue;
+            if (stack.isEmpty() || i >= 36 && i < 40 || acceptsStorageSlot(player, i, stack)) continue;
             inv.setItem(i, ItemStack.EMPTY);
             insert(player, stack, false);
             if (!stack.isEmpty()) player.drop(stack, false); // Preserve any admin/config overflow as a normal player drop.
-        }
-        for (int i = 3; i < 9; i++) {
-            if (!inv.getItem(i).isEmpty() || rules.hotbar().get(i).equals("free")) continue;
-            for (int j = 9; j < 36; j++) if (role(inv.getItem(j)).equals(rules.hotbar().get(i))) {
-                inv.setItem(i, inv.getItem(j)); inv.setItem(j, ItemStack.EMPTY); break;
-            }
         }
     }
     public static void selectAndUse(ServerPlayer player, String action) {

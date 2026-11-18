@@ -31,9 +31,9 @@ public final class PubgInventoryInteractionChecks {
         require(attachmentDefault(1, false, true, slot -> slot != 1, slot -> false).slot() == 0,
                 "same-component or locked selected attachment must skip to the next candidate");
 
-        Source groundPart = new Source(true, false, 400, true, true);
-        Source inventoryPart = new Source(false, false, 15, true, true);
-        Source mountedPart = new Source(false, true, 0, true, true);
+        Source groundPart = new Source(true, false, 400, true, true, false);
+        Source inventoryPart = new Source(false, false, 15, true, true, true);
+        Source mountedPart = new Source(false, true, 0, true, true, false);
         Destination inventoryColumn = new Destination(false, true, -1, false, false, false);
         Destination nearbyColumn = new Destination(true, false, -1, false, false, false);
         require(drag(groundPart, inventoryColumn).operation() == Operation.STORE,
@@ -63,9 +63,13 @@ public final class PubgInventoryInteractionChecks {
                 "mounted attachment cannot become an armor item");
         require(drag(groundPart, new Destination(false, false, -1, false, false, false)).badge() == Badge.INVALID,
                 "invalid areas need the red X instead of a successful action badge");
-        require(!drag(new Source(true, false, 600, false, false), inventoryColumn).valid(), "guns cannot enter the inventory list");
-        require(drag(new Source(false, false, 38, false, true), inventoryColumn).operation() == Operation.STORE,
+        require(!drag(new Source(true, false, 600, false, false, false), inventoryColumn).valid(), "guns cannot enter the inventory list");
+        require(drag(new Source(false, false, 38, false, true, false), inventoryColumn).operation() == Operation.STORE,
                 "armor dragged into inventory must be removed from its real equipment slot");
+        require(drag(new Source(false, false, 5, false, true, false), inventoryColumn).operation() == Operation.STORE,
+                "a configured melee or throwable card can be dragged into the list");
+        require(drag(new Source(false, false, 5, false, true, true), inventoryColumn).operation() == Operation.RETURN,
+                "a hotbar stack already shown in the list stays in its slot");
 
         require(groundWeaponDefault(1, slot -> slot < 2, slot -> slot == 0).slot() == 0, "an empty matching weapon slot precedes replacing the held gun");
         require(groundWeaponDefault(1, slot -> slot < 2, slot -> false).slot() == 1, "full weapon slots replace only the selected matching gun");

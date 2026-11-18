@@ -283,9 +283,11 @@ public final class PubgInventoryService {
         if (to >= 36 && !canRemove(player, plan.get(to))) return false;
         int amount = 0;
         if (to == -1) {
-            if (from < 36) return false;
+            if (from < 36 && (from < 3 || plan.settings.inPubgInventoryList(from))) return false;
             plan.set(from, ItemStack.EMPTY);
-            plan.returnOrDrop(source);
+            if (from < 36) {
+                if (!plan.store(source.copy(), true)) return false;
+            } else plan.returnOrDrop(source);
         } else {
             if (!accepts(player, to, source)) return false;
             amount = to >= 36 || MatchInventoryService.weapon(source) ? 1 : source.getCount();
@@ -319,11 +321,7 @@ public final class PubgInventoryService {
                 && !(item.getItem() instanceof com.example.examplemod.zones.match.flight.ParachuteItem)
                 && player.getEquipmentSlotForItem(item).getType() == EquipmentSlot.Type.HUMANOID_ARMOR
                 && player.getEquipmentSlotForItem(item).getIndex() == slot - 36;
-        String role = MatchInventoryService.role(item);
-        if (MatchInventoryService.weapon(item)) return role.equals("handgun") ? slot == 2 : slot == 0 || slot == 1;
-        if (slot < 3) return false;
-        return slot >= 9 || InventoryConfig.current(player).hotbar().get(slot).equals("free")
-                || InventoryConfig.current(player).hotbar().get(slot).equals(role);
+        return MatchInventoryService.acceptsStorageSlot(player, slot, item);
     }
     private static boolean canRemove(Player player, ItemStack stack) {
         return player.isCreative() || !EnchantmentHelper.has(stack, EnchantmentEffectComponents.PREVENT_ARMOR_CHANGE);
@@ -627,15 +625,19 @@ public final class PubgInventoryService {
             }
         }
         boolean store(ItemStack returning) {
+            return store(returning, false);
+        }
+        boolean store(ItemStack returning, boolean inventoryListOnly) {
             if (returning.isEmpty()) return true;
             MatchInventoryService.prepareStack(player, returning);
             if (MatchInventoryService.weapon(returning)) return false;
             String role = MatchInventoryService.role(returning);
             int dedicated = role.equals("free") ? -1 : settings.slot(role);
-            if (dedicated >= 3) put(dedicated, returning);
+            if (dedicated >= 3 && (!inventoryListOnly || settings.inPubgInventoryList(dedicated))) put(dedicated, returning);
             if (returning.isEmpty()) return true;
             for (int pass = 0; pass < 2; pass++) for (int index = 0; index < 33; index++) {
                 int slot = index < 27 ? index + 9 : index - 24;
+                if (inventoryListOnly && !settings.inPubgInventoryList(slot)) continue;
                 if (!accepts(player, slot, returning)) continue;
                 ItemStack existing = items[slot];
                 if (existing.isEmpty() != (pass == 1) || !existing.isEmpty() && !ItemStack.isSameItemSameComponents(existing, returning)) continue;

@@ -10,6 +10,7 @@ import com.example.examplemod.lootconfig.LootConfigModel;
 import com.example.examplemod.lootconfig.LootConfigStore;
 import com.example.examplemod.lootspawn.GroundLootEntity;
 import com.example.examplemod.lootspawn.LootSpawnRegistration;
+import com.example.examplemod.vitals.PubgMedicineItems;
 import com.example.examplemod.zones.MapZoneModel;
 import com.mojang.authlib.GameProfile;
 import java.util.ArrayList;
@@ -28,12 +29,14 @@ import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.inventory.ChestMenu;
 import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.BundleContents;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.util.FakePlayer;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -236,6 +239,115 @@ public final class EquipmentPickupGameTests {
                     && player.getInventory().getItem(5).getCount() == 3,
                     "Number-key gun acquisition failed to use the empty fixed slot without swapping unrelated items");
             f.drops.addAll(helper.getLevel().getEntitiesOfClass(GroundLootEntity.class, player.getBoundingBox().inflate(3)));
+            helper.succeed();
+        }
+    }
+
+    @GameTest(template = "empty", templateNamespace = "tacz_pubg")
+    public static void manuallyMoveAndSplitReservedHotbarStacks(GameTestHelper helper) throws Exception {
+        try (Fixture f = new Fixture(helper, 1, false)) {
+            var player = f.player;
+            var menu = player.inventoryMenu;
+            int bandage = InventoryMenu.USE_ROW_SLOT_START + 8;
+            int storage = InventoryMenu.INV_SLOT_START;
+            ItemStack original = named(new ItemStack(PubgMedicineItems.BANDAGE.get(), 5), "marked bandages");
+            menu.getSlot(bandage).set(original.copy());
+            menu.clicked(bandage, 1, ClickType.PICKUP, player);
+            helper.assertTrue(ItemStack.matches(menu.getCarried(), original.copyWithCount(3))
+                    && ItemStack.matches(menu.getSlot(bandage).getItem(), original.copyWithCount(2)),
+                    "Right click did not take half of the reserved stack");
+            menu.clicked(bandage, 1, ClickType.PICKUP, player);
+            helper.assertTrue(ItemStack.matches(menu.getCarried(), original.copyWithCount(2))
+                    && ItemStack.matches(menu.getSlot(bandage).getItem(), original.copyWithCount(3)),
+                    "Right click did not return one matching item to its reserved slot");
+            menu.clicked(bandage, 0, ClickType.PICKUP, player);
+            menu.clicked(bandage, 0, ClickType.PICKUP, player);
+            menu.clicked(storage, 0, ClickType.PICKUP, player);
+            helper.assertTrue(menu.getCarried().isEmpty() && !menu.getSlot(bandage).hasItem()
+                    && ItemStack.matches(menu.getSlot(storage).getItem(), original),
+                    "Could not take the complete stack out of the hotbar");
+            NeoForge.EVENT_BUS.post(new PlayerTickEvent.Post(player));
+            helper.assertTrue(!menu.getSlot(bandage).hasItem() && ItemStack.matches(menu.getSlot(storage).getItem(), original),
+                    "The inventory tick undid a manual move into storage");
+            int otherStorage = storage + 1;
+            ItemStack sticks = new ItemStack(Items.STICK, 2);
+            menu.getSlot(otherStorage).set(sticks.copy());
+            menu.clicked(otherStorage, 8, ClickType.SWAP, player);
+            helper.assertTrue(!menu.getSlot(bandage).hasItem() && ItemStack.matches(menu.getSlot(otherStorage).getItem(), sticks),
+                    "A number key inserted sticks into the empty bandage slot");
+            menu.clicked(storage, 0, ClickType.PICKUP, player);
+            menu.clicked(InventoryMenu.USE_ROW_SLOT_START + 7, 0, ClickType.PICKUP, player);
+            helper.assertTrue(ItemStack.matches(menu.getCarried(), original)
+                    && !menu.getSlot(InventoryMenu.USE_ROW_SLOT_START + 7).hasItem(),
+                    "An incompatible first-aid slot accepted bandages");
+            menu.clicked(bandage, 0, ClickType.PICKUP, player);
+            helper.assertTrue(menu.getCarried().isEmpty() && ItemStack.matches(menu.getSlot(bandage).getItem(), original),
+                    "Could not put the stack back into its empty reserved slot");
+            helper.succeed();
+        }
+    }
+
+    @GameTest(template = "empty", templateNamespace = "tacz_pubg")
+    public static void shiftMoveAndDoubleClickRespectHotbarRoles(GameTestHelper helper) throws Exception {
+        try (Fixture f = new Fixture(helper, 1, false)) {
+            var player = f.player;
+            var menu = player.inventoryMenu;
+            int bandage = InventoryMenu.USE_ROW_SLOT_START + 8;
+            int storage = InventoryMenu.INV_SLOT_START;
+            ItemStack stack = new ItemStack(PubgMedicineItems.BANDAGE.get(), 3);
+            menu.getSlot(bandage).set(stack.copy());
+            menu.clicked(bandage, 0, ClickType.QUICK_MOVE, player);
+            helper.assertTrue(!menu.getSlot(bandage).hasItem() && ItemStack.matches(menu.getSlot(storage).getItem(), stack),
+                    "Shift-click did not move a dedicated stack out of the hotbar");
+
+            // An item left in the wrong slot after a rule change can be removed, but cannot grow there.
+            int incompatible = InventoryMenu.USE_ROW_SLOT_START + 7;
+            menu.getSlot(incompatible).set(stack.copyWithCount(1));
+            menu.getSlot(bandage).set(stack.copyWithCount(1));
+            menu.clicked(storage, 0, ClickType.QUICK_MOVE, player);
+            helper.assertTrue(menu.getSlot(incompatible).getItem().getCount() == 1
+                    && menu.getSlot(bandage).getItem().getCount() == 4 && !menu.getSlot(storage).hasItem(),
+                    "Shift-click merged into an incompatible hotbar slot");
+            menu.clicked(incompatible, 0, ClickType.PICKUP, player);
+            menu.clicked(incompatible, 0, ClickType.PICKUP_ALL, player);
+            helper.assertTrue(ItemStack.matches(menu.getCarried(), stack.copyWithCount(5))
+                    && !menu.getSlot(bandage).hasItem() && !menu.getSlot(incompatible).hasItem(),
+                    "Double-click failed to collect from a dedicated hotbar slot");
+            helper.succeed();
+        }
+    }
+
+    @GameTest(template = "empty", templateNamespace = "tacz_pubg")
+    public static void hotbarWeaponSwapsCheckBothDestinations(GameTestHelper helper) throws Exception {
+        try (Fixture f = new Fixture(helper, 1, false)) {
+            var player = f.player;
+            var menu = player.inventoryMenu;
+            int primary = InventoryMenu.USE_ROW_SLOT_START;
+            int secondary = primary + 1;
+            int free = primary + 5;
+            ItemStack first = named(new ItemStack(Items.CROSSBOW), "first");
+            ItemStack second = named(new ItemStack(Items.CROSSBOW), "second");
+            ItemStack sticks = new ItemStack(Items.STICK, 3);
+            menu.getSlot(primary).set(first.copy());
+            menu.getSlot(secondary).set(second.copy());
+            menu.getSlot(free).set(sticks.copy());
+            menu.clicked(primary, 0, ClickType.PICKUP, player);
+            menu.clicked(secondary, 0, ClickType.PICKUP, player);
+            helper.assertTrue(ItemStack.matches(menu.getCarried(), second)
+                    && ItemStack.matches(menu.getSlot(secondary).getItem(), first), "Compatible cursor swap failed");
+            menu.clicked(free, 0, ClickType.PICKUP, player);
+            helper.assertTrue(ItemStack.matches(menu.getCarried(), second) && ItemStack.matches(menu.getSlot(free).getItem(), sticks),
+                    "A free hotbar slot accepted a long gun");
+            menu.clicked(primary, 0, ClickType.PICKUP, player);
+            menu.clicked(primary, 1, ClickType.SWAP, player);
+            helper.assertTrue(ItemStack.matches(menu.getSlot(primary).getItem(), first)
+                    && ItemStack.matches(menu.getSlot(secondary).getItem(), second), "Compatible number-key swap failed");
+            menu.clicked(free, 0, ClickType.SWAP, player);
+            helper.assertTrue(ItemStack.matches(menu.getSlot(primary).getItem(), first)
+                    && ItemStack.matches(menu.getSlot(free).getItem(), sticks), "Number key moved sticks into a primary slot");
+            menu.clicked(primary, 5, ClickType.SWAP, player);
+            helper.assertTrue(ItemStack.matches(menu.getSlot(primary).getItem(), first)
+                    && ItemStack.matches(menu.getSlot(free).getItem(), sticks), "An incompatible number-key swap changed a stack");
             helper.succeed();
         }
     }

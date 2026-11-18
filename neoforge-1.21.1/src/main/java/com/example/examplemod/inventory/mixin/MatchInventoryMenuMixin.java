@@ -2,6 +2,8 @@ package com.example.examplemod.inventory.mixin;
 
 import com.example.examplemod.inventory.InventoryConfig;
 import com.example.examplemod.inventory.MatchInventoryService;
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.core.NonNullList;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -36,9 +38,10 @@ public abstract class MatchInventoryMenuMixin {
                 !com.example.examplemod.backpack.BackpackOwnership.isTemporaryInputStack(inventory.player, stack));
         ci.setReturnValue(before > stack.getCount());
     }
-    @Inject(method = "canTakeItemForPickAll", at = @At("HEAD"), cancellable = true)
-    private void pubg$keepLockedStack(ItemStack stack, Slot slot, CallbackInfoReturnable<Boolean> ci) {
-        if (slot.container instanceof Inventory inv && MatchInventoryService.locked(inv.player, slot.getContainerSlot()))
-            ci.setReturnValue(false);
+    // Shift-click checks empty slots with mayPlace, but merges into existing stacks without it.
+    @ModifyExpressionValue(method = "moveItemStackTo", at = @At(value = "INVOKE",
+            target = "Lnet/minecraft/world/item/ItemStack;isSameItemSameComponents(Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/item/ItemStack;)Z"))
+    private boolean pubg$canMergeIntoSlot(boolean matches, @Local Slot slot, @Local(argsOnly = true) ItemStack incoming) {
+        return matches && MatchInventoryService.mayPlace(slot, incoming);
     }
 }

@@ -63,6 +63,37 @@ public final class PubgInventoryBusyGameTests {
     private static final AtomicLong MAP_IDS = new AtomicLong(98_700_000);
 
     @GameTest(template = "empty", templateNamespace = "tacz_pubg")
+    public static void weaponCardTransfersUseVisibleStorageOrLeaveSourceIntact(GameTestHelper helper) throws Exception {
+        try (var f = new Fixture(helper)) {
+            var inventory = f.player.getInventory();
+            var settings = InventoryConfig.current(f.player);
+            int melee = settings.slot("melee"), throwable = settings.slot("throwable");
+            ItemStack sword = new ItemStack(Items.IRON_SWORD);
+            inventory.setItem(melee, sword);
+            f.command(Action.MOVE, false, melee, -1);
+            helper.assertTrue(inventory.getItem(melee).isEmpty() && ItemStack.matches(inventory.getItem(9), sword),
+                    "Dragging the melee card to the list did not move it into storage");
+            f.command(Action.MOVE, false, 9, melee);
+            helper.assertTrue(ItemStack.matches(inventory.getItem(melee), sword) && inventory.getItem(9).isEmpty(),
+                    "Dragging the melee item back to its matching card did not equip it");
+            var grenade = ThrowableRegistration.ITEMS.get(ThrowableKind.FRAG).get();
+            ItemStack pair = new ItemStack(grenade, 2);
+            inventory.setItem(throwable, pair);
+            for (int slot = 3; slot < 36; slot++) {
+                if (settings.inPubgInventoryList(slot)) inventory.setItem(slot, new ItemStack(Items.STONE, 64));
+            }
+            f.command(Action.MOVE, false, throwable, -1);
+            helper.assertTrue(inventory.getItem(throwable) == pair && pair.getCount() == 2 && f.groundCount(grenade) == 0,
+                    "Dragging a throwable card into a full list changed its source or dropped items");
+            inventory.setItem(9, ItemStack.EMPTY);
+            f.command(Action.MOVE, false, throwable, -1);
+            helper.assertTrue(inventory.getItem(throwable).isEmpty() && ItemStack.matches(inventory.getItem(9), pair),
+                    "Dragging a throwable card to the list did not preserve its full stack");
+            helper.succeed();
+        }
+    }
+
+    @GameTest(template = "empty", templateNamespace = "tacz_pubg")
     public static void aimingCooldownAndReloadDoNotBlockUnrelatedHandleMoves(GameTestHelper helper) throws Exception {
         try (var f = new Fixture(helper)) {
             ItemStack gun = GunItemBuilder.create().setId(ResourceLocation.parse("tacz:m4a1"))

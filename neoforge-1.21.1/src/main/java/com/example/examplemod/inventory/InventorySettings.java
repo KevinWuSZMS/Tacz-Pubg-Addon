@@ -49,6 +49,12 @@ public record InventorySettings(List<String> hotbar, Map<String, Double> capacit
                 "free", "med_kit", "first_aid_kit", "bandage"), Map.of(), Map.of());
     }
     public int slot(String role) { return hotbar.indexOf(role); }
+    public boolean inPubgInventoryList(int slot) {
+        if (slot < 3 || slot >= 36) return false;
+        if (slot >= 9) return true;
+        String role = hotbar.get(slot);
+        return !role.equals("melee") && !role.equals("throwable");
+    }
     public InventorySettings withRole(int slot, String role) {
         if (slot < 3 || slot > 8 || !ROLES.contains(role)) throw new IllegalArgumentException("Invalid editable hotbar slot");
         var values = new ArrayList<>(hotbar);

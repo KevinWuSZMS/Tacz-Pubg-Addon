@@ -81,8 +81,7 @@ public final class PubgInventoryScreen extends Screen {
         for (int slot = 0; slot < 36; slot++) {
             ItemStack item = stack(slot);
             if (item.isEmpty()) continue;
-            String role = slot < 9 ? rules.hotbar().get(slot) : "free";
-            if (slot < 3 || role.equals("melee") || role.equals("throwable")) continue;
+            if (!rules.inPubgInventoryList(slot)) continue;
             int existing = -1;
             for (int i = 0; i < rows.size(); i++)
                 if (ItemStack.isSameItemSameComponents(rows.get(i).item, item)) { existing = i; break; }
@@ -221,10 +220,7 @@ public final class PubgInventoryScreen extends Screen {
             return !BackpackService.isBackpack(item) && armor.getType() == EquipmentSlot.Type.HUMANOID_ARMOR
                     && armor.getIndex() == slot - 36 && removable(stack(slot));
         }
-        String role = MatchInventoryService.role(item);
-        if (MatchInventoryService.weapon(item)) return role.equals("handgun") ? slot == 2 : slot == 0 || slot == 1;
-        return slot >= 3 && (slot >= 9 || InventoryConfig.current(minecraft.player).hotbar().get(slot).equals("free")
-                || InventoryConfig.current(minecraft.player).hotbar().get(slot).equals(role));
+        return MatchInventoryService.acceptsStorageSlot(minecraft.player, slot, item);
     }
     private Target itemTarget(int slot, ItemStack item) {
         return acceptsItem(slot, item) ? new Target(Operation.EQUIP, slot, !stack(slot).isEmpty()) : INVALID;
@@ -262,7 +258,8 @@ public final class PubgInventoryScreen extends Screen {
         boolean attach = slot >= 0 && slot < 3 && attachment != null && PubgAttachmentSlots.accepts(stack(slot), type, source.item);
         boolean occupied = slot >= 0 && (attachment != null && slot < 3
                 ? !PubgAttachmentSlots.installed(stack(slot), type).isEmpty() : !stack(slot).isEmpty());
-        return PubgInventoryInteractionRules.drag(new Source(source.ground, source.mounted(), source.source, attachment != null, canStore(source.item)),
+        boolean inList = !source.ground && !source.mounted() && InventoryConfig.current(minecraft.player).inPubgInventoryList(source.source);
+        return PubgInventoryInteractionRules.drag(new Source(source.ground, source.mounted(), source.source, attachment != null, canStore(source.item), inList),
                 new Destination(layout.overNearby(x, y), overInventory(x, y), slot, attach, acceptsItem(slot, source.item), occupied));
     }
     private boolean previewsEquip() {

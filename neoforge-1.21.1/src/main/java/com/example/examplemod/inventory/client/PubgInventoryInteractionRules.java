@@ -19,7 +19,7 @@ public final class PubgInventoryInteractionRules {
             };
         }
     }
-    public record Source(boolean ground, boolean mounted, int slot, boolean attachment, boolean storable) { }
+    public record Source(boolean ground, boolean mounted, int slot, boolean attachment, boolean storable, boolean inInventoryList) { }
     public record Destination(boolean nearby, boolean inventory, int slot,
                               boolean acceptsAttachment, boolean acceptsItem, boolean occupied) { }
     public static final Target INVALID = new Target(Operation.INVALID, -1, false);
@@ -44,7 +44,7 @@ public final class PubgInventoryInteractionRules {
         if (destination.nearby()) return source.ground() ? RETURN : new Target(Operation.DROP, -2, false);
         if (destination.inventory()) {
             if (!source.storable()) return INVALID;
-            return !source.ground() && !source.mounted() && source.slot() < 36 ? RETURN : STORE;
+            return source.inInventoryList() ? RETURN : STORE;
         }
         int slot = destination.slot();
         if (slot < 0) return INVALID;
