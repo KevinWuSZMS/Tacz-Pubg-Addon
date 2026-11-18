@@ -2662,5 +2662,8 @@
   "df83dc74a565": "screen.tacz_pubg.combat.assist_message",
   "19b74ddbd3f5": "screen.tacz_pubg.battle_settings.field.hud.health_critical_red",
   "e7bf3e4ec53f": "screen.tacz_pubg.battle_settings.field.hud.health_flash_ticks",
-  "04b43de6d59a": "screen.tacz_pubg.hud_layout.component.player_stance"
+  "04b43de6d59a": "screen.tacz_pubg.hud_layout.component.player_stance",
+  "0d8d3ce04245": "message.tacz_pubg.flight.jump_action",
+  "882f83ab1a3d": "message.tacz_pubg.flight.deploy_action",
+  "252927c26d79": "screen.tacz_pubg.throwable.cook_control"
 }

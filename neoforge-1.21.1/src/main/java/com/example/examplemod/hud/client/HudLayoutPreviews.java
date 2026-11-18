@@ -46,7 +46,7 @@ final class HudLayoutPreviews {
                 int half = Math.max(30, (int) (h * .15)), gap = Math.max(64, (int) (w * .238));
                 yield rect(w / 2 - gap - 65, h / 2 + (int) (h * .01) - half - 15, gap * 2 + 130, half * 2 + 52);
             }
-            case "loot_pickup" -> centeredRect(w, h / 2 + 18, textWidth(pickupLabel()), Minecraft.getInstance().font.lineHeight);
+            case "loot_pickup" -> InteractionPromptHud.bounds(w, h, GroundLootClient.pickupKey().getTranslatedKeyMessage(), pickupLabel());
             case "area_selection" -> {
                 int width = 0;
                 for (String line : selectionLines()) width = Math.max(width, textWidth(line));
@@ -134,7 +134,7 @@ final class HudLayoutPreviews {
                 }
                 string(g, "850 M", x, axisTop + axisHeight / 2, 58, text);
                 string(g, "180 KM/H", right + 9, axisTop + axisHeight / 2, 56, text);
-                centered(g, translated("message.tacz_pubg.flight.deploy", binding("flight_jump")), r, y + h - 12, text);
+                // The action key is previewed by the shared interaction row.
             }
             case "xaero_minimap" -> {
                 g.fill(x, y, x + w, y + h, 0xEE304137);
@@ -144,7 +144,9 @@ final class HudLayoutPreviews {
                 centered(g, "▲", r, y + h / 2 - 4, 0xFFF4E899);
                 centered(g, "Xaero", r, y + h - 14, text);
             }
-            case "loot_pickup" -> string(g, pickupLabel(), x, y, w, text);
+            case "loot_pickup" -> {
+                if (selected) InteractionPromptHud.draw(g, r, GroundLootClient.pickupKey().getTranslatedKeyMessage(), pickupLabel(), Component.empty());
+            }
             case "area_selection" -> {
                 g.fill(x, y, x + w, y + h, 0xA0000000);
                 String[] lines = selectionLines();
@@ -178,11 +180,10 @@ final class HudLayoutPreviews {
         return translated("screen.tacz_pubg.medicine.use_progress", sampleItem("first_aid_kit").getHoverName(), "3.2");
     }
     private static String throwableControls() {
-        return translated("screen.tacz_pubg.throwable.controls", binding("cook"), binding("cancel_use"));
+        return translated("screen.tacz_pubg.throwable.cook_control", binding("cook"));
     }
-    private static String pickupLabel() {
-        return translated("gui.tacz_pubg.pickup_hint", GroundLootClient.pickupKey().getTranslatedKeyMessage(),
-                sampleItem("first_aid_kit").getHoverName(), 1);
+    private static Component pickupLabel() {
+        return Texts.of("gui.tacz_pubg.pickup_action", sampleItem("first_aid_kit").getHoverName(), 1);
     }
     private static String mapLabel() {
         return translated("screen.tacz_pubg.map_overlay_hud.map", 1,

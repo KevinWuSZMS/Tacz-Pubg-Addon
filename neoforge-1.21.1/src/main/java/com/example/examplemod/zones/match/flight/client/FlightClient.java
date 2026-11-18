@@ -1,6 +1,7 @@
 package com.example.examplemod.zones.match.flight.client;
 
 import com.example.examplemod.localization.Texts;
+import com.example.examplemod.hud.client.InteractionPromptHud;
 import com.example.examplemod.zones.match.flight.FlightPayloads;
 import com.example.examplemod.zones.match.flight.FlightRegistration;
 import com.example.examplemod.zones.match.flight.FlightMotion;
@@ -129,11 +130,14 @@ public final class FlightClient {
         if (mc.options.hideGui || current.stage() == 0 || mc.screen != null || mc.player == null || mc.level == null) return;
         int cx = graphics.guiWidth() / 2, cy = graphics.guiHeight() / 2;
         if (current.stage() == 1) {
-            var text = current.jumpWait() > 0 ? Texts.of("message.tacz_pubg.flight.wait", current.jumpWait())
-                    : Texts.of("message.tacz_pubg.flight.jump", JUMP.getTranslatedKeyMessage());
-            try (var layout = com.example.examplemod.hud.client.HudLayoutClient.apply(graphics, "flight",
-                    cx - 100, cy + 40, 200, mc.font.lineHeight)) {
-            graphics.drawCenteredString(mc.font, text, cx, cy + 40, 0xFFFFFF);
+            if (current.jumpWait() > 0) {
+                var text = Texts.of("message.tacz_pubg.flight.wait", current.jumpWait());
+                try (var layout = com.example.examplemod.hud.client.HudLayoutClient.apply(graphics, "flight",
+                        cx - 100, cy + 40, 200, mc.font.lineHeight)) {
+                    graphics.drawCenteredString(mc.font, text, cx, cy + 40, 0xFFFFFF);
+                }
+            } else {
+                InteractionPromptHud.render(graphics, JUMP.getTranslatedKeyMessage(), Texts.of("message.tacz_pubg.flight.jump_action"));
             }
             return;
         }
@@ -157,15 +161,12 @@ public final class FlightClient {
             graphics.fill(cx - gap - 3, Math.clamp(mark, cy - half, cy + half),
                     cx - gap + 8, Math.clamp(mark, cy - half, cy + half) + 2, 0xFFE4BD58);
         }
-        if (current.stage() == 2 && current.canDeploy()) {
-            var text = Texts.of("message.tacz_pubg.flight.deploy", JUMP.getTranslatedKeyMessage());
-            int x = cx + (int) (graphics.guiWidth() * .06), y = cy + (int) (graphics.guiHeight() * .06);
-            graphics.fill(x - 3, y - 3, x + mc.font.width(text) + 3, y + mc.font.lineHeight + 2, 0x90000000);
-            graphics.drawString(mc.font, text, x, y, 0xFFFFFFFF);
-        }
         graphics.drawCenteredString(mc.font, Texts.of(current.stage() == 3
                         ? "message.tacz_pubg.flight.canopy_controls" : "message.tacz_pubg.flight.fall_controls",
                 DIVE.getTranslatedKeyMessage(), GLIDE.getTranslatedKeyMessage()), cx, cy + half + 26, 0xDDDDDD);
+        }
+        if (current.stage() == 2 && current.canDeploy()) {
+            InteractionPromptHud.render(graphics, JUMP.getTranslatedKeyMessage(), Texts.of("message.tacz_pubg.flight.deploy_action"));
         }
     }
     private static void axis(GuiGraphics g, int x, int top, int height, double value, double maximum,

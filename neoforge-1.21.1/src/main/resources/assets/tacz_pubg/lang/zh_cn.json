@@ -2803,5 +2803,10 @@
   "screen.tacz_pubg.medicine.cancel": "取消",
   "screen.tacz_pubg.battle_settings.field.hud.health_critical_red": "危急生命闪烁亮红色",
   "screen.tacz_pubg.battle_settings.field.hud.health_flash_ticks": "危急生命换色间隔（刻）",
-  "screen.tacz_pubg.hud_layout.component.player_stance": "人物姿态提示"
+  "screen.tacz_pubg.hud_layout.component.player_stance": "人物姿态提示",
+  "gui.tacz_pubg.interact_action": "交互",
+  "gui.tacz_pubg.pickup_action": "拾取 %s ×%s",
+  "message.tacz_pubg.flight.jump_action": "跳伞",
+  "message.tacz_pubg.flight.deploy_action": "展开降落伞",
+  "screen.tacz_pubg.throwable.cook_control": "[%s] 温雷"
 }
